@@ -213,9 +213,9 @@ cython_debug/
 /auxil/
 /out/
 *.synctex.gz
+*.synctex.gz.sum.synctex
 *.bbl
 *.blg
-
 
 # Marimo
 marimo/_static/
