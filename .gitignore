@@ -216,6 +216,8 @@ cython_debug/
 *.synctex.gz.sum.synctex
 *.bbl
 *.blg
+*.bcf
+*.run.xml
 
 # Marimo
 marimo/_static/
