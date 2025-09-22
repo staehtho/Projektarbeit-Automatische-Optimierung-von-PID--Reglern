@@ -224,8 +224,6 @@ cython_debug/
 *.fdb_latexmk
 *.synctex.gz
 
-# PDFs ignorieren
-*.pdf
 
 # Marimo
 marimo/_static/

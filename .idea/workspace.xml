@@ -4,8 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="5e3ec1ec-13d4-4b28-8f5c-c5eeae163a41" name="Changes" comment="Unresolved Files">
-      <change beforePath="$PROJECT_DIR$/out/Projektarbeit.synctex.gz.sum.synctex" beforeDir="false" />
+    <list default="true" id="5e3ec1ec-13d4-4b28-8f5c-c5eeae163a41" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,17 +30,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "LaTeX.PA.executor": "Run",
-    "Python.PSO-simulation-example.executor": "Run",
-    "Python.test_python_matlab.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "C:/Users/thoma/OneDrive/Dokumente/Studium Systemtechnik/PA/Projektarbeit Automatische Optimierung von PID- Reglern",
-    "settings.editor.selected.configurable": "preferences.pluginManager"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;LaTeX.PA.executor&quot;: &quot;Run&quot;,
+    &quot;Python.PSO-simulation-example.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test_python_matlab.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/thoma/OneDrive/Dokumente/Studium Systemtechnik/PA/Projektarbeit Automatische Optimierung von PID- Reglern&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="PA" type="LATEX_RUN_CONFIGURATION" factoryName="LaTeX configuration factory">
       <texify>
@@ -137,7 +137,23 @@
       <option name="project" value="LOCAL" />
       <updated>1758540914182</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Unresolved Files">
+      <option name="closed" value="true" />
+      <created>1758541012859</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1758541012859</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Unresolved Files">
+      <option name="closed" value="true" />
+      <created>1758541133137</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1758541133137</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
