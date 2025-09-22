@@ -203,26 +203,17 @@ cython_debug/
 
 # LaTeX temporäre Dateien
 *.aux
-*.bbl
-*.blg
-*.brf
-*.idx
-*.ilg
-*.ind
+*.toc
 *.lof
 *.lot
 *.out
-*.toc
-*.acn
-*.acr
-*.alg
-*.glg
-*.glo
-*.gls
-*.ist
 *.fls
 *.fdb_latexmk
+/auxil/
+/out/
 *.synctex.gz
+*.bbl
+*.blg
 
 
 # Marimo

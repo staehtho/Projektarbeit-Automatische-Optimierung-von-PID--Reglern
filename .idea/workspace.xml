@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="5e3ec1ec-13d4-4b28-8f5c-c5eeae163a41" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="5e3ec1ec-13d4-4b28-8f5c-c5eeae163a41" name="Changes" comment="Add Aufgabenstellung" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -153,7 +151,23 @@
       <option name="project" value="LOCAL" />
       <updated>1758541133137</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Add Aufgabenstellung">
+      <option name="closed" value="true" />
+      <created>1758565029632</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1758565029632</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Add Aufgabenstellung">
+      <option name="closed" value="true" />
+      <created>1758565044073</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1758565044073</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -176,6 +190,8 @@
     <MESSAGE value="Runt test" />
     <MESSAGE value="Init LaTech" />
     <MESSAGE value="Unresolved Files" />
-    <option name="LAST_COMMIT_MESSAGE" value="Unresolved Files" />
+    <MESSAGE value="Merge branch 'main' of https://github.com/staehtho/Projektarbeit-Automatische-Optimierung-von-PID--Reglern" />
+    <MESSAGE value="Add Aufgabenstellung" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add Aufgabenstellung" />
   </component>
 </project>
