@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="5e3ec1ec-13d4-4b28-8f5c-c5eeae163a41" name="Changes" comment="POS neu" />
+    <list default="true" id="5e3ec1ec-13d4-4b28-8f5c-c5eeae163a41" name="Changes" comment="PSO und Matlab">
+      <change beforePath="$PROJECT_DIR$/PSO/swarmlip.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/__init__.py" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -53,7 +56,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758538953746</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="PSO und Matlab">
+      <option name="closed" value="true" />
+      <created>1758539424998</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1758539424998</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -69,6 +80,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="POS neu" />
-    <option name="LAST_COMMIT_MESSAGE" value="POS neu" />
+    <MESSAGE value="PSO und Matlab" />
+    <option name="LAST_COMMIT_MESSAGE" value="PSO und Matlab" />
   </component>
 </project>
