@@ -8,7 +8,7 @@ Created on Thu May 30 09:12:35 2024
 # import the system to simulate
 from Systems.HeatSystem import HeatSystem
 
-import PSO.swarmlip as swl
+from PSO import Swarm
 
 
 def outputSwarm(swarm, particle_space):
@@ -29,7 +29,7 @@ def main():
     obj_func = HeatSystem.systemResponseX
 
     # Swarm-Optimierung
-    swarm = swl.Swarm(obj_func, swarm_size, bounds)
+    swarm = Swarm(obj_func, swarm_size, bounds)
     terminated_swarm = swarm.simulate_swarm(outputSwarm)
 
     # Best parameters from the swarm
