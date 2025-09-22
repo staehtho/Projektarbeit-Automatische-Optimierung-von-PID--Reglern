@@ -4,13 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="5e3ec1ec-13d4-4b28-8f5c-c5eeae163a41" name="Changes" comment="New Files">
-      <change afterPath="$PROJECT_DIR$/src/PSO/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/PSO-simulation-example.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/PSO-simulation-example.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/model.slxc" beforeDir="false" afterPath="$PROJECT_DIR$/src/model.slxc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/test.py" afterDir="false" />
+    <list default="true" id="5e3ec1ec-13d4-4b28-8f5c-c5eeae163a41" name="Changes" comment="Unresolved Files">
+      <change beforePath="$PROJECT_DIR$/out/Projektarbeit.synctex.gz.sum.synctex" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,6 +32,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "LaTeX.PA.executor": "Run",
     "Python.PSO-simulation-example.executor": "Run",
     "Python.test_python_matlab.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
@@ -57,8 +53,8 @@
         <envs />
         <before-run-command />
         <main-file>$PROJECT_DIR$/Dokumentation/src/Projektarbeit.tex</main-file>
-        <output-path>$PROJECT_DIR$/out</output-path>
-        <auxil-path>$PROJECT_DIR$/auxil</auxil-path>
+        <output-path>$PROJECT_DIR$/Dokumentation/out</output-path>
+        <auxil-path>$PROJECT_DIR$/Dokumentation/auxil</auxil-path>
         <compile-twice>false</compile-twice>
         <output-format>PDF</output-format>
         <latex-distribution>MIKTEX</latex-distribution>
@@ -117,7 +113,31 @@
       <option name="project" value="LOCAL" />
       <updated>1758539626049</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Runt test">
+      <option name="closed" value="true" />
+      <created>1758540767889</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1758540767889</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Init LaTech">
+      <option name="closed" value="true" />
+      <created>1758540785028</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1758540785028</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Unresolved Files">
+      <option name="closed" value="true" />
+      <created>1758540914182</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1758540914182</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -137,6 +157,9 @@
     <MESSAGE value="ALles" />
     <MESSAGE value="neu" />
     <MESSAGE value="New Files" />
-    <option name="LAST_COMMIT_MESSAGE" value="New Files" />
+    <MESSAGE value="Runt test" />
+    <MESSAGE value="Init LaTech" />
+    <MESSAGE value="Unresolved Files" />
+    <option name="LAST_COMMIT_MESSAGE" value="Unresolved Files" />
   </component>
 </project>

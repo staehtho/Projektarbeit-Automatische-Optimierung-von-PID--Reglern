@@ -201,11 +201,6 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-# Marimo
-marimo/_static/
-marimo/_lsp/
-__marimo__/
-
 # LaTeX temporäre Dateien
 *.aux
 *.bbl
@@ -231,3 +226,10 @@ __marimo__/
 
 # PDFs ignorieren
 *.pdf
+
+# Marimo
+marimo/_static/
+marimo/_lsp/
+__marimo__/
+
+
