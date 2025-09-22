@@ -1,19 +1,67 @@
 %! Author = thomas
 %! Date = 22.09.2025
 
-% Preamble
-\documentclass[12pt,a4paper]{scrreprt}
 
-% Packages
-\usepackage{amsmath}
+% main.tex
+\documentclass[12pt,a4paper]{scrreprt} % KOMA-Script report class
 
 
-\usepackage{biblatex}
+% ---------------------- Preamble ----------------------
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}   % Text + Mathe in Times
+\usepackage[ngerman]{babel}
+\usepackage{microtype}
+\usepackage{csquotes}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{booktabs}       % für bessere Tabellenregeln
+\usepackage{siunitx}        % Einheiten und Zahlen
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}       % Verlinkungen im PDF
+% Link einfaerben
+%\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+\usepackage{biblatex}       % moderne Literaturverwaltung
 \addbibresource{../bib/main.bib}
+\usepackage{listings}       % Quellcode-Listings
+\usepackage{float}
+\usepackage{geometry}
+\usepackage{import}
+\geometry{a4paper, left=30mm, right=25mm, top=30mm, bottom=30mm}
 
-% Document
+
+
+% ---------------------- Dokument ----------------------
 \begin{document}
 
-    Test
+
+% Titelseite (einfaches Beispiel)
+\begin{titlepage}
+  \centering
+  {\LARGE Hochschule Beispielstadt\\[1.5em]}
+  {\Large Fachbereich XY\\[4em]}
+  {\huge\bfseries Titel der Projektarbeit\\[1.5em]}
+  {\Large Untertitel (optional)\\[4em]}
+  {\Large\textbf{Autor:} Max Mustermann\\[0.5em]}
+  {\Large\textbf{Betreuer:} Prof. Dr. Beispiel\\[4em]}
+  {\large Abgabedatum: 1. Januar 2025}
+\end{titlepage}
+
+
+\cleardoublepage
+\pagenumbering{roman}
+\tableofcontents
+\cleardoublepage
+\pagenumbering{arabic}
+
+
+% Kapitel: mit includes
+\include{01_Einleitung/01_Einleitung}
+
+
+
+% Fazit / Literatur / Anhang
+%\printbibliography[heading=bibliography]
 
 \end{document}
+

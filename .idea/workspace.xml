@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="5e3ec1ec-13d4-4b28-8f5c-c5eeae163a41" name="Changes" comment="Init LaTech">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dokumentation/bib/main.bib" beforeDir="false" afterPath="$PROJECT_DIR$/Dokumentation/bib/main.bib" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dokumentation/tex/main.tex" beforeDir="false" afterPath="$PROJECT_DIR$/Dokumentation/tex/main.tex" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -195,7 +194,23 @@
       <option name="project" value="LOCAL" />
       <updated>1758565812018</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="Init LaTech">
+      <option name="closed" value="true" />
+      <created>1758567262193</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1758567262193</updated>
+    </task>
+    <task id="LOCAL-00015" summary="Init LaTech">
+      <option name="closed" value="true" />
+      <created>1758567281468</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1758567281468</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
