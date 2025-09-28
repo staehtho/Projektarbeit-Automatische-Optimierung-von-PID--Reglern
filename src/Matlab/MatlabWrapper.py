@@ -14,7 +14,7 @@ class MatlabWrapper:
 
     def __enter__(self):
         print("Matlab starting...")
-        self.engine = matlab.engine.start_matlab()
+        self.engine = matlab.engine.start_matlab("-nojvm -nodisplay")
         print("Matlab is running...")
         return self
 

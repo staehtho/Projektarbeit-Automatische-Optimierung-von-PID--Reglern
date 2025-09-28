@@ -8,8 +8,10 @@ Created on Sat Apr 13 16:12:52 2024
 import numpy as np
 from scipy.integrate import solve_ivp
 
+
 class ClosedLoopSystem:
-    def __init__(self, Kp, Ki=None, Kd=None, Ti=None, Td=None, pos_sat=None, neg_sat=None, K=1.0, setPoint=1.0, tau_d=0.01, control=True):
+    def __init__(self, Kp, Ki=None, Kd=None, Ti=None, Td=None, pos_sat=None, neg_sat=None, K=1.0, setPoint=1.0,
+                 tau_d=0.01, control=True):
         self.myKp = Kp
         if Ki is not None:
             self.myKi = Ki
@@ -22,7 +24,7 @@ class ClosedLoopSystem:
             self.myKd = Kd
         else:
             self.myKd = Kp * Td
-        
+
         self.tau_d = tau_d
         self.myPosSat = pos_sat
         self.myNegSat = neg_sat
@@ -34,8 +36,8 @@ class ClosedLoopSystem:
         self.filtered_d = 0
         self.tau = 0.01
         # state
-        self.order_i=0
-    
+        self.order_i = 0
+
     def _pid_controller(self, t, y):
         error = self.mySetPoint - y[self.order_i]
         dt = t - self.myLastError[1]
@@ -64,7 +66,6 @@ class ClosedLoopSystem:
         self.myLastError = [error, t]
         return PID
 
-    
     def response(self):
         y0 = [0.0, 0.0]  # Anfangswerte
         # Zeitbereich
@@ -73,9 +74,9 @@ class ClosedLoopSystem:
         timet = sol.t
         step_response = sol.y[self.order_i]
 
-        itae_krit = self.__itae(timet,step_response, self.mySetPoint)
+        itae_krit = self.__itae(timet, step_response, self.mySetPoint)
         return itae_krit, timet, step_response
-    
+
     @staticmethod
     def __itae(t, y, setPoint):
         value = 0

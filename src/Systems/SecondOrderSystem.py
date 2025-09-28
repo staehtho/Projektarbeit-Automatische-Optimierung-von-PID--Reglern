@@ -113,6 +113,3 @@ class SecondOrderSystem:
         plt.grid(True)
         plt.show()
         return itae_krit
-
-# X represents the 3 controll parameter Kp, Ti, Td.
-print(SecondOrderSystem.systemResponseX(X=[10,5.12882,0.414282]))

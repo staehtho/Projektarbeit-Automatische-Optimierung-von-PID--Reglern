@@ -6,7 +6,7 @@ Created on Thu May 30 09:12:35 2024
 """
 
 # import the system to simulate
-from Systems.HeatSystem import HeatSystem
+from Systems import HeatSystem
 
 from PSO import Swarm
 
