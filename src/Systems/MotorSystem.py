@@ -6,7 +6,8 @@ Created on Wed Apr 16 14:22:37 2024
 """
 
 import matplotlib.pyplot as plt
-from Systems.closedLoopSystem import ClosedLoopSystem
+from .closedLoopSystem import ClosedLoopSystem
+
 
 class MotorSystem(ClosedLoopSystem):
     def __init__(self, Kp, Ki=None, Kd=None, Ti=None, Td=None, pos_sat=None, neg_sat=None, K=1.0, _KI=1.061, _TI=1.257, setPoint=100.0, tau_d=0.01, control=True):
@@ -61,6 +62,3 @@ class MotorSystem(ClosedLoopSystem):
         plt.grid(True)
         plt.show()
         print(itae_krit)
-        
-# X represents the 3 controll parameter Kp, Ti, Td.
-MotorSystem.plotSystemResponseX([49.8873, 8179.66, 0.367418], control=True)

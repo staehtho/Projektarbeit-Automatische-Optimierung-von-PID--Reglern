@@ -139,6 +139,3 @@ class PT3System:
         plt.grid(True)
         plt.show()
         print(itae_krit)
-        
-# X represents the 3 controll parameter Kp, Ti, Td.
-PT3System.plotSystemResponseX(X=[10,20,0.7])

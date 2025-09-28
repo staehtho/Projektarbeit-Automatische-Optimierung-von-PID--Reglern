@@ -6,7 +6,7 @@ Created on Thu May 3 10:29:36 2024
 """
 
 import matplotlib.pyplot as plt
-from Systems.closedLoopSystem2 import ClosedLoopSystem2
+from .closedLoopSystem2 import ClosedLoopSystem2
 
 
 class HeatSystem(ClosedLoopSystem2):
