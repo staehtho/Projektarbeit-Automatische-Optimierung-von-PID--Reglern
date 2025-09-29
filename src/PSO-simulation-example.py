@@ -6,7 +6,7 @@ Created on Thu May 30 09:12:35 2024
 """
 
 # import the system to simulate
-from Systems import HeatSystem
+import Systems
 
 from PSO import Swarm
 
@@ -26,7 +26,7 @@ def outputSwarm(swarm, particle_space):
 def main():
     swarm_size = 40
     bounds = [[0, 0.1, 0], [100, 10000, 10]]
-    obj_func = HeatSystem.systemResponseX
+    obj_func = Systems.MotorSystem.systemResponseX
 
     # Swarm-Optimierung
     swarm = Swarm(obj_func, swarm_size, bounds)
@@ -48,13 +48,13 @@ def main():
     # 1️⃣ Plot ohne Optimierung
     # ------------------------------
     print("Plot ohne Optimierung:")
-    HeatSystem.plotSystemResponseX([59.8449, 2043.5, 5.72668], pos_sat=500, neg_sat=20, control=False)
+    Systems.MotorSystem.plotSystemResponseX([59.8449, 2043.5, 5.72668], pos_sat=500, neg_sat=20, control=False)
 
     # ------------------------------
     # 2️⃣ Plot mit Swarm-Optimierung
     # ------------------------------
     print("Plot mit Swarm-Optimierung:")
-    HeatSystem.plotSystemResponseX([Kp, Ki, Kd], pos_sat=500, neg_sat=20, control=True)
+    Systems.MotorSystem.plotSystemResponseX([Kp, Ki, Kd], pos_sat=500, neg_sat=20, control=True)
 
 
 if __name__ == '__main__':
