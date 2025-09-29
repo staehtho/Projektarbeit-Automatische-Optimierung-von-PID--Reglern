@@ -1,4 +1,4 @@
-from .Plant import Plant
+from .plant import Plant
 
 
 class ClosedLoop:
