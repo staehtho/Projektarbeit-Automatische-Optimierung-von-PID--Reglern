@@ -6,10 +6,9 @@ def main():
     with MatlabWrapper() as mat:
 
         s = "tf('s');"
-        C = "10 * (1 + 1/(5 * s) + (2 * s)/(10 * s + 1));"
-        G = "1 / ((1 + s) * (2 + s));"
+        G = "1 / ((s + 1)^2);"
 
-        mat.run_simulation("model", "yout", stop_time=20, s=s, C=C, G=G)
+        mat.run_simulation("stepresponse", "yout", stop_time=10, s=s, G=G)
         mat.plot_simulation("1", "Test", show=True)
 
 
