@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Callable
+from typing import Callable, Union
 import matplotlib.pyplot as plt
 
 
@@ -25,46 +25,77 @@ def calculate_response(solver_methode: str, max_step: float) -> np.ndarray:
     pass
 
 
-SystemFunc = Callable[[complex | np.ndarray], complex | np.ndarray]
+SystemData = Union[Callable[[np.ndarray], np.ndarray], tuple[np.ndarray, np.ndarray, np.ndarray]]
 
 
-def bode_plot(systems: dict[str, SystemFunc], *, grid: bool = True):
+def bode_plot(
+    systems: dict[str, SystemData],
+    *,
+    omega: np.ndarray | None = None,
+    low_exp: float = -2,
+    high_exp: float = 3,
+    num_points: int = 400,
+    grid: bool = True
+):
     """
-    Plots Bode diagrams (magnitude and phase) for multiple systems.
+    Plot Bode diagrams (magnitude and phase) for multiple systems.
+
+    Each system can be either:
+        - a callable accepting `s = 1j*omega` and returning frequency response, or
+        - a tuple (omega, mag, phase) of precomputed Bode data.
+
+    If `omega` is given, it defines the frequency points for all callables.
 
     Parameters
     ----------
-    systems : dict[str, Callable]
-        Dictionary mapping labels to transfer functions (callables).
-        Each function must accept s=jω (complex or np.ndarray) as input.
+    systems : dict[str, callable or tuple[np.ndarray, np.ndarray, np.ndarray]]
+        Mapping from label to system.
+    omega : np.ndarray, optional
+        Frequency vector (rad/s) used to evaluate callables.
+        If None and no precomputed omega is given, a log sweep is generated.
+    low_exp, high_exp, num_points : floats/ints
+        Parameters for logarithmic sweep if omega is None.
     grid : bool, default=True
         Whether to display grid lines.
-
-    Notes
-    -----
-    - Magnitude in dB: 20 * log10(|H(jω)|)
-    - Phase in degrees, wrapped to [-180, 180]
-    - Frequency axis is logarithmic (Hz)
-    - Automatically adjusts y-limits to data
     """
-    # Frequency axis
-    f = np.logspace(-2, 3, 400)      # [Hz]
-    w = 2 * np.pi * f                # rad/s
-    s = 1j * w                        # Laplace variable
+
+    # Determine omega
+    if omega is None:
+        # Check if any precomputed system exists
+        precomputed = [sys for sys in systems.values() if isinstance(sys, tuple)]
+        if precomputed:
+            # Use omega of the first precomputed system
+            omega = precomputed[0][0]
+        else:
+            # Generate log sweep
+            omega = np.logspace(low_exp, high_exp, num_points)
+
+    s = 1j * omega
 
     fig, (ax_mag, ax_phase) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
-
     all_mag = []
     all_phase = []
 
     for label, sys in systems.items():
-        y = sys(s)
-        mag = 20 * np.log10(np.abs(y))
-        phase = np.angle(y, deg=True)
-        phase = (phase + 180) % 360 - 180  # wrap to [-180, 180]
+        if callable(sys):
+            # Evaluate Python-callable on omega
+            y = sys(s)
+            mag = 20 * np.log10(np.abs(y))
+            phase = np.angle(y, deg=True)
+        elif isinstance(sys, tuple) and len(sys) == 3:
+            omega_sys, mag, phase = sys
+            # Ensure same omega points as global omega
+            if not np.array_equal(omega_sys, omega):
+                # Interpolation of mag/phase onto omega
+                mag = np.interp(omega, omega_sys, mag)
+                phase = np.interp(omega, omega_sys, phase)
+        else:
+            raise TypeError(f"Unsupported system type for '{label}'")
 
-        ax_mag.semilogx(f, mag, label=label)
-        ax_phase.semilogx(f, phase, label=label)
+        phase = (phase + 180) % 360 - 180  # wrap phase to [-180, 180]
+
+        ax_mag.semilogx(omega, mag, label=label)
+        ax_phase.semilogx(omega, phase, label=label)
 
         all_mag.append(mag)
         all_phase.append(phase)
@@ -86,9 +117,8 @@ def bode_plot(systems: dict[str, SystemFunc], *, grid: bool = True):
     ax_phase.set_ylim(phase_min, phase_max)
     ax_phase.set_yticks(np.arange(phase_min, phase_max + 1, 45))
     ax_phase.set_ylabel("Phase [°]")
-    ax_phase.set_xlabel("Frequency [Hz]")
+    ax_phase.set_xlabel("Frequency [rad/s]")
 
-    # Grid
     if grid:
         ax_mag.grid(True, which="both")
         ax_phase.grid(True, which="both")
@@ -96,6 +126,5 @@ def bode_plot(systems: dict[str, SystemFunc], *, grid: bool = True):
     ax_mag.legend()
     plt.tight_layout()
     plt.show()
-
 
 

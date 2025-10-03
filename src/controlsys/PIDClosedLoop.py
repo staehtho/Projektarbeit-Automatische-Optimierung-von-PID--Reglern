@@ -2,7 +2,7 @@ from .plant import Plant
 import numpy as np
 
 
-class ClosedLoop:
+class PIDClosedLoop:
     """
     Represents a closed-loop control system with a PID controller.
 
@@ -59,11 +59,11 @@ class ClosedLoop:
     -------
     Direct form:
         plant = Plant(num=[1], den=[1, 2, 1])
-        loop = ClosedLoop(plant=plant, kp=1.0, ki=0.5, kd=0.1)
+        loop = PIDClosedLoop(plant=plant, kp=1.0, ki=0.5, kd=0.1)
 
     Time-constant form:
         plant = Plant(num=[1], den=[1, 2, 1])
-        loop = ClosedLoop(plant=plant, kp=1.0, tn=2.0, tv=0.1)
+        loop = PIDClosedLoop(plant=plant, kp=1.0, tn=2.0, tv=0.1)
     """
 
     def __init__(self,
@@ -168,4 +168,36 @@ class ClosedLoop:
         I = 1 / (self._tn * s)
         D = (self._tv * s) / (self._tf * s + 1)
         return self._kp * (P + I + D)
+
+    def closed_loop(self, s: complex | np.ndarray) -> complex | np.ndarray:
+        """
+        Evaluate the closed-loop transfer function of the system.
+
+        The closed-loop transfer function is defined as:
+
+            T(s) = C(s) * P(s) / (1 + C(s) * P(s))
+
+        where:
+            - C(s): PID controller transfer function
+            - P(s): plant (process) transfer function
+
+        Parameters
+        ----------
+        s : complex or np.ndarray
+            The Laplace variable (s = σ + jω). Can be a scalar or an array
+            of complex frequencies.
+
+        Returns
+        -------
+        complex or np.ndarray
+            The closed-loop transfer function evaluated at s.
+            Returns a scalar if s is a single value, or an array if s is an array.
+
+        Notes
+        -----
+        - The closed-loop represents the transfer function from reference input
+          to system output.
+        - This is useful for stability analysis, Bode plots, and step-response simulations.
+        """
+        return (self.pid_controller(s) * self._plant.system(s)) / (1 + self.pid_controller(s) * self._plant.system(s))
 
