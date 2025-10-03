@@ -1,9 +1,9 @@
-from Matlab import MatlabWrapper
+from Matlab import MatlabInterface
 
 
 def main():
 
-    with MatlabWrapper() as mat:
+    with MatlabInterface() as mat:
 
         s = "tf('s');"
         G = "1 / ((s + 1)^2);"

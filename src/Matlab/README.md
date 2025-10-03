@@ -1,79 +1,56 @@
-# MATLAB Engine API für Python & MatlabWrapper Nutzung
+ MATLAB Engine API for Python & MatlabInterface Usage
+ ----------------------------------------------------
+ This script demonstrates installation and usage of the MATLAB Engine API for Python,
+ as well as the MatlabInterface class to start MATLAB, run Simulink simulations,
+ and plot results.
+ ----------------------------
+ 📋 Requirements
+ ----------------------------
+ - MATLAB installed (R2014b or newer)
+ - Python installed (3.7 – 3.11 recommended)
+ - Both MATLAB and Python must have the same architecture (e.g., 64-bit)
+ - Optional: matplotlib and numpy for plotting
+   pip install matplotlib numpy
+ ----------------------------
+ 🔧 Installing MATLAB Engine API
+ ----------------------------
+ 1. Open terminal / Anaconda Prompt
+ 2. Navigate to MATLAB engine Python folder:
+    ``` bash
+    cd "MATLABROOT/extern/engines/python"
+    ```
 
-Dieses Dokument beschreibt die Installation der MATLAB Engine API für Python, sowie die Nutzung des `MatlabWrapper` zum Starten von MATLAB, Ausführen von Simulink-Simulationen und Plotten der Ergebnisse.
-
----
-
-## 📋 Voraussetzungen
-- Installiertes **MATLAB** (R2014b oder neuer)
-- Installiertes **Python** (3.7 – 3.11 empfohlen)
-- MATLAB und Python müssen **gleiche Architektur** haben (z. B. beide 64-Bit)
-- Optional: `matplotlib` und `numpy` für die Visualisierung:
-  ```bash
-  pip install matplotlib numpy
-  ```
-
----
-
-## 🔧 Installation der MATLAB Engine API
-
-1. **Terminal oder Anaconda Prompt öffnen**  
-   Stelle sicher, dass du das richtige Python verwendest (z. B. deine Conda-Umgebung aktivieren).
-
-2. **Zum MATLAB-Ordner wechseln**  
-   Navigiere zum Unterordner der Engine-API:
-
-   ```bash
-   cd "MATLABROOT/extern/engines/python"
-   ```
-
-3. **Installation starten**
-   ```bash
-   python setup.py install
-   ```
-
-   **Hinweis:**  
-   - Windows: `MATLABROOT` z. B. `C:\Program Files\MATLAB\R2023b`  
-   - Linux: `MATLABROOT` z. B. `/usr/local/MATLAB/R2023b`
-
-4. **Installation testen**
-   ```bash
-   python -c "import matlab.engine; print('MATLAB Engine erfolgreich installiert!')"
-   ```
-
----
-
-## 🚀 Erste Schritte mit MATLAB Engine
-
-### MATLAB starten und beenden
-```python
+ 3. Install:
+    python setup.py install
+ 4. Test:
+    ``` bash
+    python -c "import matlab.engine; print('MATLAB Engine successfully installed!')"
+    ```
+ ----------------------------
+ 🚀 MATLAB Engine Basic Example
+ ----------------------------
+``` python
 import matlab.engine
 
-# MATLAB starten
+ Start MATLAB
 eng = matlab.engine.start_matlab()
 
-# Beispielberechnung
+ Example calculation
 result = eng.sqrt(16.0)
-print("Ergebnis:", result)
+print("Result:", result)
 
-# MATLAB beenden
+ Quit MATLAB
 eng.quit()
 ```
+ ----------------------------
+ 🛠 MatlabInterface Usage
+ ----------------------------
+ Assuming MatlabInterface.py is in the project directory
+``` python
+from MatlabInterface import MatlabInterface
 
----
-
-## 🛠 Nutzung des `MatlabWrapper`
-
-Die Klasse `MatlabWrapper` befindet sich in der Datei:  
-[MatlabWrapper.py](MatlabWrapper.py)
-
-### Klasse importieren
-```python
-from MatlabWrapper import MatlabWrapper
-
-### Simulink-Simulation ausführen
-```python
-with MatlabWrapper() as mat:
+ Run a Simulink simulation
+with MatlabInterface() as mat:
     mat.run_simulation(
         simulink_model='model_name_or_path.slx',
         variable_name_out='y',
@@ -85,13 +62,11 @@ with MatlabWrapper() as mat:
         K=5
     )
 
-    # Zugriff auf Zeitvektor und Signale
+    # Access time vector and signal values
     t = mat.t
     values = mat.values
-```
 
-### Simulationsergebnisse plotten
-```python
+ Plot simulation results
 mat.plot_simulation(
     figure_name="step_response",
     title="Step Response",
@@ -100,29 +75,24 @@ mat.plot_simulation(
     show=True
 )
 ```
+ ----------------------------
+ 🔄 Data type conversion Python <-> MATLAB
+ ----------------------------
+ Python to MATLAB
+``` python
+import matlab
+data = matlab.double([1, 2, 3, 4, 5])
 
----
-
-## 🔄 Datentypen zwischen Python und MATLAB
-
-- **Python → MATLAB**:
-  ```python
-  import matlab
-  data = matlab.double([1, 2, 3, 4, 5])
-  ```
-- **MATLAB → Python**:
-  ```python
-  py_list = list(data)
-  ```
-
----
-
-## ⚡ Tipps
-
-- MATLAB schneller ohne GUI starten:
-  ```python
-  eng = matlab.engine.start_matlab("-nojvm -nodisplay")
-  ```
-- Überprüfe die Python-Umgebung, damit die Engine in der richtigen Umgebung installiert wird.
-- `MatlabWrapper` unterstützt beliebige MATLAB Workspace-Variablen über `kwargs`.
-- Die Engine kann auch in Jupyter Notebooks genutzt werden.
+ MATLAB to Python
+py_list = list(data)
+```
+ ----------------------------
+ ⚡ Tips
+ ----------------------------
+ Start MATLAB faster without GUI
+``` python
+eng = matlab.engine.start_matlab("-nojvm -nodisplay")
+```
+ Ensure correct Python environment is used for installation
+ MatlabInterface supports arbitrary workspace variables via kwargs
+ MATLAB Engine can be used in Jupyter Notebooks as well

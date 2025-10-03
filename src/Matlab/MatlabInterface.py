@@ -5,7 +5,7 @@ import numpy as np
 from typing import Any
 
 
-class MatlabWrapper:
+class MatlabInterface:
 
     def __init__(self):
         self.engine = None
@@ -70,18 +70,7 @@ class MatlabWrapper:
         else:
             model_str = simulink_model
 
-        # Set MATLAB workspace variables
-        for key, value in kwargs.items():
-            if isinstance(value, str):
-                # Direkt als MATLAB Expression übergeben
-                param_str = f"{key} = {value}"
-            elif isinstance(value, (list, tuple)):
-                # Listen in matlab.double umwandeln
-                param_str = f"{key} = {matlab.double(value)};"
-            else:
-                # Zahlen direkt
-                param_str = f"{key} = {value};"
-            self.engine.eval(param_str, nargout=0)
+        self.write_in_workspace(**kwargs)
 
         # Simulation starten
         self.engine.eval(f"""
@@ -170,3 +159,60 @@ class MatlabWrapper:
     @property
     def values(self) -> dict[str, dict[str, str | np.ndarray]]:
         return self._values
+
+    def write_in_workspace(self, **kwargs):
+        """
+        Write Python variables into the MATLAB workspace.
+
+        Args:
+            **kwargs: Key-value pairs of variables to write into MATLAB.
+                - str: Treated as MATLAB expression (evaluated with `eval`).
+                - list, tuple, np.ndarray: Converted to `matlab.double`.
+                - int, float: Written as scalar values.
+
+        Raises:
+            TypeError: If an unsupported type is passed.
+        """
+        # Set MATLAB workspace variables
+        for key, value in kwargs.items():
+            if isinstance(value, str):
+                # Direkt als MATLAB Expression übergeben
+                param_str = f"{key} = {value}"
+            elif isinstance(value, (list, tuple)):
+                # Listen in matlab.double umwandeln
+                param_str = f"{key} = {matlab.double(value)};"
+            else:
+                # Zahlen direkt
+                param_str = f"{key} = {value};"
+
+            self.engine.eval(param_str, nargout=0)
+
+    def bode(self, sys: str, low_exp: float, high_exp: float, num_points: int, **kwargs):
+        """
+        Compute the Bode plot data for a transfer function defined in MATLAB.
+
+        Args:
+            sys (str): Name of the transfer function variable in the MATLAB workspace.
+            low_exp (float): Lower exponent for `logspace` (10^low_exp).
+            high_exp (float): Upper exponent for `logspace` (10^high_exp).
+            num_points (int): Number of frequency points.
+            **kwargs: Additional variables to write into the MATLAB workspace before execution.
+
+        Returns:
+            tuple:
+                mag (np.ndarray): Magnitude response (absolute values).
+                phase (np.ndarray): Phase response (in radians).
+                wout (np.ndarray): Frequency vector (rad/s).
+        """
+        # Write additional variables into MATLAB workspace
+        self.write_in_workspace(**kwargs)
+        self.engine.eval(f"w = logspace({low_exp},{high_exp},{num_points});", nargout=0)
+        mag, phase, wout = self.engine.eval(f"bode({sys}, w)", nargout=3)
+
+        # Convert MATLAB arrays to NumPy arrays
+        mag = np.squeeze(np.array(mag))
+        mag_db = 20 * np.log10(mag)
+        phase = np.squeeze(np.array(phase))
+        wout = np.squeeze(np.array(wout))
+
+        return mag_db, phase, wout

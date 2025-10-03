@@ -1,1 +1,1 @@
-from .MatlabWrapper import MatlabWrapper
+from .MatlabInterface import MatlabInterface
