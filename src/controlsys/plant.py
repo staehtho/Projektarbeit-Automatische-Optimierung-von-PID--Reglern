@@ -17,7 +17,6 @@ class Plant:
                  num: list[float] | np.ndarray,
                  dec: list[float] | np.ndarray
                  ) -> None:
-
         self._num = np.array(num, copy=False, dtype=float)
         self._dec = np.array(dec, copy=False, dtype=float)
 
@@ -67,3 +66,16 @@ class Plant:
         """
         return np.polyval(self._num[::-1], s) / np.polyval(self._dec[::-1], s)
 
+    def __format__(self, format_spec: str) -> str:
+        format_spec = format_spec.replace(" ", "")
+
+        if format_spec == "mat":
+            sys_str = "("
+            sys_str += "+".join([f"{self._num[i]} * s ^{i}" for i in range(self._num.shape[0] - 1, -1, -1)])
+            sys_str += ") / ("
+            sys_str += "+".join([f"{self._dec[i]} * s ^{i}" for i in range(self._dec.shape[0] - 1, -1, -1)])
+            sys_str += ")"
+        else:
+            raise NotImplementedError
+
+        return sys_str

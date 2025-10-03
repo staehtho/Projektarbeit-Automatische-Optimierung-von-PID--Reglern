@@ -128,6 +128,20 @@ class PIDClosedLoop:
         """Derivative gain of the PID controller."""
         return self._kd
 
+    def __format__(self, format_spec: str) -> str:
+        format_spec = format_spec.replace(" ", "")
+        if format_spec == "pid":
+            p_str = "1"
+            i_str = f"1 / ({self._tn} * s)"
+            d_str = f"({self._tv} * s) / ({self._tf} * s + 1)"
+            return f"{self._kp} * ({p_str} + {i_str} + {d_str})"
+
+        elif format_spec == "mat":
+            return f"({self: pid} * {self._plant: mat}) / (1 + {self: pid} * {self._plant: mat})"
+
+        else:
+            raise NotImplementedError
+
     # ******************************
     # Methods
     # ******************************
