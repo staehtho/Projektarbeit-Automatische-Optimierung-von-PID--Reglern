@@ -17,7 +17,7 @@ def laplace_2_response(num: list[float] | np.ndarray,
 
 
 def inverse_laplace(num: np.ndarray, dec: np.ndarray):
-    # https: // arxiv.org / abs / 2112.08306?utm_source = chatgpt.com
+    # https://arxiv.org/abs/2112.08306
     pass
 
 
@@ -42,32 +42,35 @@ def bode_plot(
 
     Each system can be either:
         - a callable accepting `s = 1j*omega` and returning frequency response, or
-        - a tuple (omega, mag, phase) of precomputed Bode data.
+        - a tuple `(omega, mag, phase)` of precomputed Bode data.
 
-    If `omega` is given, it defines the frequency points for all callables.
+    Args:
+        systems (dict[str, callable or tuple[np.ndarray, np.ndarray, np.ndarray]]):
+            Mapping from system label to system data.
+        omega (np.ndarray or None, optional):
+            Frequency vector (rad/s) used to evaluate callables.
+            If None and no precomputed omega is provided, a logarithmic sweep is generated.
+        low_exp (float, optional):
+            Lower exponent for logarithmic sweep (10**low_exp). Default is -2.
+        high_exp (float, optional):
+            Upper exponent for logarithmic sweep (10**high_exp). Default is 3.
+        num_points (int, optional):
+            Number of frequency points for logarithmic sweep. Default is 400.
+        grid (bool, optional):
+            If True, displays grid lines. Default is True.
 
-    Parameters
-    ----------
-    systems : dict[str, callable or tuple[np.ndarray, np.ndarray, np.ndarray]]
-        Mapping from label to system.
-    omega : np.ndarray, optional
-        Frequency vector (rad/s) used to evaluate callables.
-        If None and no precomputed omega is given, a log sweep is generated.
-    low_exp, high_exp, num_points : floats/ints
-        Parameters for logarithmic sweep if omega is None.
-    grid : bool, default=True
-        Whether to display grid lines.
+    Raises:
+        TypeError: If a system entry is neither callable nor a tuple of (omega, mag, phase).
+
+    Returns:
+        None
     """
-
     # Determine omega
     if omega is None:
-        # Check if any precomputed system exists
         precomputed = [sys for sys in systems.values() if isinstance(sys, tuple)]
         if precomputed:
-            # Use omega of the first precomputed system
             omega = precomputed[0][0]
         else:
-            # Generate log sweep
             omega = np.logspace(low_exp, high_exp, num_points)
 
     s = 1j * omega
@@ -78,15 +81,12 @@ def bode_plot(
 
     for label, sys in systems.items():
         if callable(sys):
-            # Evaluate Python-callable on omega
             y = sys(s)
             mag = 20 * np.log10(np.abs(y))
             phase = np.angle(y, deg=True)
         elif isinstance(sys, tuple) and len(sys) == 3:
             omega_sys, mag, phase = sys
-            # Ensure same omega points as global omega
             if not np.array_equal(omega_sys, omega):
-                # Interpolation of mag/phase onto omega
                 mag = np.interp(omega, omega_sys, mag)
                 phase = np.interp(omega, omega_sys, phase)
         else:
@@ -100,18 +100,15 @@ def bode_plot(
         all_mag.append(mag)
         all_phase.append(phase)
 
-    # Flatten arrays for min/max calculation
     all_mag = np.hstack(all_mag)
     all_phase = np.hstack(all_phase)
 
-    # Magnitude limits & ticks
     mag_min = np.floor(all_mag.min() / 20) * 20
     mag_max = np.ceil(all_mag.max() / 20) * 20
     ax_mag.set_ylim(mag_min, mag_max)
     ax_mag.set_yticks(np.arange(mag_min, mag_max + 1, 20))
     ax_mag.set_ylabel("Magnitude [dB]")
 
-    # Phase limits & ticks
     phase_min = max(np.floor(all_phase.min() / 45) * 45, -180)
     phase_max = min(np.ceil(all_phase.max() / 45) * 45, 180)
     ax_phase.set_ylim(phase_min, phase_max)
@@ -126,5 +123,6 @@ def bode_plot(
     ax_mag.legend()
     plt.tight_layout()
     plt.show()
+
 
 
