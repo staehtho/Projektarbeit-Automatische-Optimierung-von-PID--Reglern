@@ -1,63 +1,68 @@
+
 import numpy as np
-from scipy.signal import tf2ss
 from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
 
-def laplace_to_rhs(num_coeffs, den_coeffs):
+# Parameter
+num = [1]
+den = [1, 0.6, 1]
+
+# Ordnung des Systems
+n = len(den) - 1
+
+
+def state_derivative(t, x, num, den, u_func):
     """
-    num_coeffs: Zählerkoeffizienten [b0, b1, ...] (höchster Grad zuerst)
-    den_coeffs: Nennerkoeffizienten [a0, a1, ...] (höchster Grad zuerst)
-
-    Gibt eine Funktion rhs(t, y_vec, x_vec) zurück:
-        - y_vec = [y, y', y'', ...] Länge = Ordnung des Systems
-        - x_vec = [x, x', x'', ...] Länge = Zählergrad +1
-        - rhs(t, y_vec, x_vec) gibt dy_n/dt = y^(n) zurück
+    x : Zustandsvektor [y1, y2, ..., yn]
+    u_func : Funktion der Zeit, liefert den Eingang u(t)
     """
-    # Systemordnung
-    n = len(den_coeffs) - 1
-    m = len(num_coeffs) - 1
+    n = len(den) - 1
+    x = np.array(x, dtype=float)
+    y_dot = np.zeros(n)
 
-    # Koeffizienten normalisieren (y'' + ...)
-    a_coeffs = np.array(den_coeffs, dtype=float) / den_coeffs[0]
-    b_coeffs = np.array(num_coeffs, dtype=float) / den_coeffs[0]
+    # dy1dt = y2, dy2dt = y3, ...
+    for i in range(n - 1):
+        y_dot[i] = x[i + 1]
 
-    def rhs(t, y_vec, x_vec):
-        """
-        y_vec: [y, y', ..., y^(n-1)]
-        x_vec: [x, x', ..., x^(m)]
-        Gibt dy_n/dt zurück
-        """
-        # Linke Seite: y^(n) = - (a_{n-1} y^(n-1) + ... + a0 y) + RHS
-        y_terms = -np.sum(a_coeffs[1:] * y_vec[::-1])
+    # letzte DGL: y^(n) = -a_{n-1} y^{(n-1)} - ... - a0 y + b0*u + ...
+    den = np.array(den) / den[0]
+    num = np.array(num) / den[0]
+    y_coeffs = -den[1:]
+    u_coeffs = np.zeros(n + 1)
+    m = len(num) - 1
+    u_coeffs[-(m + 1):] = num
 
-        # Rechte Seite: b0 x^(m) + ... + b_m x
-        # Pad x_vec falls zu kurz
-        if len(x_vec) < len(b_coeffs):
-            x_vec_padded = np.pad(x_vec, (len(b_coeffs) - len(x_vec), 0), 'constant')
-        else:
-            x_vec_padded = x_vec[-len(b_coeffs):]
+    # Beitrag von y
+    last = sum(c * x_i for c, x_i in zip(y_coeffs[::-1], x))
 
-        x_terms = np.sum(b_coeffs * x_vec_padded[::-1])
+    # Beitrag von u(t) – hier einfache Version: nur u^0
+    u_t = u_func(t)
+    last += u_coeffs[-1] * u_t
 
-        return y_terms + x_terms
-
-    return rhs
+    y_dot[-1] = last
+    return y_dot
 
 
-# ===========================
-# Beispiel: H(s) = 1 / (s+1)^2
-num_coeffs = [1]  # Zähler: 1
-den_coeffs = [1, 2, 1]  # Nenner: s^2 +2 s +1
+# Eingang u(t) = Sprung
+def u_step(t):
+    return 1.0
 
-rhs_func = laplace_to_rhs(num_coeffs, den_coeffs)
+# Anfangszustände
+x0 = np.zeros(n)
 
-# Test: y_vec = [y, y'], x_vec = [x, x']
-y_vec = np.array([0.0, 0.0])  # y, y'
-x_vec = np.array([1.0, 0.0])  # x, x'
-
-dy_n_dt = rhs_func(0.0, y_vec, x_vec)
-print("dy_n/dt =", dy_n_dt)
-
-y0 = [0.0, 0.0]  # Anfangswerte
-# Zeitbereich
+# Zeitvektor
 t_span = (0, 10)
-sol = solve_ivp(rhs_func, t_span, y0, max_step=0.1, method='RK23', vectorized=False)
+t_eval = np.linspace(*t_span, 1000)
+
+# Simulation
+sol = solve_ivp(state_derivative, t_span, x0, t_eval=t_eval, args=(num, den, u_step))
+
+# Ausgabe
+y = sol.y[0]  # y1 = Ausgang
+
+plt.plot(sol.t, y)
+plt.xlabel('t [s]')
+plt.ylabel('y(t)')
+plt.title('Sprungantwort des Systems')
+plt.grid(True)
+plt.show()
