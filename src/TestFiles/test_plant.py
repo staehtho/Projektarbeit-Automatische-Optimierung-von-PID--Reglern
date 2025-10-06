@@ -1,5 +1,6 @@
-from ..controlsys import Plant, PIDClosedLoop, bode_plot
-from ..Matlab import MatlabInterface
+import numpy as np
+from src.controlsys import Plant, PIDClosedLoop, bode_plot
+from src.Matlab import MatlabInterface
 
 
 def main():
@@ -7,9 +8,10 @@ def main():
 
     pid: PIDClosedLoop = PIDClosedLoop(plant, kp=4.92, tn=19.2e-3, tv=5.7e-3, derivative_filter_ratio=0.001)
     bode_plot({"test": plant.system})
-    '''with MatlabInterface() as mat:
+
+    with MatlabInterface() as mat:
         s = "tf('s');"
-        G = f"{pid: mat};"
+        G = f"{plant: mat};"
         mat.write_in_workspace(s=s, G=G)
         mag, phase, omega = mat.bode("G", -2, 3, 1000)
 
@@ -24,7 +26,7 @@ def main():
         F = f"s / (0.01 * {plant.t1} * s + 1);"
         mat.write_in_workspace(Kp=Kp, Td=Td, Ti=Ti, F=F)
         mat.run_simulation("model", "yout", stop_time=5)
-        mat.plot_simulation("1", "Test", show=True)'''
+        mat.plot_simulation("1", "Test", show=True)
 
 
 if __name__ == "__main__":
