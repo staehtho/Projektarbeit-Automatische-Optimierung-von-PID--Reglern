@@ -140,6 +140,7 @@ class PIDClosedLoop:
         Examples:
             >>> PIDClosedLoop.pid_controller(1j * np.array([0.1, 1, 10]))
         """
+        # ToDo: Stellgrösse beschränkung und Antiwinde up
         P = 1
         I = 1 / (self._tn * s)
         D = (self._tv * s) / (self._tf * s + 1)
