@@ -1,5 +1,5 @@
-from controlsys import Plant, PIDClosedLoop, bode_plot
-from Matlab import MatlabInterface
+from ..controlsys import Plant, PIDClosedLoop, bode_plot
+from ..Matlab import MatlabInterface
 
 
 def main():

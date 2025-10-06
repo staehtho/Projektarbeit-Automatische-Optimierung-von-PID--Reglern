@@ -1,4 +1,4 @@
-from Matlab import MatlabInterface
+from ..Matlab import MatlabInterface
 
 
 def main():
