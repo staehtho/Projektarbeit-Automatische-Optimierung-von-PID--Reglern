@@ -18,6 +18,7 @@ def laplace_2_response(num: list[float] | np.ndarray,
 
 def inverse_laplace(num: np.ndarray, dec: np.ndarray):
     # https://arxiv.org/abs/2112.08306
+    # https://arxiv.org/abs/1304.2505
     pass
 
 
@@ -101,20 +102,22 @@ def bode_plot(
         all_phase.append(phase)
 
     all_mag = np.hstack(all_mag)
-    all_phase = np.hstack(all_phase)
 
+    # min und max dynamisch berechnen
     mag_min = np.floor(all_mag.min() / 20) * 20
     mag_max = np.ceil(all_mag.max() / 20) * 20
     ax_mag.set_ylim(mag_min, mag_max)
     ax_mag.set_yticks(np.arange(mag_min, mag_max + 1, 20))
-    ax_mag.set_ylabel("Magnitude [dB]")
+    ax_mag.set_ylabel("Magnitude / dB")
 
-    phase_min = max(np.floor(all_phase.min() / 45) * 45, -180)
-    phase_max = min(np.ceil(all_phase.max() / 45) * 45, 180)
-    ax_phase.set_ylim(phase_min, phase_max)
-    ax_phase.set_yticks(np.arange(phase_min, phase_max + 1, 45))
-    ax_phase.set_ylabel("Phase [°]")
-    ax_phase.set_xlabel("Frequency [rad/s]")
+    ax_phase.set_ylim(-180, 180)
+    ax_phase.set_yticks(np.arange(-180, 180 + 1, 45))
+    ax_phase.set_ylabel("Phase / °")
+    ax_phase.set_xlabel("Frequency / rad/s")
+
+    plt.xlim(omega.min(), omega.max())
+
+    fig.suptitle("Bode Diagramm", fontsize=14, fontweight='bold')
 
     if grid:
         ax_mag.grid(True, which="both")
@@ -123,6 +126,3 @@ def bode_plot(
     ax_mag.legend()
     plt.tight_layout()
     plt.show()
-
-
-

@@ -19,15 +19,15 @@ class PIDClosedLoop:
     """
 
     def __init__(
-        self,
-        plant: Plant,
-        kp: float,
-        *,
-        ki: float = None,
-        kd: float = None,
-        tn: float = None,
-        tv: float = None,
-        derivative_filter_ratio: float = 0.01
+            self,
+            plant: Plant,
+            kp: float,
+            *,
+            ki: float = None,
+            kd: float = None,
+            tn: float = None,
+            tv: float = None,
+            derivative_filter_ratio: float = 0.01
     ) -> None:
         """
         Initialize a PID closed-loop controller.
@@ -108,6 +108,24 @@ class PIDClosedLoop:
         """Derivative time constant."""
         return self._tv
 
+    def __format__(self, format_spec: str) -> str:
+        format_spec = format_spec.replace(" ", "")
+
+        if format_spec == "pid":
+            p_str = "1"
+            i_str = f"1 / ({self._tn} * s)"
+            d_str = f"({self._tv} * s) / ({self._tf} * s + 1)"
+            return f"{self._kp} * ({p_str} + {i_str} + {d_str})"
+
+        elif format_spec == "mat":
+            return (
+                f"({format(self, 'pid')} * {format(self._plant, 'mat')}) / "
+                f"(1 + {format(self, 'pid')} * {format(self._plant, 'mat')})"
+            )
+
+        else:
+            raise NotImplementedError(f"Unknown format specifier: {format_spec}")
+
     # Methods
     def pid_controller(self, s: complex | np.ndarray) -> complex | np.ndarray:
         """
@@ -131,7 +149,7 @@ class PIDClosedLoop:
         """
         Evaluate the closed-loop transfer function of the system.
 
-        T(s) = C(s) * P(s) / (1 + C(s) * P(s))
+        T(s) = C(s) * G(s) / (1 + C(s) * G(s))
 
         Args:
             s (complex or np.ndarray): Laplace variable (s = σ + jω). Scalar or array.
@@ -143,5 +161,7 @@ class PIDClosedLoop:
             >>> PIDClosedLoop.closed_loop(1j * np.array([0.1, 1, 10]))
         """
         C = self.pid_controller(s)
-        P = self._plant.system(s)
-        return (C * P) / (1 + C * P)
+        G = self._plant.system(s)
+        return (C * G) / (1 + C * G)
+
+
