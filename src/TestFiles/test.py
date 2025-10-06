@@ -1,10 +1,10 @@
-
 import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
+from src.Matlab import MatlabInterface
 
 # Parameter
-num = [1]
+num = [3, 1]
 den = [1, 0.6, 1]
 
 # Ordnung des Systems
@@ -59,6 +59,12 @@ sol = solve_ivp(state_derivative, t_span, x0, t_eval=t_eval, args=(num, den, u_s
 
 # Ausgabe
 y = sol.y[0]  # y1 = Ausgang
+
+#with MatlabInterface() as mat:
+#    s = "tf('s');"
+#    G = "tf([3, 1], [1, 0.6, 1]);"
+#    mat.run_simulation("stepresponse", "yout", s=s, G=G)
+#    mat.plot_simulation("test", "Step response")
 
 plt.plot(sol.t, y)
 plt.xlabel('t [s]')
