@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import Any
+# ToDo: In README einfügen: Umgebungsvariable einfügen
 
 
 class MatlabInterface:
