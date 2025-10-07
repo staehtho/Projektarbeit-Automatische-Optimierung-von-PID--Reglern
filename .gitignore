@@ -226,6 +226,7 @@ __marimo__/
 
 # Matlab
 /src/slprj/
+src/TestFiles/slprj
 *.slxc
 
 
