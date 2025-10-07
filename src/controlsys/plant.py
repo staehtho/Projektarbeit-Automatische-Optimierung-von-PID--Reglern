@@ -42,19 +42,17 @@ class Plant:
         Examples:
             >>> plant = Plant(num=[1], dec=[1, 2, 1])
             >>> format(plant, "mat")
+            'tf([1], [1 2 1])'
         """
-        format_spec = format_spec.replace(" ", "")
+        # Whitespace entfernen und lower() für Sicherheit
+        format_spec = format_spec.strip().lower()
+
         if format_spec == "mat":
-            sys_str = "("
-            sys_str += "+".join([f"{self._num[i]} * s ^{self._num.shape[0] - 1 - i}"
-                                 for i in range(self._num.shape[0])])
-            sys_str += ") / ("
-            sys_str += "+".join([f"{self._dec[i]} * s ^{self._dec.shape[0] - 1 - i}"
-                                 for i in range(self._dec.shape[0])])
-            sys_str += ")"
+            num_str = "[" + " ".join(map(str, self._num)) + "]"
+            dec_str = "[" + " ".join(map(str, self._dec)) + "]"
+            return f"tf({num_str}, {dec_str})"
         else:
-            raise NotImplementedError
-        return sys_str
+            raise NotImplementedError(f"Unsupported format specifier: '{format_spec}'")
 
     # ******************************
     # Attributes

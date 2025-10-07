@@ -1,4 +1,5 @@
-from ..controlsys import Plant, ClosedLoop
+from .plant import Plant
+from .closedLoop import ClosedLoop
 import numpy as np
 
 

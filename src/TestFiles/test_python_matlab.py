@@ -1,12 +1,16 @@
+from src.controlsys import Plant
 from src.Matlab import MatlabInterface
+import numpy as np
 
 
 def main():
 
     with MatlabInterface() as mat:
-
+        num = np.array([1, 2])
+        dec = np.array([1, 2, 3])
+        plant = Plant(num=num, dec=dec)
         s = "tf('s');"
-        G = "(1*s^4 + 2*s^3 + 3*s^2 + 4*s + 5) / (1*s^5 + 2*s^4 + 3*s^3 + 4*s^2 + 5*s + 6);"
+        G = f"{plant: mat};"
 
         mat.run_simulation("stepresponse", "yout", stop_time=10, s=s, G=G)
         mat.plot_simulation("1", "Test", show=True)

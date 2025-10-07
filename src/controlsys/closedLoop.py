@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
-from ..controlsys import Plant
+from .plant import Plant
 
 
 class ClosedLoop(ABC):
