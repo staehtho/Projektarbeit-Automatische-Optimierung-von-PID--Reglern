@@ -41,13 +41,13 @@ class Plant:
 
         Examples:
             >>> plant = Plant(num=[1], dec=[1, 2, 1])
-            >>> format(plant, "mat")
+            >>> format(plant, "plant")
             'tf([1], [1 2 1])'
         """
         # Whitespace entfernen und lower() für Sicherheit
         format_spec = format_spec.strip().lower()
 
-        if format_spec == "mat":
+        if format_spec == "plant":
             num_str = "[" + " ".join(map(str, self._num)) + "]"
             dec_str = "[" + " ".join(map(str, self._dec)) + "]"
             return f"tf({num_str}, {dec_str})"

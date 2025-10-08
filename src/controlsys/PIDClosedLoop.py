@@ -60,8 +60,40 @@ class PIDClosedLoop(ClosedLoop):
         # Filterzeitkonstante für D-Anteil
         self._tf = self._plant.t1 * derivative_filter_ratio
 
+    def __format__(self, format_spec: str) -> str:
+        """
+        Format the PID-T1 controller as a MATLAB transfer function string.
+
+        This uses the normalized PID-T1 form:
+            G(s) = (Tn*Tv*s^2 + Tn*s + 1) / (Tn*Tf*s^2 + Tn*s)
+
+        Args:
+            format_spec (str): Format type.
+                - "mat": MATLAB-style string representation.
+
+        Returns:
+            str: PID-T1 controller formatted as MATLAB transfer function string.
+
+        Raises:
+            NotImplementedError: If the format_spec is not supported.
+
+        Examples:
+            >>> pid = PIDClosedLoop(Tn=1.0, Tv=0.2, Tf=0.05)
+            >>> format(pid, "controller")
+            'tf([0.2 1.0 1],[0.05 1.0 0])'
+        """
+        # Whitespace entfernen und auf Kleinbuchstaben prüfen
+        format_spec = format_spec.strip().lower()
+
+        if format_spec == "controller":
+            num_str = f"[{self._tn * self._tv} {self._tn} 1]"
+            dec_str = f"[{self._tn * self._tf} {self._tn} 0]"
+            return f"tf({num_str}, {dec_str})"
+        else:
+            return super().__format__(format_spec)
+
     # -------------------- Properties --------------------
-    # ToDo: __format__ für MATLAB
+
     @property
     def kp(self) -> float:
         return self._kp

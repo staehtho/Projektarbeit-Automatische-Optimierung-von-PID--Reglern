@@ -22,7 +22,40 @@ class ClosedLoop(ABC):
         self._filtered_d: float = 0.0
         self._last_u: float = 0.0
 
-    # ToDo: __format__ für MATLAB
+    def __format__(self, format_spec: str) -> str:
+        """
+        Format the closed-loop system as a MATLAB-style transfer function string.
+
+        This produces the symbolic closed-loop transfer function:
+            G_cl(s) = (C(s) * G(s)) / (1 + C(s) * G(s))
+
+        The controller and plant are formatted using their own __format__ methods:
+            - Controller:  f"{self:controller}"
+            - Plant:       f"{self._plant:plant}"
+
+        Args:
+            format_spec (str): Format type.
+                - "cl": MATLAB-style closed-loop expression.
+
+        Returns:
+            str: MATLAB-formatted closed-loop transfer function string.
+
+        Raises:
+            NotImplementedError: If the format_spec is not supported.
+        """
+        # Formatstring bereinigen
+        format_spec = format_spec.strip().lower()
+
+        if format_spec == "cl":
+            controller_str = format(self, "controller")
+            plant_str = format(self._plant, "plant")
+
+            num_str = f"{controller_str} * {plant_str}"
+            den_str = f"1 + {controller_str} * {plant_str}"
+            return f"({num_str}) / ({den_str})"
+        else:
+            raise NotImplementedError(f"Unsupported format specifier: '{format_spec}'")
+
     @property
     def plant(self) -> Plant:
         return self._plant

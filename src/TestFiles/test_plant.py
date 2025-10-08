@@ -7,11 +7,12 @@ def main():
     plant: Plant = Plant([4, 1], [1, 1, 2])
 
     pid: PIDClosedLoop = PIDClosedLoop(plant, kp=4.92, tn=19.2e-3, tv=5.7e-3, derivative_filter_ratio=0.001)
+    print(f"{pid: cl}")
     bode_plot({"test": plant.system})
 
     with MatlabInterface() as mat:
         s = "tf('s');"
-        G = f"{plant: mat};"
+        G = f"{pid: cl};"
         mat.write_in_workspace(s=s, G=G)
         mag, phase, omega = mat.bode("G", -2, 3, 1000)
 

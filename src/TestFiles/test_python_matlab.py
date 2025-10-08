@@ -10,7 +10,7 @@ def main():
         dec = np.array([1, 2, 3])
         plant = Plant(num=num, dec=dec)
         s = "tf('s');"
-        G = f"{plant: mat};"
+        G = f"{plant: plant};"
 
         mat.run_simulation("stepresponse", "yout", stop_time=10, s=s, G=G)
         mat.plot_simulation("1", "Test", show=True)
