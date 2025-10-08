@@ -3,6 +3,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import Any
+import inspect
+# ToDo: In README einfügen: Umgebungsvariable einfügen
 
 
 class MatlabInterface:
@@ -27,45 +29,56 @@ class MatlabInterface:
             self.engine.quit()
 
     def run_simulation(
-        self,
-        simulink_model: str,
-        variable_name_out: str,
-        start_time: float = 0,
-        stop_time: float = 10,
-        solver: str = "ode45",
-        max_step: float = 0.01,
-        **kwargs: Any
+            self,
+            simulink_model: str,
+            variable_name_out: str,
+            start_time: float = 0,
+            stop_time: float = 10,
+            solver: str = "ode45",
+            max_step: float = 0.01,
+            **kwargs: Any
     ) -> None:
         """
         Run a Simulink simulation and store the output signals in Python.
 
+        The Simulink model file must be located in the same directory as the Python
+        file that calls this function. The working directory of the MATLAB engine
+        is automatically set to the caller's directory before the simulation starts.
+
         Args:
-            simulink_model (str): Name of the Simulink model or absolute path.
-            variable_name_out (str): Name of the 'To Workspace' variable in Simulink.
+            simulink_model (str): Name of the Simulink model (with or without the .slx extension).
+                The file must be located in the same directory as the Python script that calls this method.
+            variable_name_out (str): Name of the 'To Workspace' variable in the Simulink model.
             start_time (float, optional): Simulation start time in seconds. Defaults to 0.
             stop_time (float, optional): Simulation stop time in seconds. Defaults to 10.
             solver (str, optional): Solver algorithm. Defaults to "ode45".
             max_step (float, optional): Maximum solver step size. Defaults to 0.01.
-            **kwargs: Additional MATLAB workspace variables.
+            **kwargs: Additional MATLAB workspace variables to define before running the simulation.
 
         Raises:
-            TypeError: If an unsupported type is passed.
+            FileNotFoundError: If the Simulink model cannot be found in the caller's directory.
+            TypeError: If an unsupported variable type is passed to the MATLAB workspace.
 
         Examples:
-            >>> MatlabInterface.run_simulation('model', 'y', stop_time=20, G='tf([2],[1 3 2])')
-            >>> MatlabInterface.run_simulation('C:/Users/User/Documents/MATLAB/model.slx', 'y', stop_time=20)
+            >>> # Assuming 'stepresponse.slx' is in the same folder as this script
+            >>> mat.run_simulation('stepresponse', 'yout', stop_time=10, s="tf('s');", G="tf([1 2],[1 2 3])")
         """
         print("Simulation is running...")
 
-        if os.path.isabs(simulink_model):
-            model_str = simulink_model.replace("\\", "/")
-        else:
-            model_str = simulink_model
+        # Determine directory of the calling Python file dynamically
+        frame = inspect.stack()[1]  # [0] = current function, [1] = caller
+        caller_file = os.path.abspath(frame.filename)
+        path = os.path.dirname(caller_file)
 
+        # Set MATLAB working directory to caller's location
+        self.engine.cd(path, nargout=0)
+
+        # Write all provided variables into the MATLAB workspace
         self.write_in_workspace(**kwargs)
 
+        # Run Simulink model
         self.engine.eval(f"""
-            simIn = Simulink.SimulationInput('{model_str}');
+            simIn = Simulink.SimulationInput('{simulink_model}');
             simIn = simIn.setModelParameter('StartTime', '{start_time}', ...
             'StopTime', '{stop_time}', ...
             'Solver', '{solver}', ...
@@ -73,16 +86,17 @@ class MatlabInterface:
             out = sim(simIn);
         """, nargout=0)
 
+        # Retrieve time vector
         self._t = np.array(self.engine.eval(f"out.{variable_name_out}.time", nargout=1)).flatten()
-        num_signals: int = int(self.engine.eval(f"numel(out.{variable_name_out}.signals)", nargout=1))
 
+        # Retrieve all output signals
+        num_signals: int = int(self.engine.eval(f"numel(out.{variable_name_out}.signals)", nargout=1))
         for i in range(1, num_signals + 1):
             value: np.ndarray = np.array(
                 self.engine.eval(f"out.{variable_name_out}.signals({i}).values", nargout=1)
             ).flatten()
             label: str = self.engine.eval(f"out.{variable_name_out}.signals({i}).label", nargout=1)
             title: str = self.engine.eval(f"out.{variable_name_out}.signals({i}).title", nargout=1)
-
             self._values[f"value_{label}"] = {"value": value, "label": label, "title": title}
 
     def plot_simulation(

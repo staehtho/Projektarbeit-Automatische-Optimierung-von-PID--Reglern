@@ -25,6 +25,35 @@ class Plant:
         self._dec = np.array(dec, copy=False, dtype=float)
         self._t1 = 1  # dominant time constant for derivative filter calculation
 
+    def __format__(self, format_spec: str) -> str:
+        """
+        Format the transfer function as a string.
+
+        Args:
+            format_spec (str): Format type. Supported:
+                - "mat": MATLAB-style string representation.
+
+        Returns:
+            str: Transfer function formatted as a string.
+
+        Raises:
+            NotImplementedError: If the format_spec is not supported.
+
+        Examples:
+            >>> plant = Plant(num=[1], dec=[1, 2, 1])
+            >>> format(plant, "mat")
+            'tf([1], [1 2 1])'
+        """
+        # Whitespace entfernen und lower() für Sicherheit
+        format_spec = format_spec.strip().lower()
+
+        if format_spec == "mat":
+            num_str = "[" + " ".join(map(str, self._num)) + "]"
+            dec_str = "[" + " ".join(map(str, self._dec)) + "]"
+            return f"tf({num_str}, {dec_str})"
+        else:
+            raise NotImplementedError(f"Unsupported format specifier: '{format_spec}'")
+
     # ******************************
     # Attributes
     # ******************************
@@ -70,33 +99,6 @@ class Plant:
         """
         return np.polyval(self._num, s) / np.polyval(self._dec, s)
 
-    def __format__(self, format_spec: str) -> str:
-        """
-        Format the transfer function as a string.
-
-        Args:
-            format_spec (str): Format type. Supported:
-                - "mat": MATLAB-style string representation.
-
-        Returns:
-            str: Transfer function formatted as a string.
-
-        Raises:
-            NotImplementedError: If the format_spec is not supported.
-
-        Examples:
-            >>> plant = Plant(num=[1], dec=[1, 2, 1])
-            >>> format(plant, "mat")
-        """
-        format_spec = format_spec.replace(" ", "")
-        if format_spec == "mat":
-            sys_str = "("
-            sys_str += "+".join([f"{self._num[i]} * s ^{self._num.shape[0] - 1 - i}"
-                                 for i in range(self._num.shape[0])])
-            sys_str += ") / ("
-            sys_str += "+".join([f"{self._dec[i]} * s ^{self._dec.shape[0] - 1 - i}"
-                                 for i in range(self._dec.shape[0])])
-            sys_str += ")"
-        else:
-            raise NotImplementedError
-        return sys_str
+    def response(self, t: np.ndarray, y: np.ndarray) -> np.ndarray:
+        # ToDo: step response
+        pass

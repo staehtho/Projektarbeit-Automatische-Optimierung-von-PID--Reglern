@@ -1,9 +1,9 @@
 from .plant import Plant
+from .closedLoop import ClosedLoop
 import numpy as np
-import mpmath as mp
 
 
-class PIDClosedLoop:
+class PIDClosedLoop(ClosedLoop):
     """
     Represents a closed-loop control system with a PID controller.
 
@@ -33,21 +33,9 @@ class PIDClosedLoop:
         """
         Initialize a PID closed-loop controller.
         """
-        self._plant = plant
+        super().__init__(plant)
+
         self._kp = kp
-
-        # Begrenzung des Stellwerts (z. B. 0–100 %)
-        self._control_constraint = [0, 100]
-
-        # Standard-Sollwert (Einheitssprung)
-        self._set_point: float = 1.0
-
-        # Zustände für Zeitbereichsberechnung
-        self._last_time: float | None = None
-        self._last_error: float = 0.0
-        self._integral: float = 0.0
-        self._filtered_d: float = 0.0
-        self._last_u: float = 0.0
 
         # Parameter-Validierung
         if (ki is not None or kd is not None) and (tn is not None or tv is not None):
@@ -73,11 +61,7 @@ class PIDClosedLoop:
         self._tf = self._plant.t1 * derivative_filter_ratio
 
     # -------------------- Properties --------------------
-
-    @property
-    def plant(self) -> Plant:
-        return self._plant
-
+    # ToDo: __format__ für MATLAB
     @property
     def kp(self) -> float:
         return self._kp
@@ -100,28 +84,16 @@ class PIDClosedLoop:
 
     # -------------------- Frequency Domain --------------------
 
-    def pid_controller(self, s: complex | np.ndarray) -> complex | np.ndarray:
+    def controller(self, s: complex | np.ndarray) -> complex | np.ndarray:
         """PID controller transfer function with derivative filter (Laplace domain)."""
         P = 1
         I = 1 / (self._tn * s)
         D = (self._tv * s) / (self._tf * s + 1)
         return self._kp * (P + I + D)
 
-    def closed_loop(self, s: complex | np.ndarray) -> complex | np.ndarray:
-        """Closed-loop transfer function."""
-        C = self.pid_controller(s)
-        G = self._plant.system(s)
-        return (C * G) / (1 + C * G)
-
-    def response(self, t: np.ndarray) -> np.ndarray:
-        """Closed-loop step response via inverse Laplace transform (Talbot)."""
-        F = lambda s: self.closed_loop(s) * 1 / s
-        y = np.array([mp.invertlaplace(F, float(tt), method='talbot') for tt in t], dtype=float)
-        return y
-
     # -------------------- Time Domain --------------------
 
-    def pid_time_step(self, t: float, y: float, set_point: float | None = None) -> float:
+    def controller_time_step(self, t: float, y: float, set_point: float | None = None) -> float:
         """
         Compute PID control output in the time domain (time-constant form).
         Uses internal state memory between calls.
@@ -165,7 +137,7 @@ class PIDClosedLoop:
         D = self._kp * self._tv * self._filtered_d
 
         # Gesamtausgang
-        u = P + I + D
+        u: float = P + I + D
         u = float(np.clip(u, self._control_constraint[0], self._control_constraint[1]))
 
         # Anti-Windup (Integrator-Clamping)
