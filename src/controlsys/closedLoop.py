@@ -72,7 +72,7 @@ class ClosedLoop(ABC):
         return (C * G) / (1 + C * G)
 
 
-    # TODO: Integration Stoeruebertragungsfunktion
+    # ToDo: Integration Stoeruebertragungsfunktion
 
     def response(self, t: np.ndarray) -> np.ndarray:
         """Closed-loop step response via inverse Laplace transform (Talbot)."""
