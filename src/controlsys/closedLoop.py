@@ -71,6 +71,9 @@ class ClosedLoop(ABC):
         G = self._plant.system(s)
         return (C * G) / (1 + C * G)
 
+
+    # TODO: Integration Störübertragungsfunktion
+
     def response(self, t: np.ndarray) -> np.ndarray:
         """Closed-loop step response via inverse Laplace transform (Talbot)."""
         # ToDo: step response
