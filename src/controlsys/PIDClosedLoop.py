@@ -170,12 +170,12 @@ class PIDClosedLoop(ClosedLoop):
 
         # Gesamtausgang
         u: float = P + I + D
-        u = float(np.clip(u, self._control_constraint[0], self._control_constraint[1]))
+        # u = float(np.clip(u, self._control_constraint[0], self._control_constraint[1]))
 
         # Anti-Windup (Integrator-Clamping)
-        if (u >= self._control_constraint[1] and error > 0) or \
-           (u <= self._control_constraint[0] and error < 0):
-            self._integral -= error * dt
+        # if (u >= self._control_constraint[1] and error > 0) or \
+        #    (u <= self._control_constraint[0] and error < 0):
+        #     self._integral -= error * dt
 
         # Zustände aktualisieren
         self._last_time = t

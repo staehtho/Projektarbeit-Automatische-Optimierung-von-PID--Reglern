@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-
+from typing import Callable
 from .plant import Plant
 
 
@@ -71,13 +71,42 @@ class ClosedLoop(ABC):
         G = self._plant.system(s)
         return (C * G) / (1 + C * G)
 
-
     # ToDo: Integration Stoeruebertragungsfunktion
 
-    def response(self, t: np.ndarray) -> np.ndarray:
-        """Closed-loop step response via inverse Laplace transform (Talbot)."""
-        # ToDo: step response
-        pass
+    def step_response(
+            self,
+            t0: float = 0,
+            t1: float = 10,
+            dt: float = 0.01,
+            method: str = "RK23"
+    ) -> tuple[np.ndarray, np.ndarray]:
+        r = lambda t: 1
+        return self.system_response(r, t0, t1, dt, method=method)
+
+    def system_response(self, r: Callable[[float], float],
+                        t0: float,
+                        t1: float,
+                        dt: float,
+                        x0: np.ndarray | None = None,
+                        y0: float = 0,
+                        method: str = "RK23"
+                        ) -> tuple[np.ndarray, np.ndarray]:
+        if x0 is None:
+            x0 = np.zeros(self._plant.get_system_order())
+
+        t_eval = np.arange(t0, t1, dt)
+        y_hist = []
+        x = x0
+        y = y0
+        for t in t_eval:
+            u = self.controller_time_step(t, y, set_point=r(t))
+            if method == "RK4":
+                x, y = self._plant.rk4_step(u, dt, x)
+            else:
+                x, y = self._plant.tf2ivp(u, t, t + dt, x)
+            y_hist.append(y)
+
+        return t_eval, np.array(y_hist)
 
     @abstractmethod
     def controller_time_step(self, t: float, y: float, set_point: float | None = None) -> float:

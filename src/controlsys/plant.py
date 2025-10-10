@@ -88,6 +88,9 @@ class Plant:
     # Methods
     # ******************************
 
+    def get_system_order(self) -> int:
+        return self._A.shape[0]
+
     def system(self, s: complex | np.ndarray) -> complex | np.ndarray:
         """
         Evaluate the transfer function of the plant at a given complex frequency `s`.
@@ -110,52 +113,81 @@ class Plant:
         """
         return np.polyval(self._num, s) / np.polyval(self._den, s)
 
-    def step_response(self, t0: float = 0, t1: float = 10, dt: float = 0.01) -> tuple[np.ndarray, np.ndarray]:
-        """Compute the step response of the plant.
+    def step_response(
+            self,
+            t0: float = 0,
+            t1: float = 10,
+            dt: float = 0.01,
+            method: str = "RK23"
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Compute the time-domain step response of the LTI plant.
+
+        Simulates the output y(t) of the system for a unit step input `u(t) = 1`
+        using either a fixed-step RK4 method or SciPy’s adaptive `solve_ivp` integrator.
 
         Args:
-            t0 (float): Start time of the simulation. Defaults to 0.
-            t1 (float): End time of the simulation. Defaults to 10.
-            dt (float): Time step for simulation. Defaults to 0.01.
+            t0 (float, optional): Start time of the simulation [s]. Defaults to 0.
+            t1 (float, optional): End time of the simulation [s]. Defaults to 10.
+            dt (float, optional): Simulation time step [s]. Defaults to 0.01.
+            method (str, optional): Integration method.
+                - `"RK4"`: fixed-step fourth-order Runge–Kutta.
+                - any other value: uses SciPy’s adaptive `solve_ivp`.
+                Defaults to `"RK23"`.
 
         Returns:
-            tuple[np.ndarray, np.ndarray]: Tuple containing:
-                - t_eval (np.ndarray): Array of time points.
-                - y_hist (np.ndarray): Step response of the system at each time point.
+            tuple[np.ndarray, np.ndarray]:
+                - **t_eval** (`np.ndarray`): Time vector.
+                - **y_hist** (`np.ndarray`): Output response y(t) for each time point.
 
         Example:
             >>> plant = Plant(num=[1], den=[1, 2, 1])
-            >>> t, y = plant.step_response()
+            >>> t, y = plant.step_response(t1=5, dt=0.01, method="RK4")
+            >>> import matplotlib.pyplot as plt
+            >>> plt.plot(t, y)
+            >>> plt.xlabel("Time [s]")
+            >>> plt.ylabel("Output y(t)")
+            >>> plt.grid(True)
+            >>> plt.show()
         """
         u = lambda t: 1
-        return self.system_response(u, t0, t1, dt)
+        return self.system_response(u, t0, t1, dt, method=method)
 
     def system_response(self,
                         u: Callable[[float], float],
                         t0: float = 0,
                         t1: float = 10,
                         dt: float = 0.01,
-                        x0: np.ndarray | None = None
+                        x0: np.ndarray | None = None,
+                        method: str = "RK23"
                         ) -> tuple[np.ndarray, np.ndarray]:
-        """Simulate the plant response to a given input signal.
+        """Simulate the time-domain response of the plant to a given input signal.
+
+        This function integrates the continuous-time state-space system using either
+        a fixed-step RK4 integrator or SciPy’s adaptive `solve_ivp` method. The input
+        signal `u(t)` is evaluated at each time step.
 
         Args:
             u (Callable[[float], float]): Input function of time, u(t).
-            t0 (float): Start time of the simulation. Defaults to 0.
-            t1 (float): End time of the simulation. Defaults to 10.
-            dt (float): Time step for simulation. Defaults to 0.01.
-            x0 (np.ndarray | None): Initial state of the system. If None, initialized to zero.
+            t0 (float, optional): Simulation start time [s]. Defaults to 0.
+            t1 (float, optional): Simulation end time [s]. Defaults to 10.
+            dt (float, optional): Fixed simulation time step [s]. Defaults to 0.01.
+            x0 (np.ndarray | None, optional): Initial system state. If None, zeros are used.
+            method (str, optional): Integration method.
+                - "RK4": fixed-step fourth-order Runge–Kutta method.
+                - otherwise: uses SciPy’s `solve_ivp` (e.g., "RK23" or "RK45").
+                Defaults to "RK23".
 
         Returns:
-            tuple[np.ndarray, np.ndarray]: Tuple containing:
-                - t_eval (np.ndarray): Array of time points.
-                - y_hist (np.ndarray): System output at each time point.
+            tuple[np.ndarray, np.ndarray]:
+                - **t_eval** (`np.ndarray`): Time vector.
+                - **y_hist** (`np.ndarray`): System output y(t) for each time step.
 
         Example:
             >>> plant = Plant(num=[1], den=[1, 2, 1])
             >>> u = lambda t: np.sin(t)
-            >>> t, y = plant.system_response(u, t0=0, t1=5, dt=0.01)
+            >>> t, y = plant.system_response(u, t0=0, t1=5, dt=0.01, method="RK4")
         """
+
         if x0 is None:
             x0 = np.zeros(self._A.shape[0])
 
@@ -164,7 +196,10 @@ class Plant:
         y_hist = []
 
         for t in t_eval:
-            x, y = self._tf2ivp(u(t), t, t + dt, x)
+            if method == "RK4":
+                x, y = self.rk4_step(u(t), dt, x)
+            else:
+                x, y = self.tf2ivp(u(t), t, t + dt, x)
             y_hist.append(y)
 
         return t_eval, np.array(y_hist)
@@ -175,21 +210,25 @@ class Plant:
                x0: np.ndarray,
                method: str = "RK23"
                ) -> tuple[np.ndarray, np.ndarray]:
-        """Perform a single integration step of the plant's state-space system.
+        """Integrate the LTI state-space system over one time interval.
+
+        Uses SciPy’s `solve_ivp` to integrate from `t0` to `t1` with constant input `u`.
 
         Args:
-            u (float): Input value held constant over the integration step.
-            t0 (float): Start time of the integration step.
-            t1 (float): End time of the integration step.
-            x0 (np.ndarray): Initial state at time t0.
-            method (str): Integration method to use (passed to solve_ivp). Defaults to 'RK23'.
+            u (float): Constant input value over [t0, t1].
+            t0 (float): Start time of integration [s].
+            t1 (float): End time of integration [s].
+            x0 (np.ndarray): System state at t0.
+            method (str, optional): Integration method passed to `solve_ivp`.
+                Defaults to "RK23".
 
         Returns:
-            tuple[np.ndarray, np.ndarray]: Tuple containing:
-                - x_next (np.ndarray): System state at t1.
-                - y (float): System output at t1.
+            tuple[np.ndarray, np.ndarray]:
+                - **x_next** (`np.ndarray`): State vector at time t1.
+                - **y** (`float`): System output y(t1).
 
         Example:
+            >>> plant = Plant(num=[1], den=[1, 2, 1])
             >>> x_next, y = plant.tf2ivp(u=1.0, t0=0, t1=0.01, x0=np.zeros(2))
         """
 
@@ -199,4 +238,40 @@ class Plant:
         sol: Any = solve_ivp(dx_dt, (t0, t1), x0, t_eval=[t1], method=method, max_step=0.1)
         y = (self._C @ sol.y[:, -1] + self._D * u).item()
         return sol.y[:, -1], y
+
+    def rk4_step(self, u: float, dt: float, x: np.ndarray) -> tuple[np.ndarray, float]:
+        """Perform a single fixed-step RK4 integration for the LTI plant.
+
+        Computes the state update for `dx/dt = A·x + B·u` over one time step `dt`
+        assuming `u` is constant during the interval. This method is typically used
+        in fixed-step control simulations (e.g. PID loops).
+
+        Args:
+            u (float): Constant input during the integration step.
+            dt (float): Time step [s].
+            x (np.ndarray): Current state vector.
+
+        Returns:
+            tuple[np.ndarray, float]:
+                - **x_next** (`np.ndarray`): Updated state vector at t + dt.
+                - **y** (`float`): Corresponding system output y(t + dt).
+
+        Example:
+            >>> plant = Plant(num=[1], den=[1, 2, 1])
+            >>> x_next, y = plant.rk4_step(u=1.0, dt=0.01, x=np.zeros(2))
+        """
+
+        def dx_dt(x):
+            return (self._A @ x + self._B.flatten() * u).flatten()
+
+        k1 = dx_dt(x)
+        k2 = dx_dt(x + 0.5 * dt * k1)
+        k3 = dx_dt(x + 0.5 * dt * k2)
+        k4 = dx_dt(x + dt * k3)
+
+        x_next = x + (dt / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+        y = (self._C @ x_next + self._D * u).item()
+
+        return x_next, y
+
 
