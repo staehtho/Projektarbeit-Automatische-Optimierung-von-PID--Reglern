@@ -8,7 +8,7 @@ def main():
     with MatlabInterface() as mat:
         num = np.array([1, 2])
         dec = np.array([1, 2, 3])
-        plant = Plant(num=num, dec=dec)
+        plant = Plant(num=num, den=dec)
         s = "tf('s');"
         G = f"{plant: plant};"
 
