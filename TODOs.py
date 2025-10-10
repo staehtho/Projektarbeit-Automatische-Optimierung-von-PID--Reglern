@@ -4,4 +4,3 @@
 # TODO: Weitere Gütekriterien in Python implementieren und mit MATLAB verifizieren
 # TODO: Für PSO die zu minimierende Funktion erstellen
 # TODO: Thomas erklärt Flo MatlabInterface :)
-# TODO: Thomas zeigt Forschungsziel, Forschungsfragen und Methoden (SWA)
