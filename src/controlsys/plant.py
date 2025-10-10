@@ -170,11 +170,11 @@ class Plant:
         return t_eval, np.array(y_hist)
 
     def tf2ivp(self, u: float,
-                t0: float,
-                t1: float,
-                x0: np.ndarray,
-                method: str = "RK23"
-                ) -> tuple[np.ndarray, np.ndarray]:
+               t0: float,
+               t1: float,
+               x0: np.ndarray,
+               method: str = "RK23"
+               ) -> tuple[np.ndarray, np.ndarray]:
         """Perform a single integration step of the plant's state-space system.
 
         Args:
