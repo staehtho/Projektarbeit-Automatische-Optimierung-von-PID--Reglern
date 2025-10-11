@@ -9,18 +9,8 @@ class ClosedLoop(ABC):
 
         self._plant = plant
 
-        # Begrenzung des Stellwerts (z. B. 0–100 %)
-        self._control_constraint = [0, 100]
-
         # Standard-Sollwert (Einheitssprung)
         self._set_point: float = 1.0
-
-        # Zustände für Zeitbereichsberechnung
-        self._last_time: float | None = None
-        self._last_error: float = 0.0
-        self._integral: float = 0.0
-        self._filtered_d: float = 0.0
-        self._last_u: float = 0.0
 
     def __format__(self, format_spec: str) -> str:
         """
@@ -62,7 +52,15 @@ class ClosedLoop(ABC):
 
     @abstractmethod
     def controller(self, s: complex | np.ndarray) -> complex | np.ndarray:
-        """Controller transfer function with derivative filter (Laplace domain)."""
+        """
+        Compute the controller transfer function with derivative filter in the Laplace domain.
+
+        Args:
+            s (complex | np.ndarray): Laplace variable.
+
+        Returns:
+            complex | np.ndarray: Complex transfer function value.
+        """
         pass
 
     def closed_loop(self, s: complex | np.ndarray) -> complex | np.ndarray:
@@ -80,17 +78,60 @@ class ClosedLoop(ABC):
             dt: float = 0.01,
             method: str = "RK23"
     ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Compute the step response of the system.
+
+        This method generates a step input signal and computes the system response
+        over the specified time interval using the specified numerical integration method.
+
+        Args:
+            t0 (float): Start time of the simulation. Defaults to 0.
+            t1 (float): End time of the simulation. Defaults to 10.
+            dt (float): Time step for the simulation. Defaults to 0.01.
+            method (str): Numerical integration method to use. Options are "RK23" or "RK4".
+                Defaults to "RK23".
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]:
+                A tuple containing:
+                - t_eval (np.ndarray): Array of time points.
+                - y_hist (np.ndarray): Array of system output values corresponding to `t_eval`.
+        """
         r = lambda t: 1
         return self.system_response(r, t0, t1, dt, method=method)
 
-    def system_response(self, r: Callable[[float], float],
-                        t0: float,
-                        t1: float,
-                        dt: float,
-                        x0: np.ndarray | None = None,
-                        y0: float = 0,
-                        method: str = "RK23"
-                        ) -> tuple[np.ndarray, np.ndarray]:
+    def system_response(
+            self,
+            r: Callable[[float], float],
+            t0: float,
+            t1: float,
+            dt: float,
+            x0: np.ndarray | None = None,
+            y0: float = 0,
+            method: str = "RK23"
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Compute the system response to a given reference input signal.
+
+        This method simulates the system over the specified time interval using the
+        provided reference function `r(t)` and numerical integration method.
+
+        Args:
+            r (Callable[[float], float]): Reference input function of time.
+            t0 (float): Start time of the simulation.
+            t1 (float): End time of the simulation.
+            dt (float): Time step for the simulation.
+            x0 (np.ndarray | None, optional): Initial state of the system. If None, defaults
+                to zero vector of system order. Defaults to None.
+            y0 (float, optional): Initial output of the system. Defaults to 0.
+            method (str, optional): Numerical integration method. Options are "RK23" or "RK4".
+                Defaults to "RK23".
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]:
+                - t_eval (np.ndarray): Array of time points.
+                - y_hist (np.ndarray): Array of system output values corresponding to `t_eval`.
+        """
         if x0 is None:
             x0 = np.zeros(self._plant.get_system_order())
 
@@ -106,6 +147,8 @@ class ClosedLoop(ABC):
                 x, y = self._plant.tf2ivp(u, t, t + dt, x)
             y_hist.append(y)
 
+        # TODO: PID eventuell auch Plant muss zurückgesetzt werden
+        #  -> beim weiteren aufruf von system_response werden die Werte zurzeit beibehalten
         return t_eval, np.array(y_hist)
 
     @abstractmethod

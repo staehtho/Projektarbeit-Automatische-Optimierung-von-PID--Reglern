@@ -26,6 +26,7 @@ class Plant:
     ) -> None:
         self._num = np.array(num, copy=False, dtype=float)
         self._den = np.array(den, copy=False, dtype=float)
+        # TODO: T1 berechnen
         self._t1 = 1  # dominant time constant for derivative filter calculation
 
         # Transfer function to state-space representation.
