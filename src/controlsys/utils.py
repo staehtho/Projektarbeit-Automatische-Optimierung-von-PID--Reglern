@@ -2,30 +2,6 @@ import numpy as np
 from typing import Callable, Union
 import matplotlib.pyplot as plt
 
-
-def laplace_2_response(num: list[float] | np.ndarray,
-                       dec: list[float] | np.ndarray,
-                       *,
-                       solver_methode: str = "RK23",
-                       max_step: float = 0.1
-                       ) -> np.ndarray:
-    inverse_laplace(num=np.array(num), dec=np.array(dec))
-
-    response: np.ndarray = calculate_response(solver_methode=solver_methode, max_step=max_step)
-
-    return response
-
-
-def inverse_laplace(num: np.ndarray, dec: np.ndarray):
-    # https://arxiv.org/abs/2112.08306
-    # https://arxiv.org/abs/1304.2505
-    pass
-
-
-def calculate_response(solver_methode: str, max_step: float) -> np.ndarray:
-    pass
-
-
 SystemData = Union[Callable[[np.ndarray], np.ndarray], tuple[np.ndarray, np.ndarray, np.ndarray]]
 
 
@@ -126,3 +102,14 @@ def bode_plot(
     ax_mag.legend()
     plt.tight_layout()
     plt.show()
+
+
+def itae(t: np.ndarray, y: np.ndarray, setPoint: float) -> float:
+    """Calculates ITAE criterion."""
+    value: float = 0.0
+    t_old = 0.0
+    for ti, yi in zip(t, y):
+        delta_t = ti - t_old
+        value += ti * abs((setPoint - yi) * delta_t)
+        t_old = ti
+    return value
