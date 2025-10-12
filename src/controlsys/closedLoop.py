@@ -135,6 +135,8 @@ class ClosedLoop(ABC):
         if x0 is None:
             x0 = np.zeros(self._plant.get_system_order())
 
+        self._reset_controller_time_step()
+
         t_eval = np.arange(t0, t1, dt)
         y_hist = []
         x = x0
@@ -147,8 +149,6 @@ class ClosedLoop(ABC):
                 x, y = self._plant.tf2ivp(u, t, t + dt, x)
             y_hist.append(y)
 
-        # TODO: PID eventuell auch Plant muss zurückgesetzt werden
-        #  -> beim weiteren aufruf von system_response werden die Werte zurzeit beibehalten
         return t_eval, np.array(y_hist)
 
     @abstractmethod
@@ -165,4 +165,8 @@ class ClosedLoop(ABC):
         Returns:
             float: Control output u(t)
         """
+        pass
+
+    @abstractmethod
+    def _reset_controller_time_step(self) -> None:
         pass

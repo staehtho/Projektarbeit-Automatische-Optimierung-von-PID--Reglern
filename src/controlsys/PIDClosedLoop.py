@@ -226,3 +226,12 @@ class PIDClosedLoop(ClosedLoop):
         self._last_u = u
 
         return u
+
+    def _reset_controller_time_step(self) -> None:
+        # Internal states for time-domain simulation
+        self._last_time: float | None = None
+        self._last_error: float = 0.0
+        self._integral: float = 0.0
+        self._filtered_d: float = 0.0
+        self._last_u: float = 0.0
+        pass
