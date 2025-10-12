@@ -262,7 +262,7 @@ class Plant:
             >>> x_next, y = plant.rk4_step(u=1.0, dt=0.01, x=np.zeros(2))
         """
 
-        def dx_dt(x):
+        def dx_dt(x: np.ndarray) -> np.ndarray:
             return (self._A @ x + self._B.flatten() * u).flatten()
 
         k1 = dx_dt(x)
