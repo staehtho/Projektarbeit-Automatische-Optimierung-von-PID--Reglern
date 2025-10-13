@@ -13,7 +13,7 @@ def main():
         s = "tf('s');"
         G = f"{plant: plant};"
         mat.write_in_workspace(s=s, G=G)
-        mat.run_simulation("stepresponse_model", "yout", stop_time=20, max_step=0.001)
+        mat.run_simulation("plant_model", "yout", stop_time=20, max_step=0.001)
         mat.plot_simulation("1", "Test", show=False)
         itae_mat = itae(mat.t, mat.values['value_y']['value'], 1)
         print(f"Matlab ITEA: {itae_mat}")
