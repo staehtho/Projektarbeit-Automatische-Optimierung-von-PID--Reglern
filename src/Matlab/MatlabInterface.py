@@ -60,7 +60,7 @@ class MatlabInterface:
             TypeError: If an unsupported variable type is passed to the MATLAB workspace.
 
         Examples:
-            >>> # Assuming 'stepresponse.slx' is in the same folder as this script
+            >>> # Assuming 'response_sim.slx' is in the same folder as this script
             >>> mat.run_simulation('stepresponse', 'yout', stop_time=10, s="tf('s');", G="tf([1 2],[1 2 3])")
         """
         print("Simulation is running...")
