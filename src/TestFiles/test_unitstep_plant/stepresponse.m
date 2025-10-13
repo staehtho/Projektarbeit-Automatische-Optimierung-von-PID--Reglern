@@ -1,6 +1,6 @@
 %%
 %% 
-load step_sim_00.mat % save('step_sim_00.mat', 'out');
+%load step_sim_00.mat % save('step_sim_00.mat', 'out');
 
 %% transfer function
 s = tf('s');
