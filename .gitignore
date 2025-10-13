@@ -225,8 +225,6 @@ marimo/_lsp/
 __marimo__/
 
 # Matlab
-/src/slprj/
+slprj/
 src/TestFiles/slprj
 *.slxc
-
-
