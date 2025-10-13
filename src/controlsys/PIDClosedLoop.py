@@ -167,19 +167,38 @@ class PIDClosedLoop(ClosedLoop):
 
     # -------------------- Time Domain --------------------
 
-    def controller_time_step(self, t: float, y: float, set_point: float | None = None) -> float:
-        """
-        Compute PID control output in the time domain using the time-constant form.
+    def controller_time_step(
+            self,
+            t: float,
+            y: float,
+            set_point: float | None = None,
+            anti_windup: bool = True
+    ) -> float:
+        """Compute the PID control output in the time domain (time-constant form).
 
-        The method keeps internal state between calls and supports anti-windup and derivative filtering.
+        This method computes a single control step for a PID controller using
+        time-domain formulation. It maintains internal state between calls, applies
+        a first-order (PT1) derivative filter, and optionally includes anti-windup
+        protection via integrator clamping.
 
         Args:
-            t (float): Current simulation time [s].
+            t (float): Current simulation time in seconds.
             y (float): Current measured process variable.
-            set_point (float, optional): Desired reference value. Defaults to `self._set_point`.
+            set_point (float, optional): Desired reference value. If not provided,
+                the internally stored set point (`self._set_point`) is used.
+            anti_windup (bool, optional): Enables or disables anti-windup via
+                integrator clamping. Defaults to True.
 
         Returns:
-            float: Control output u(t).
+            float: The control output :math:`u(t)` at the current time step.
+
+        Notes:
+            - The controller stores internal states such as the last error,
+              last control output, and integral term.
+            - The derivative term is filtered using a PT1 filter with time constant
+              `self._tf`.
+            - The control output is saturated within `self._control_constraint`.
+
         """
         if set_point is None:
             set_point = self._set_point
@@ -213,12 +232,12 @@ class PIDClosedLoop(ClosedLoop):
 
         # Control output with saturation
         u = P + I + D
-        # u = float(np.clip(u, self._control_constraint[0], self._control_constraint[1]))
-        # TODO: Anti-windup in Simulink und Python aktivieren
-        # Anti-windup (Integrator clamping)
-        # if ((u >= self._control_constraint[1] and error > 0) or
-        #         (u <= self._control_constraint[0] and error < 0)):
-        #     self._integral -= error * dt
+        if anti_windup:
+            u = float(np.clip(u, self._control_constraint[0], self._control_constraint[1]))
+            # Anti-windup (Integrator clamping)
+            if ((u >= self._control_constraint[1] and error > 0) or
+                    (u <= self._control_constraint[0] and error < 0)):
+                self._integral -= error * dt
 
         # Update states
         self._last_time = t

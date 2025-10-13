@@ -52,7 +52,7 @@ def bode_plot(
 
     s = 1j * omega
 
-    fig, (ax_mag, ax_phase) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+    fig, (ax_mag, ax_phase) = plt.subplots(2, 1, figsize=(8, 6), sharex="all")
     all_mag = []
     all_phase = []
 
@@ -104,12 +104,29 @@ def bode_plot(
     plt.show()
 
 
-def itae(t: np.ndarray, y: np.ndarray, setPoint: float) -> float:
-    """Calculates ITAE criterion."""
-    value: float = 0.0
-    t_old = 0.0
-    for ti, yi in zip(t, y):
-        delta_t = ti - t_old
-        value += ti * abs((setPoint - yi) * delta_t)
-        t_old = ti
-    return value
+def itae(t: np.ndarray, y: np.ndarray, set_point: float) -> float:
+    """Compute the Integral of Time-weighted Absolute Error (ITAE).
+
+    The ITAE criterion is defined as:
+
+        ITAE = ∫ t * |set_point - y(t)| dt
+
+    It penalizes errors that persist over time, emphasizing fast
+    settling and minimal steady-state error.
+
+    Args:
+        t (np.ndarray): Time vector [s].
+        y (np.ndarray): System output corresponding to `t`.
+        set_point (float): Desired reference value.
+
+    Returns:
+        float: The computed ITAE value.
+    """
+    # berechnet delta t, beginnend mit t[0] - t[0] 
+    dt = np.diff(t, prepend=t[0])
+
+    # Compute absolute error
+    error = np.abs(set_point - y)
+
+    # Integral approximation (time-weighted)
+    return float(np.sum(t * error * dt))
