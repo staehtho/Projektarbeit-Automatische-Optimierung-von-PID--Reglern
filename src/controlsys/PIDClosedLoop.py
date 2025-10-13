@@ -232,6 +232,7 @@ class PIDClosedLoop(ClosedLoop):
 
         # Control output with saturation
         u = P + I + D
+
         if anti_windup:
             u = float(np.clip(u, self._control_constraint[0], self._control_constraint[1]))
             # Anti-windup (Integrator clamping)
@@ -253,4 +254,3 @@ class PIDClosedLoop(ClosedLoop):
         self._integral: float = 0.0
         self._filtered_d: float = 0.0
         self._last_u: float = 0.0
-        pass
