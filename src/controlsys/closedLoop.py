@@ -76,7 +76,8 @@ class ClosedLoop(ABC):
             t0: float = 0,
             t1: float = 10,
             dt: float = 0.01,
-            method: str = "RK23"
+            method: str = "RK23",
+            anti_windup: bool = True
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Compute the step response of the system.
@@ -90,6 +91,9 @@ class ClosedLoop(ABC):
             dt (float): Time step for the simulation. Defaults to 0.01.
             method (str): Numerical integration method to use. Options are "RK23" or "RK4".
                 Defaults to "RK23".
+            anti_windup (bool, optional): If True, activates integrator clamping in
+                the controller to prevent windup when actuator saturation occurs.
+                Defaults to True.
 
         Returns:
             tuple[np.ndarray, np.ndarray]:
@@ -98,7 +102,7 @@ class ClosedLoop(ABC):
                 - y_hist (np.ndarray): Array of system output values corresponding to `t_eval`.
         """
         r = lambda t: 1
-        return self.system_response(r, t0, t1, dt, method=method)
+        return self.system_response(r, t0, t1, dt, method=method, anti_windup=anti_windup)
 
     def system_response(
             self,
@@ -108,7 +112,8 @@ class ClosedLoop(ABC):
             dt: float,
             x0: np.ndarray | None = None,
             y0: float = 0,
-            method: str = "RK23"
+            method: str = "RK23",
+            anti_windup: bool = True
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Compute the system response to a given reference input signal.
@@ -126,6 +131,9 @@ class ClosedLoop(ABC):
             y0 (float, optional): Initial output of the system. Defaults to 0.
             method (str, optional): Numerical integration method. Options are "RK23" or "RK4".
                 Defaults to "RK23".
+            anti_windup (bool, optional): If True, activates integrator clamping in
+                the controller to prevent windup when actuator saturation occurs.
+                Defaults to True.
 
         Returns:
             tuple[np.ndarray, np.ndarray]:
@@ -142,7 +150,7 @@ class ClosedLoop(ABC):
         x = x0
         y = y0
         for t in t_eval:
-            u = self.controller_time_step(t, y, set_point=r(t))
+            u = self.controller_time_step(t, y, set_point=r(t), anti_windup=anti_windup)
             if method == "RK4":
                 x, y = self._plant.rk4_step(u, dt, x)
             else:
@@ -152,7 +160,13 @@ class ClosedLoop(ABC):
         return t_eval, np.array(y_hist)
 
     @abstractmethod
-    def controller_time_step(self, t: float, y: float, set_point: float | None = None) -> float:
+    def controller_time_step(self,
+                             t: float,
+                             y: float,
+                             set_point:
+                             float | None = None,
+                             anti_windup: bool = True
+                             ) -> float:
         """
         Compute control output in the time domain (time-constant form).
         Uses internal state memory between calls.
@@ -161,6 +175,9 @@ class ClosedLoop(ABC):
             t (float): Current simulation time [s]
             y (float): Current measured process variable
             set_point (float, optional): Desired reference value. Defaults to 1.0.
+            anti_windup (bool, optional): If True, activates integrator clamping in
+                the controller to prevent windup when actuator saturation occurs.
+                Defaults to True.
 
         Returns:
             float: Control output u(t)
