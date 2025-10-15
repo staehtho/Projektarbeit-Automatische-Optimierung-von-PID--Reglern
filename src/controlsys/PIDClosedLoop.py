@@ -217,32 +217,38 @@ class PIDClosedLoop(ClosedLoop):
         r = self._set_point if set_point is None else set_point
         e = r - y
 
-        # ------------------------------
-        # PID components
-        # ------------------------------
-        # Proportional term
+        # --- Proportional term ---
         P = self._kp * e
 
-        # Integral term (numerical integration)
-        self._integral += e * dt
-        I = self._kp * (1 / self._ti) * self._integral
-
-        # Derivative term with PT1 filter
+        # --- Derivative term (mit PT1-Filter) ---
         de = (e - self._e_prev) / dt
         alpha = dt / (self._tf + dt)
         d_filtered = (1 - alpha) * self._filtered_prev + alpha * de
         D = self._kp * self._td * d_filtered
 
-        # Controller output
+        # Integral term
+        I = self._kp * (1 / self._ti) * self._integral
+
+        u_temp = P + I + D
+
+        # Grenzen
+        u_min, u_max = self._control_constraint
+
+        # --- Conditional Integration Logik ---
+        # Integrator nur updaten, wenn keine Sättigung ODER Entlastungsrichtung
+        if (u_temp < u_max and u_temp > u_min) or \
+                (u_temp >= u_max and e < 0) or \
+                (u_temp <= u_min and e > 0):
+            self._integral += e * dt
+
+        # Integral term
+        I = self._kp * (1 / self._ti) * self._integral
+
+        # --- Gesamtausgang berechnen ---
         u_unsat = P + I + D
 
-        # Output saturation
+        # --- Stellgrößenbegrenzung am Reglerausgang ---
         u_sat = float(np.clip(u_unsat, *self._control_constraint))
-
-        # Anti-windup: stop integration if actuator saturated
-        if anti_windup and (u_sat != u_unsat):
-            # Roll back integration for this step
-            self._integral -= e * dt
 
         # Save filtered derivative for next step
         self._filtered_prev = d_filtered

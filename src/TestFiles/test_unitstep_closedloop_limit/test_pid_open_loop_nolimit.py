@@ -6,8 +6,8 @@ from src.SystemsOld import SecondOrderSystem
 
 
 def main():
-    num = [1, 2, 4, 5, 10]
-    den = [1, 1, 30, 2, 6, 8, 10, 0.6, 10]
+    num = [1]
+    den = [1, 0.6, 1]
     plant: Plant = Plant(num, den)
     pid: PIDClosedLoop = PIDClosedLoop(plant=plant, Kp=10, Ti=3, Td=0.8)
 
@@ -21,14 +21,9 @@ def main():
         Ti = pid.Ti
         F = f"s / ({pid.Tf} * s + 1);"
         mat.write_in_workspace(s=s, G=G, Kp=Kp, Td=Td, Ti=Ti, F=F)
-        mat.run_simulation("closedloop_model_nolimit", "yout", stop_time=20, max_step=0.001)
+        mat.run_simulation("closedloop_model_limit_and_antiwindup", "yout", stop_time=20, max_step=0.001)
         t_mat = mat.t
         y_mat = mat.values['value_y']['value']
-        u_mat = mat.values['value_u']['value']
-        e_mat = mat.values['value_r']['value']
-        P_mat = mat.values['value_P']['value']
-        I_mat = mat.values['value_I']['value']
-        D_mat = mat.values['value_D']['value']
 
     # **************************************************************
     # Closed Loop Python
@@ -46,30 +41,6 @@ def main():
     # plt.plot(t_sec, y_sec, label="y (Lukas)")
     plt.legend()
 
-    plt.figure("Signal u")
-    plt.plot(t_mat, u_mat, label="u (Matlab)")
-    plt.plot(t_py, u_py, label="u (Python)")
-    plt.legend()
-
-    plt.figure("Signal r")
-    plt.plot(t_mat, e_mat, label="e (Matlab)")
-    plt.plot(t_py, e_py, label="e (Python)")
-    plt.legend()
-
-    plt.figure("Signal P")
-    plt.plot(t_mat, P_mat, label="P (Matlab)")
-    plt.plot(t_py, P_py, label="P (Python)")
-    plt.legend()
-
-    plt.figure("Signal I")
-    plt.plot(t_mat, I_mat, label="I (Matlab)")
-    plt.plot(t_py, I_py, label="I (Python)")
-    plt.legend()
-
-    plt.figure("Signal D")
-    plt.plot(t_mat, D_mat, label="D (Matlab)")
-    plt.plot(t_py, D_py, label="D (Python)")
-    plt.legend()
     # **************************************************************
     # ITAE
     # **************************************************************
@@ -82,7 +53,7 @@ def main():
     # print(f"ITAE Lukas: {itae_sec}")
 
     print(
-        f"ITAE der Schrittantwort einer Beispiels-PT2-Strecke unterscheidet sich um {itae_py / itae_mat} "
+        f"ITAE der Schrittantwort einer Beispiels-PT2-Strecke unterscheidet sich um {abs(itae_py - itae_mat)} "
         f"zwischen Matlab und Python (ITAE in Python gerechnet)")
 
     plt.show()
