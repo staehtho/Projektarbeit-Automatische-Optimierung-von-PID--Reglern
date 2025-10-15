@@ -78,7 +78,7 @@ class ClosedLoop(ABC):
             dt: float = 0.01,
             method: str = "RK23",
             anti_windup: bool = True
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Compute the step response of the system.
 
@@ -114,7 +114,7 @@ class ClosedLoop(ABC):
             y0: float = 0,
             method: str = "RK23",
             anti_windup: bool = True
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Compute the system response to a given reference input signal.
 
@@ -147,40 +147,63 @@ class ClosedLoop(ABC):
 
         t_eval = np.arange(t0, t1, dt)
         y_hist = []
+        u_hist = []
+        e_hist = []
         x = x0
         y = y0
         for t in t_eval:
-            u = self.controller_time_step(t, y, set_point=r(t), anti_windup=anti_windup)
+            e_hist.append(r(t) - 0)
+            u = self.controller_time_step(t, dt, y, set_point=r(t), anti_windup=anti_windup)
             if method == "RK4":
                 x, y = self._plant.rk4_step(u, dt, x)
             else:
                 x, y = self._plant.tf2ivp(u, t, t + dt, x)
             y_hist.append(y)
+            u_hist.append(u)
 
-        return t_eval, np.array(y_hist)
+        return t_eval, np.array(y_hist), np.array(u_hist), np.array(e_hist)
 
     @abstractmethod
     def controller_time_step(self,
                              t: float,
+                             dt: float,
                              y: float,
-                             set_point:
-                             float | None = None,
+                             set_point: float | None = None,
                              anti_windup: bool = True
                              ) -> float:
         """
         Compute control output in the time domain (time-constant form).
         Uses internal state memory between calls.
 
+        This method implements a discrete-time controller (e.g., PID) that updates its
+        internal states (such as integral and derivative terms) based on the current
+        measurement `y`, desired set point `set_point`, and time step `dt`. The controller
+        output `u(t)` can be clamped to prevent actuator saturation, and an optional
+        anti-windup mechanism can limit integrator growth when clamping occurs.
+
         Args:
-            t (float): Current simulation time [s]
-            y (float): Current measured process variable
-            set_point (float, optional): Desired reference value. Defaults to 1.0.
+            t (float): Current simulation time [s].
+            dt (float): Time step since the last controller update [s]. Used to scale
+                the integral and derivative contributions correctly.
+            y (float): Current measured process variable (feedback signal).
+            set_point (float, optional): Desired reference value for the process variable.
+                If None, the controller may use the last set point or a default value.
+                Defaults to None.
             anti_windup (bool, optional): If True, activates integrator clamping in
                 the controller to prevent windup when actuator saturation occurs.
                 Defaults to True.
 
         Returns:
-            float: Control output u(t)
+            float: Control output u(t), typically in the range supported by the actuator.
+                The returned value may be limited to prevent saturation, and internal
+                integrator states may be adjusted accordingly if anti-windup is active.
+
+        Notes:
+            - The controller maintains internal state between calls, so it must be called
+              sequentially in simulation or real-time control.
+            - Proper choice of `dt` is crucial for stable and accurate control behavior.
+            - If `anti_windup` is enabled, the integrator term will be adjusted to
+              prevent excessive overshoot caused by actuator limits.
         """
         pass
 

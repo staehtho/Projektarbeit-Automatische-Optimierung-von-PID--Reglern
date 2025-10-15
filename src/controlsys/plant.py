@@ -26,8 +26,14 @@ class Plant:
     ) -> None:
         self._num = np.array(num, copy=False, dtype=float)
         self._den = np.array(den, copy=False, dtype=float)
-        # TODO: T1 berechnen
-        self._t1 = 1  # dominant time constant for derivative filter calculation
+
+        # Dominante Zeitkonstante T1 bestimmen
+        roots = np.roots(self._den)
+        stable_poles = roots[np.real(roots) < 0]
+        if stable_poles.size > 0:
+            self._t1 = -1 / np.min(np.real(stable_poles))
+        else:
+            self._t1 = 1.0  # fallback
 
         # Transfer function to state-space representation.
         self._A: np.ndarray
