@@ -89,11 +89,14 @@ class PIDClosedLoop(ClosedLoop):
         self._control_constraint = control_constraint or [-5.0, 5.0]
 
         # Internal states for time-domain simulation
-        self._last_time: float | None = None
-        self._last_error: float = 0.0
+        self._e_prev: float = 0.0
+        self._e_prev2: float = 0.0
+        self._filtered_prev: float = 0.0
         self._integral: float = 0.0
-        self._filtered_d: float = 0.0
-        self._last_u: float = 0.0
+
+        self.P_hist = []
+        self.I_hist = []
+        self.D_hist = []
 
     # -------------------- Properties --------------------
 
@@ -167,90 +170,102 @@ class PIDClosedLoop(ClosedLoop):
 
     # -------------------- Time Domain --------------------
 
-    def controller_time_step(
-            self,
-            t: float,
-            y: float,
-            set_point: float | None = None,
-            anti_windup: bool = True
-    ) -> float:
-        """Compute the PID control output in the time domain (time-constant form).
+    def controller_time_step(self,
+                             t: float,
+                             dt: float,
+                             y: float,
+                             set_point: float | None = None,
+                             anti_windup: bool = True
+                             ) -> float:
+        """
+        Compute control output in the time domain (time-constant form).
+        Uses internal state memory between calls.
 
-        This method computes a single control step for a PID controller using
-        time-domain formulation. It maintains internal state between calls, applies
-        a first-order (PT1) derivative filter, and optionally includes anti-windup
-        protection via integrator clamping.
+        This method implements a discrete-time controller (e.g., PID) that updates its
+        internal states (such as integral and derivative terms) based on the current
+        measurement `y`, desired set point `set_point`, and time step `dt`. The controller
+        output `u(t)` can be clamped to prevent actuator saturation, and an optional
+        anti-windup mechanism can limit integrator growth when clamping occurs.
 
         Args:
-            t (float): Current simulation time in seconds.
-            y (float): Current measured process variable.
-            set_point (float, optional): Desired reference value. If not provided,
-                the internally stored set point (`self._set_point`) is used.
-            anti_windup (bool, optional): Enables or disables anti-windup via
-                integrator clamping. Defaults to True.
+            t (float): Current simulation time [s].
+            dt (float): Time step since the last controller update [s]. Used to scale
+                the integral and derivative contributions correctly.
+            y (float): Current measured process variable (feedback signal).
+            set_point (float, optional): Desired reference value for the process variable.
+                If None, the controller may use the last set point or a default value.
+                Defaults to None.
+            anti_windup (bool, optional): If True, activates integrator clamping in
+                the controller to prevent windup when actuator saturation occurs.
+                Defaults to True.
 
         Returns:
-            float: The control output :math:`u(t)` at the current time step.
+            float: Control output u(t), typically in the range supported by the actuator.
+                The returned value may be limited to prevent saturation, and internal
+                integrator states may be adjusted accordingly if anti-windup is active.
 
         Notes:
-            - The controller stores internal states such as the last error,
-              last control output, and integral term.
-            - The derivative term is filtered using a PT1 filter with time constant
-              `self._tf`.
-            - The control output is saturated within `self._control_constraint`.
-
+            - The controller maintains internal state between calls, so it must be called
+              sequentially in simulation or real-time control.
+            - Proper choice of `dt` is crucial for stable and accurate control behavior.
+            - If `anti_windup` is enabled, the integrator term will be adjusted to
+              prevent excessive overshoot caused by actuator limits.
         """
-        if set_point is None:
-            set_point = self._set_point
+        # ------------------------------
+        # Setpoint and Error
+        # ------------------------------
+        r = self._set_point if set_point is None else set_point
+        e = r - y
 
-        # Compute control error
-        error = set_point - y
-
-        # First call initialization
-        if self._last_time is None:
-            self._last_time = t
-            self._last_error = error
-            return self._last_u
-
-        # Time difference
-        dt = t - self._last_time
-        if dt <= 0:
-            return self._last_u
-
+        # ------------------------------
+        # PID components
+        # ------------------------------
         # Proportional term
-        P = self._kp * error
+        P = self._kp * e
 
-        # Integral term (Euler integration)
-        self._integral += error * dt
-        I = self._kp / self._ti * self._integral
+        # Integral term (numerical integration)
+        self._integral += e * dt
+        I = self._kp * (1 / self._ti) * self._integral
 
         # Derivative term with PT1 filter
-        derivative = (error - self._last_error) / dt
+        de = (e - self._e_prev) / dt
         alpha = dt / (self._tf + dt)
-        self._filtered_d = alpha * derivative + (1 - alpha) * self._filtered_d
-        D = self._kp * self._td * self._filtered_d
+        d_filtered = (1 - alpha) * self._filtered_prev + alpha * de
+        D = self._kp * self._td * d_filtered
 
-        # Control output with saturation
-        u = P + I + D
+        # Controller output
+        u_unsat = P + I + D
 
-        if anti_windup:
-            u = float(np.clip(u, self._control_constraint[0], self._control_constraint[1]))
-            # Anti-windup (Integrator clamping)
-            if ((u >= self._control_constraint[1] and error > 0) or
-                    (u <= self._control_constraint[0] and error < 0)):
-                self._integral -= error * dt
+        # Output saturation
+        u_sat = float(np.clip(u_unsat, *self._control_constraint))
 
-        # Update states
-        self._last_time = t
-        self._last_error = error
-        self._last_u = u
+        # Anti-windup: stop integration if actuator saturated
+        if anti_windup and (u_sat != u_unsat):
+            # Roll back integration for this step
+            self._integral -= e * dt
 
-        return u
+        # Save filtered derivative for next step
+        self._filtered_prev = d_filtered
+
+        # Save histories for debugging / plotting
+        self.P_hist.append(P)
+        self.I_hist.append(I)
+        self.D_hist.append(D)
+
+        # Update previous error values
+        self._e_prev2 = self._e_prev
+        self._e_prev = e
+
+        return u_sat
 
     def _reset_controller_time_step(self) -> None:
-        # Internal states for time-domain simulation
-        self._last_time: float | None = None
-        self._last_error: float = 0.0
-        self._integral: float = 0.0
-        self._filtered_d: float = 0.0
-        self._last_u: float = 0.0
+        """Reset PID internal states before simulation."""
+        self._e_prev = 0.0
+        self._e_prev2 = 0.0
+        self._filtered_prev = 0.0
+        self._integral = 0.0
+        self.P_hist.clear()
+        self.I_hist.clear()
+        self.D_hist.clear()
+
+
