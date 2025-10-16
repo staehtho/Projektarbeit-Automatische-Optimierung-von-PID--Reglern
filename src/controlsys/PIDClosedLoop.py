@@ -229,20 +229,16 @@ class PIDClosedLoop(ClosedLoop):
         # Integral term
         I = self._kp * (1 / self._ti) * self._integral
 
-        u_temp = P + I + D
-
-        # Grenzen
-        u_min, u_max = self._control_constraint
-
         # --- Conditional Integration Logik ---
         # Integrator nur updaten, wenn keine Sättigung ODER Entlastungsrichtung
+        u_temp = P + I + D
+        u_min, u_max = self._control_constraint
         if (u_temp < u_max and u_temp > u_min) or \
                 (u_temp >= u_max and e < 0) or \
                 (u_temp <= u_min and e > 0):
             self._integral += e * dt
-
-        # Integral term
-        I = self._kp * (1 / self._ti) * self._integral
+            # Integral term
+            I = self._kp * (1 / self._ti) * self._integral
 
         # --- Gesamtausgang berechnen ---
         u_unsat = P + I + D

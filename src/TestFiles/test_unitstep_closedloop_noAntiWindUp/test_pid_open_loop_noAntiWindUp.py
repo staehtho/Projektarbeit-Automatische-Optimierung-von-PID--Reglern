@@ -11,7 +11,6 @@ def main():
     plant: Plant = Plant(num, den)
     pid: PIDClosedLoop = PIDClosedLoop(plant=plant, Kp=10, Ti=3, Td=0.8)
 
-    sec_sys = SecondOrderSystem(Kp=10, Ti=3, Td=0.8, pos_sat=5, neg_sat=-5)
 
     with MatlabInterface() as mat:
         s = "tf('s');"
@@ -21,14 +20,14 @@ def main():
         Ti = pid.Ti
         F = f"s / ({pid.Tf} * s + 1);"
         mat.write_in_workspace(s=s, G=G, Kp=Kp, Td=Td, Ti=Ti, F=F)
-        mat.run_simulation("closedloop_model_limit_and_antiwindup", "yout", stop_time=20, max_step=0.001)
+        mat.run_simulation("closedloop_model_no_antiwindup", "yout", stop_time=20, max_step=0.001)
         t_mat = mat.t
         y_mat = mat.values['value_y']['value']
 
     # **************************************************************
     # Closed Loop Python
     # **************************************************************
-    t_py, y_py, u_py, e_py = pid.step_response(t0=0, t1=20, dt=0.01, method="RK23", anti_windup=True)
+    t_py, y_py, u_py, e_py = pid.step_response(t0=0, t1=20, dt=0.01, method="RK23", anti_windup=False)
     P_py = pid.P_hist
     I_py = pid.I_hist
     D_py = pid.D_hist
