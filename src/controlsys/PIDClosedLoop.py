@@ -94,6 +94,7 @@ class PIDClosedLoop(ClosedLoop):
         self._filtered_prev: float = 0.0
         self._integral: float = 0.0
 
+        # Todo PID-Liste löschen oder saubermachen
         self.P_hist = []
         self.I_hist = []
         self.D_hist = []
@@ -226,19 +227,27 @@ class PIDClosedLoop(ClosedLoop):
         d_filtered = (1 - alpha) * self._filtered_prev + alpha * de
         D = self._kp * self._td * d_filtered
 
-        # Integral term
-        I = self._kp * (1 / self._ti) * self._integral
 
-        # --- Conditional Integration Logik ---
-        # Integrator nur updaten, wenn keine Sättigung ODER Entlastungsrichtung
-        u_temp = P + I + D
-        u_min, u_max = self._control_constraint
-        if (u_temp < u_max and u_temp > u_min) or \
-                (u_temp >= u_max and e < 0) or \
-                (u_temp <= u_min and e > 0):
-            self._integral += e * dt
+        # Todo müllabfuhr
+        if True:
             # Integral term
             I = self._kp * (1 / self._ti) * self._integral
+
+            # --- Conditional Integration Logik ---
+            # Integrator nur updaten, wenn keine Sättigung ODER Entlastungsrichtung
+            u_temp = P + I + D
+            u_min, u_max = self._control_constraint
+            if (u_temp < u_max and u_temp > u_min) or \
+                    (u_temp > u_max and e < 0) or \
+                    (u_temp < u_min and e > 0):
+                self._integral += e * dt
+                # Integral term
+                I = self._kp * (1 / self._ti) * self._integral
+        else:
+            # Integral term
+            self._integral += e * dt
+            I = self._kp * (1 / self._ti) * self._integral
+            I = float(np.clip(I, *self._control_constraint))
 
         # --- Gesamtausgang berechnen ---
         u_unsat = P + I + D

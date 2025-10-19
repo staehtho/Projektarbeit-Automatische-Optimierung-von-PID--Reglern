@@ -51,7 +51,7 @@ def main():
     # print(f"ITAE Lukas: {itae_sec}")
 
     print(
-        f"ITAE der Schrittantwort einer Beispiels-PT2-Strecke unterscheidet sich um {abs(itae_py - itae_mat)} "
+        f"ITAE der Schrittantwort einer Beispiels-PT2-Strecke unterscheidet sich um {abs(100*(itae_py - itae_mat)/itae_mat)} % "
         f"zwischen Matlab und Python (ITAE in Python gerechnet)")
 
     plt.show()
