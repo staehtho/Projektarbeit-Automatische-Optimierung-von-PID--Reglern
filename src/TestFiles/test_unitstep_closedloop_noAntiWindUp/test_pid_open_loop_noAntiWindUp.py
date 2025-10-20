@@ -7,9 +7,9 @@ from src.SystemsOld import SecondOrderSystem
 
 def main():
     num = [1]
-    den = [1, 0.6, 1]
+    den = [1, 2, 1]
     plant: Plant = Plant(num, den)
-    pid: PIDClosedLoop = PIDClosedLoop(plant=plant, Kp=10, Ti=3, Td=0.8)
+    pid: PIDClosedLoop = PIDClosedLoop(plant=plant, Kp=10, Ti=9.6, Td=0.3)
 
 
     with MatlabInterface() as mat:
@@ -18,16 +18,16 @@ def main():
         Kp = pid.Kp
         Td = pid.Td
         Ti = pid.Ti
-        F = f"s / ({pid.Tf} * s + 1);"
+        F = f"s / ({0.01} * s + 1);"
         mat.write_in_workspace(s=s, G=G, Kp=Kp, Td=Td, Ti=Ti, F=F)
-        mat.run_simulation("closedloop_model_no_antiwindup", "yout", stop_time=20, max_step=0.001)
+        mat.run_simulation("closedloop_model_no_antiwindup", "yout", solver = "ode45", stop_time=10, max_step=0.0001)
         t_mat = mat.t
         y_mat = mat.values['value_y']['value']
 
     # **************************************************************
     # Closed Loop Python
     # **************************************************************
-    t_py, y_py, u_py, e_py = pid.step_response(t0=0, t1=20, dt=0.01, method="RK23", anti_windup=False)
+    t_py, y_py, u_py, e_py = pid.step_response(t0=0, t1=10, dt=0.0001, method="ODE45", anti_windup=False)
     P_py = pid.P_hist
     I_py = pid.I_hist
     D_py = pid.D_hist

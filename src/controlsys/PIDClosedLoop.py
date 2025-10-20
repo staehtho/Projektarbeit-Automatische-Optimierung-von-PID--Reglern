@@ -229,7 +229,7 @@ class PIDClosedLoop(ClosedLoop):
 
 
         # Todo müllabfuhr
-        if True:
+        if False:
             # Integral term
             I = self._kp * (1 / self._ti) * self._integral
 
