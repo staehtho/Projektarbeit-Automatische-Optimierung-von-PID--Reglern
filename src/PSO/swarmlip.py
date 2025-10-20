@@ -5,6 +5,7 @@ import math
 from concurrent.futures import ProcessPoolExecutor
 from typing import Callable, List, Optional
 
+# TODO: PSO ist auf 3 Dimensionen beschränkt -> anpassen für dynamische Dimensionen
 
 class Particle:
     """Represents a single particle in the swarm.

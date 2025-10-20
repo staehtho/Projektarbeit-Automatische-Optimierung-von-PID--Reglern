@@ -6,11 +6,14 @@ from src.SystemsOld import SecondOrderSystem
 
 
 def main():
+    # TODO: Mit Simulink von Büchi prüfen -> [1], [1, 2, 1] im Verzeichnis: ITAE Examples
+    #  Alles zu erst in Simulink hardcoden und dann Schritt für Schritt diese ablösen, gleiche Einstellungen wie in
+    #  Simulink (Solver, Zeitschritte, variable Zeitschritte)
+    #  wo sind die unterschiede?
     num = [1]
     den = [1, 0.6, 1]
     plant: Plant = Plant(num, den)
     pid: PIDClosedLoop = PIDClosedLoop(plant=plant, Kp=10, Ti=3, Td=0.8)
-
 
     with MatlabInterface() as mat:
         s = "tf('s');"
@@ -52,7 +55,7 @@ def main():
     # print(f"ITAE Lukas: {itae_sec}")
 
     print(
-        f"ITAE der Schrittantwort einer Beispiels-PT2-Strecke unterscheidet sich um {abs(100*(itae_py - itae_mat)/itae_mat)} % "
+        f"ITAE der Schrittantwort einer Beispiels-PT2-Strecke unterscheidet sich um {abs(100 * (itae_py - itae_mat) / itae_mat)} % "
         f"zwischen Matlab und Python (ITAE in Python gerechnet)")
 
     plt.show()

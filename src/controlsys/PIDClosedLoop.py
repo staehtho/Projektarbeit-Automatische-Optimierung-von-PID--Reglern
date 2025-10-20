@@ -83,6 +83,7 @@ class PIDClosedLoop(ClosedLoop):
             self._kd = Kp * Td
 
         # Derivative filter time constant
+        # TODO: Achtung hier für die Verifikation von Büchi diese gleich wie in Simulink implementieren
         self._tf = self._plant.t1 * derivative_filter_ratio
 
         # Control output constraints
@@ -98,6 +99,7 @@ class PIDClosedLoop(ClosedLoop):
         self.P_hist = []
         self.I_hist = []
         self.D_hist = []
+        self.U_temp_hist = []
 
     # -------------------- Properties --------------------
 
@@ -227,8 +229,8 @@ class PIDClosedLoop(ClosedLoop):
         d_filtered = (1 - alpha) * self._filtered_prev + alpha * de
         D = self._kp * self._td * d_filtered
 
-
         # Todo müllabfuhr
+        # TODO: Anti-Windup soll auswählbar sein in einem mode:str nicht mode:bool
         if True:
             # Integral term
             I = self._kp * (1 / self._ti) * self._integral
@@ -236,10 +238,11 @@ class PIDClosedLoop(ClosedLoop):
             # --- Conditional Integration Logik ---
             # Integrator nur updaten, wenn keine Sättigung ODER Entlastungsrichtung
             u_temp = P + I + D
+            self.U_temp_hist.append(u_temp)
             u_min, u_max = self._control_constraint
-            if (u_temp < u_max and u_temp > u_min) or \
-                    (u_temp > u_max and e < 0) or \
-                    (u_temp < u_min and e > 0):
+            if (u_max > u_temp > u_min) or \
+                    (u_temp >= u_max and e < 0) or \
+                    (u_temp <= u_min and e > 0):
                 self._integral += e * dt
                 # Integral term
                 I = self._kp * (1 / self._ti) * self._integral
@@ -278,5 +281,3 @@ class PIDClosedLoop(ClosedLoop):
         self.P_hist.clear()
         self.I_hist.clear()
         self.D_hist.clear()
-
-
