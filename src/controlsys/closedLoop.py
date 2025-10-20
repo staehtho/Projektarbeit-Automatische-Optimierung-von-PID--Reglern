@@ -77,7 +77,7 @@ class ClosedLoop(ABC):
             t1: float = 10,
             dt: float = 0.01,
             method: str = "RK23",
-            anti_windup: bool = True
+            anti_windup: str = "clamping"
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Compute the step response of the system.
@@ -91,9 +91,12 @@ class ClosedLoop(ABC):
             dt (float): Time step for the simulation. Defaults to 0.01.
             method (str): Numerical integration method to use. Options are "RK23" or "RK4".
                 Defaults to "RK23".
-            anti_windup (bool, optional): If True, activates integrator clamping in
-                the controller to prevent windup when actuator saturation occurs.
-                Defaults to True.
+            anti_windup (str, optional):
+                Anti-windup method to prevent integrator windup. Possible values include:
+                    - `"clamping"`: Limit the integral term to actuator bounds.
+                    - `"conditional"`: Update the integral term only if output is within bounds
+                      or acts to reduce saturation.
+                If None, anti-windup may be disabled. Defaults to None.
 
         Returns:
             tuple[np.ndarray, np.ndarray]:
@@ -113,7 +116,7 @@ class ClosedLoop(ABC):
             x0: np.ndarray | None = None,
             y0: float = 0,
             method: str = "RK23",
-            anti_windup: bool = True
+            anti_windup: str = "clamping"
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Compute the system response to a given reference input signal.
@@ -131,9 +134,12 @@ class ClosedLoop(ABC):
             y0 (float, optional): Initial output of the system. Defaults to 0.
             method (str, optional): Numerical integration method. Options are "RK23" or "RK4".
                 Defaults to "RK23".
-            anti_windup (bool, optional): If True, activates integrator clamping in
-                the controller to prevent windup when actuator saturation occurs.
-                Defaults to True.
+            anti_windup (str, optional):
+                Anti-windup method to prevent integrator windup. Possible values include:
+                    - `"clamping"`: Limit the integral term to actuator bounds.
+                    - `"conditional"`: Update the integral term only if output is within bounds
+                      or acts to reduce saturation.
+                If None, anti-windup may be disabled. Defaults to None.
 
         Returns:
             tuple[np.ndarray, np.ndarray]:
@@ -157,7 +163,7 @@ class ClosedLoop(ABC):
             if method == "RK4":
                 x, y = self._plant.rk4_step(u, dt, x)
             else:
-                x, y = self._plant.tf2ivp(u, t, t + dt, x)
+                x, y = self._plant.tf2ivp(u, t, t + dt, x, method=method)
             y_hist.append(y)
             u_hist.append(u)
 
@@ -169,41 +175,51 @@ class ClosedLoop(ABC):
                              dt: float,
                              y: float,
                              set_point: float | None = None,
-                             anti_windup: bool = True
+                             anti_windup: str = "clamping"
                              ) -> float:
         """
-        Compute control output in the time domain (time-constant form).
-        Uses internal state memory between calls.
+        Compute the controller output in discrete time using internal state memory.
 
-        This method implements a discrete-time controller (e.g., PID) that updates its
-        internal states (such as integral and derivative terms) based on the current
-        measurement `y`, desired set point `set_point`, and time step `dt`. The controller
-        output `u(t)` can be clamped to prevent actuator saturation, and an optional
-        anti-windup mechanism can limit integrator growth when clamping occurs.
+        This method updates the internal states of a discrete-time controller
+        (e.g., PID) based on the current measurement `y`, the desired set point,
+        and the time step `dt`. The controller output `u(t)` can be limited
+        according to actuator constraints, and an optional anti-windup mechanism
+        can prevent integrator windup when saturation occurs.
 
         Args:
-            t (float): Current simulation time [s].
-            dt (float): Time step since the last controller update [s]. Used to scale
-                the integral and derivative contributions correctly.
-            y (float): Current measured process variable (feedback signal).
-            set_point (float, optional): Desired reference value for the process variable.
-                If None, the controller may use the last set point or a default value.
-                Defaults to None.
-            anti_windup (bool, optional): If True, activates integrator clamping in
-                the controller to prevent windup when actuator saturation occurs.
-                Defaults to True.
+            t (float):
+                Current simulation or control time in seconds.
+
+            dt (float):
+                Time step since the last controller update in seconds.
+                Used to scale the integral and derivative contributions correctly.
+
+            y (float):
+                Current measured process variable (feedback signal).
+
+            set_point (float | None, optional):
+                Desired reference value for the process variable. If None, the controller
+                may use the last stored set point or a default value. Defaults to None.
+
+            anti_windup (str, optional):
+                Anti-windup method to prevent integrator windup. Possible values include:
+                    - `"clamping"`: Limit the integral term to actuator bounds.
+                    - `"conditional"`: Update the integral term only if output is within bounds
+                      or acts to reduce saturation.
+                If None, anti-windup may be disabled. Defaults to None.
 
         Returns:
-            float: Control output u(t), typically in the range supported by the actuator.
-                The returned value may be limited to prevent saturation, and internal
-                integrator states may be adjusted accordingly if anti-windup is active.
+            float:
+                Controller output `u(t)`, typically in the actuator's valid range.
+                The output may be limited according to internal constraints, and the
+                integrator state may be adjusted if anti-windup is active.
 
         Notes:
             - The controller maintains internal state between calls, so it must be called
               sequentially in simulation or real-time control.
-            - Proper choice of `dt` is crucial for stable and accurate control behavior.
-            - If `anti_windup` is enabled, the integrator term will be adjusted to
-              prevent excessive overshoot caused by actuator limits.
+            - Accurate selection of `dt` is essential for stable and correct control behavior.
+            - Implementations may include proportional, integral, and derivative contributions,
+              with optional filtering on the derivative term.
         """
         pass
 

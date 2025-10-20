@@ -105,7 +105,6 @@ def bode_plot(
 
 
 def itae(t: np.ndarray, y: np.ndarray, set_point: float) -> float:
-    # TODO: ITAE mit dem von Büchi vergleichen
     """Compute the Integral of Time-weighted Absolute Error (ITAE).
 
     The ITAE criterion is defined as:
@@ -125,7 +124,7 @@ def itae(t: np.ndarray, y: np.ndarray, set_point: float) -> float:
     """
     # berechnet delta t, beginnend mit t[0] - t[0]
     dt = np.diff(t, prepend=t[0])
-#    # Compute absolute error
+    # Compute absolute error
     error = np.abs(set_point - y)
-#    # Integral approximation (time-weighted)
+    # Integral approximation (time-weighted)
     return float(np.sum(t * error * dt))

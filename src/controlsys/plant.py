@@ -248,7 +248,7 @@ class Plant:
         def dx_dt(t: float, x: np.ndarray) -> np.ndarray:
             return (self._A @ x + self._B.flatten() * u).flatten()
 
-        sol: Any = solve_ivp(dx_dt, (t0, t1), x0, t_eval=[t1], method=method, max_step=0.1)
+        sol: Any = solve_ivp(dx_dt, (t0, t1), x0, t_eval=[t1], method=method, rtol=1e-4, atol=1e-4)
         y = (self._C @ sol.y[:, -1] + self._D * u).item()
         return sol.y[:, -1], y
 
