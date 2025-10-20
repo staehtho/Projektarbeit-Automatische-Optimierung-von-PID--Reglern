@@ -69,6 +69,12 @@ class Plant:
             num_str = "[" + " ".join(map(str, self._num)) + "]"
             den_str = "[" + " ".join(map(str, self._den)) + "]"
             return f"tf({num_str}, {den_str})"
+        elif format_spec == "num":
+            num_str = "[" + " ".join(map(str, self._num)) + "];"
+            return num_str
+        elif format_spec == "den":
+            den_str = "[" + " ".join(map(str, self._den)) + "];"
+            return den_str
         else:
             raise NotImplementedError(f"Unsupported format specifier: '{format_spec}'")
 

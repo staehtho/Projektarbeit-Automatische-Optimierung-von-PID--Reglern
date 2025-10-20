@@ -6,7 +6,7 @@ from src.SystemsOld import SecondOrderSystem
 
 
 def main():
-    num = [1]
+    num = [1, 1]
     den = [1, 0.6, 1]
     plant: Plant = Plant(num, den)
     pid: PIDClosedLoop = PIDClosedLoop(plant=plant, Kp=10, Ti=3, Td=0.8)
@@ -22,6 +22,10 @@ def main():
         mat.run_simulation("closedloop_model_conditWindup", "yout", stop_time=20, max_step=0.001)
         t_mat = mat.t
         y_mat = mat.values['value_y']['value']
+        P_mat = mat.values['value_P']['value']
+        I_mat = mat.values['value_I']['value']
+        D_mat = mat.values['value_D']['value']
+        u_temp_mat = mat.values['value_u_temp']['value']
 
     # **************************************************************
     # Closed Loop Python
@@ -30,6 +34,7 @@ def main():
     P_py = pid.P_hist
     I_py = pid.I_hist
     D_py = pid.D_hist
+    u_temp_py = pid.U_temp_hist
 
     # t_sec, y_sec, _ = sec_sys.response()
 
@@ -38,6 +43,31 @@ def main():
     plt.plot(t_py, y_py, label="y (Python)")
     # plt.plot(t_sec, y_sec, label="y (Lukas)")
     plt.legend()
+    plt.grid()
+
+    plt.figure("P")
+    plt.plot(t_mat, P_mat, label="Matlab")
+    plt.plot(t_py, P_py, label="Python")
+    plt.legend()
+    plt.grid()
+
+    plt.figure("I")
+    plt.plot(t_mat, I_mat, label="Matlab")
+    plt.plot(t_py, I_py, label="Python")
+    plt.legend()
+    plt.grid()
+
+    plt.figure("D")
+    plt.plot(t_mat, D_mat, label="Matlab")
+    plt.plot(t_py, D_py, label="Python")
+    plt.legend()
+    plt.grid()
+
+    plt.figure("U_temp")
+    plt.plot(t_mat, u_temp_mat, label="Matlab")
+    plt.plot(t_py, u_temp_py, label="Python")
+    plt.legend()
+    plt.grid()
 
     # **************************************************************
     # ITAE

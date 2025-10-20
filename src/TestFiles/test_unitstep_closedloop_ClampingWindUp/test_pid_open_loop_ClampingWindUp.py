@@ -1,9 +1,6 @@
 from src.Matlab import MatlabInterface
 from src.controlsys import Plant, PIDClosedLoop, itae
 import matplotlib.pyplot as plt
-import numpy as np
-
-from src.SystemsOld import SecondOrderSystem
 
 
 def main():
@@ -17,18 +14,19 @@ def main():
     pid: PIDClosedLoop = PIDClosedLoop(plant=plant, Kp=10, Ti=9.6, Td=0.3)
 
     with MatlabInterface() as mat:
-        s = "tf('s');"
-        G = f"{plant: plant};"
+        G_num = f"{pid.plant: num}"
+        G_den = f"{pid.plant: den}"
+        F_num = "[1 0];"
+        F_den = "[0.01 1];"
         Kp = pid.Kp
         Td = pid.Td
         Ti = pid.Ti
-        F = f"s / ({0.01} * s + 1);"
-        mat.write_in_workspace(s=s, G=G, Kp=Kp, Td=Td, Ti=Ti, F=F)
-        mat.run_simulation("closedloop_model_ClampingWindup_fixed", "yout")
+        mat.write_in_workspace(G_num=G_num, G_den=G_den, F_num=F_num, F_den=F_den, Kp=Kp, Td=Td, Ti=Ti)
+        mat.run_simulation("closedloop_model_ClampingWindup", "yout")
         t_mat = mat.t
         y_mat = mat.values['value_y']['value']
-        np.savetxt('C:/Users/Flo/Desktop/pythonexporty.csv',y_mat, delimiter=',')
-        np.savetxt('C:/Users/Flo/Desktop/pythonexportt.csv', t_mat, delimiter=',')
+        '''np.savetxt('C:/Users/Flo/Desktop/pythonexporty.csv',y_mat, delimiter=',')
+        np.savetxt('C:/Users/Flo/Desktop/pythonexportt.csv', t_mat, delimiter=',')'''
 
     # **************************************************************
     # Closed Loop Python
@@ -38,12 +36,9 @@ def main():
     I_py = pid.I_hist
     D_py = pid.D_hist
 
-    # t_sec, y_sec, _ = sec_sys.response()
-
     plt.figure("Unit step Matlab vs Python")
     plt.plot(t_mat, y_mat, label="y (Matlab)")
     plt.plot(t_py, y_py, label="y (Python)")
-    # plt.plot(t_sec, y_sec, label="y (Lukas)")
     plt.legend()
 
     # **************************************************************
@@ -51,11 +46,9 @@ def main():
     # **************************************************************
     itae_mat = itae(t_mat, y_mat, 1)
     itae_py = itae(t_py, y_py, 1)
-    # itae_sec = itae(t_sec, y_sec, 1)
 
     print(f"ITAE Matlab: {itae_mat}")
     print(f"ITAE Python: {itae_py}")
-    # print(f"ITAE Lukas: {itae_sec}")
 
     print(
         f"ITAE der Schrittantwort einer Beispiels-PT2-Strecke unterscheidet sich um {abs(100 * (itae_py - itae_mat) / itae_mat)} % "
