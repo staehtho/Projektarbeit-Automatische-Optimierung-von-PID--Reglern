@@ -35,7 +35,11 @@ class MatlabInterface:
             start_time: float = 0,
             stop_time: float = 10,
             solver: str = "ode45",
-            max_step: float = 0.01,
+            max_step: float = 'auto',
+            # ToDo annotation korrigieren
+            min_step: float = 'auto',
+            abs_tol: float = 1e-4,
+            rel_tol: float = 1e-4,
             **kwargs: Any
     ) -> None:
         """
@@ -79,10 +83,14 @@ class MatlabInterface:
         # Run Simulink model
         self.engine.eval(f"""
             simIn = Simulink.SimulationInput('{simulink_model}');
-            simIn = simIn.setModelParameter('StartTime', '{start_time}', ...
+            simIn = simIn.setModelParameter(
+            'StartTime', '{start_time}', ...
             'StopTime', '{stop_time}', ...
             'Solver', '{solver}', ...
-            'MaxStep', '{max_step}');
+            'MaxStep', '{max_step}', ...
+            'MinStep', '{min_step}', ...
+            'AbsTol', '{abs_tol}', ...
+            'RelTol', '{rel_tol}');
             out = sim(simIn);
         """, nargout=0)
 

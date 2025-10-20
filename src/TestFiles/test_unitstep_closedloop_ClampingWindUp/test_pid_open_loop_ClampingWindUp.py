@@ -23,14 +23,14 @@ def main():
         Ti = pid.Ti
         F = f"s / ({0.01} * s + 1);"
         mat.write_in_workspace(s=s, G=G, Kp=Kp, Td=Td, Ti=Ti, F=F)
-        mat.run_simulation("closedloop_model_no_antiwindup", "yout", solver = "ode45", stop_time=10, max_step=0.0001)
+        mat.run_simulation("closedloop_model_ClampingWindup", "yout")
         t_mat = mat.t
         y_mat = mat.values['value_y']['value']
 
     # **************************************************************
     # Closed Loop Python
     # **************************************************************
-    t_py, y_py, u_py, e_py = pid.step_response(t0=0, t1=10, dt=0.0001, method="ODE45", anti_windup=False)
+    t_py, y_py, u_py, e_py = pid.step_response(t0=0, t1=10, dt=1e-4, method="ODE45", anti_windup=False)
     P_py = pid.P_hist
     I_py = pid.I_hist
     D_py = pid.D_hist

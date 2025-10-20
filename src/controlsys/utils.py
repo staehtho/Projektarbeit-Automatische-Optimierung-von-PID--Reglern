@@ -123,11 +123,25 @@ def itae(t: np.ndarray, y: np.ndarray, set_point: float) -> float:
     Returns:
         float: The computed ITAE value.
     """
-    # berechnet delta t, beginnend mit t[0] - t[0] 
-    dt = np.diff(t, prepend=t[0])
+    ## berechnet delta t, beginnend mit t[0] - t[0]
+    #dt = np.diff(t, prepend=t[0])
+#
+    ## Compute absolute error
+    #error = np.abs(set_point - y)
+#
+    ## Integral approximation (time-weighted)
+    #return float(np.sum(t * error * dt))
+#
 
-    # Compute absolute error
-    error = np.abs(set_point - y)
+    error_integral = 0.0
 
-    # Integral approximation (time-weighted)
-    return float(np.sum(t * error * dt))
+    for i in range(len(t)):
+        if i == 0:
+            dt = 0.0  # t[0] - t[0]
+        else:
+            dt = t[i] - t[i - 1]
+
+        error = abs(set_point - y[i])
+        error_integral += t[i] * error * dt
+
+    return float(error_integral)
