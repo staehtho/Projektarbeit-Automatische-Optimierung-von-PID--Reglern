@@ -1,6 +1,7 @@
 from src.Matlab import MatlabInterface
 from src.controlsys import Plant, PIDClosedLoop, itae
 import matplotlib.pyplot as plt
+import numpy as np
 
 from src.SystemsOld import SecondOrderSystem
 
@@ -23,9 +24,11 @@ def main():
         Ti = pid.Ti
         F = f"s / ({0.01} * s + 1);"
         mat.write_in_workspace(s=s, G=G, Kp=Kp, Td=Td, Ti=Ti, F=F)
-        mat.run_simulation("closedloop_model_ClampingWindup", "yout")
+        mat.run_simulation("closedloop_model_ClampingWindup_fixed", "yout")
         t_mat = mat.t
         y_mat = mat.values['value_y']['value']
+        np.savetxt('C:/Users/Flo/Desktop/pythonexporty.csv',y_mat, delimiter=',')
+        np.savetxt('C:/Users/Flo/Desktop/pythonexportt.csv', t_mat, delimiter=',')
 
     # **************************************************************
     # Closed Loop Python
