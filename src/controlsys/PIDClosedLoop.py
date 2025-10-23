@@ -144,6 +144,10 @@ class PIDClosedLoop(ClosedLoop):
     def D_hist(self) -> np.ndarray:
         return np.ndarray(self._D_hist)
 
+    @property
+    def control_constraint(self) -> list[float]:
+        return self._control_constraint
+
     # -------------------- Frequency Domain --------------------
 
     def controller(self, s: complex | np.ndarray) -> complex | np.ndarray:

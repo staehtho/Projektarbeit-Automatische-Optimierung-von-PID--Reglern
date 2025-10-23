@@ -97,6 +97,9 @@ class Plant:
         """Dominant time constant (used for derivative filter)."""
         return self._t1
 
+    def get_ABCD(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        return np.array(self._A, dtype=np.float64), np.array(self._B, dtype=np.float64), np.array(self._C, dtype=np.float64), np.array(self._D, dtype=np.float64),
+
     # ******************************
     # Methods
     # ******************************

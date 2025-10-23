@@ -1,10 +1,9 @@
+from src.controlsys import PsoFunc
 import random
 import numpy as np
 import copy
 import math
-from concurrent.futures import ProcessPoolExecutor
 from typing import Callable, List, Optional
-import time
 
 
 # TODO: PSO ist auf 3 Dimensionen beschränkt -> anpassen für dynamische Dimensionen
@@ -43,7 +42,7 @@ class Particle:
         self.pBest_position: Optional[List[float]] = pBest_position
 
 
-class Swarm:
+class SwarmNew:
     """Represents a swarm of particles for Particle Swarm Optimization (PSO).
 
     Attributes:
@@ -56,7 +55,7 @@ class Swarm:
     """
 
     def __init__(self,
-                 obj_func: Callable[[List[float]], float],
+                 obj_func: Callable[[np.ndarray], np.ndarray],
                  size: int,
                  bounds: List[List[float]],
                  randomness: Optional[float] = 1.0,
@@ -85,7 +84,7 @@ class Swarm:
             space_factor (Optional[float]): Factor for minimal particle space convergence criterion.
             convergence_factor (Optional[float]): Factor for cost convergence criterion.
         """
-        self.obj_func: Callable[[List[float]], float] = obj_func
+        self.obj_func: Callable[[np.ndarray], np.ndarray] = obj_func
         self.particles: List[Particle] = []
         self.c: int = 0
         self.iterations: int = 0
@@ -127,26 +126,21 @@ class Swarm:
         self.__initCosts()
         self.__initGlobalBest()
 
-    def __getCosts(self) -> List[float]:
+    def __getCosts(self) -> np.ndarray:
         """Evaluates the objective function for all particles.
 
         Returns:
             List[float]: Costs corresponding to each particle's position.
         """
         positions: List[List[float]] = [p.position for p in self.particles]
-        start = time.time()
-        with ProcessPoolExecutor() as executor:
-            costs: List[float] = list(executor.map(self.obj_func, positions))
-        end = time.time()
-        print(end - start)
-        return costs
+
+        return self.obj_func(np.array(positions, dtype=np.float64))
 
     def __initCosts(self) -> None:
         """Initializes particle costs and personal bests."""
         positions: List[List[float]] = [p.position for p in self.particles]
 
-        with ProcessPoolExecutor() as executor:
-            costs: List[float] = list(executor.map(self.obj_func, positions))
+        costs = self.obj_func(np.array(positions, dtype=np.float64))
 
         for particle, cost in zip(self.particles, costs):
             particle.cost = cost

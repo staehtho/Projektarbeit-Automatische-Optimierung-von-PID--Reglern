@@ -75,9 +75,9 @@ class ClosedLoop(ABC):
             self,
             t0: float = 0,
             t1: float = 10,
-            dt: float = 0.01,
+            dt: float = 1e-4,
             method: str = "RK23",
-            anti_windup: str = "clamping"
+            anti_windup_method: str = "clamping"
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Compute the step response of the system.
@@ -91,7 +91,7 @@ class ClosedLoop(ABC):
             dt (float): Time step for the simulation. Defaults to 0.01.
             method (str): Numerical integration method to use. Options are "RK23" or "RK4".
                 Defaults to "RK23".
-            anti_windup (str, optional):
+            anti_windup_method (str, optional):
                 Anti-windup method to prevent integrator windup. Possible values include:
                     - `"clamping"`: Limit the integral term to actuator bounds.
                     - `"conditional"`: Update the integral term only if output is within bounds
@@ -105,7 +105,7 @@ class ClosedLoop(ABC):
                 - y_hist (np.ndarray): Array of system output values corresponding to `t_eval`.
         """
         r = lambda t: 1
-        return self.system_response(r, t0, t1, dt, method=method, anti_windup=anti_windup)
+        return self.system_response(r, t0, t1, dt, method=method, anti_windup_method=anti_windup_method)
 
     def system_response(
             self,
@@ -116,7 +116,7 @@ class ClosedLoop(ABC):
             x0: np.ndarray | None = None,
             y0: float = 0,
             method: str = "RK23",
-            anti_windup: str = "clamping"
+            anti_windup_method: str = "clamping"
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Compute the system response to a given reference input signal.
@@ -134,7 +134,7 @@ class ClosedLoop(ABC):
             y0 (float, optional): Initial output of the system. Defaults to 0.
             method (str, optional): Numerical integration method. Options are "RK23" or "RK4".
                 Defaults to "RK23".
-            anti_windup (str, optional):
+            anti_windup_method (str, optional):
                 Anti-windup method to prevent integrator windup. Possible values include:
                     - `"clamping"`: Limit the integral term to actuator bounds.
                     - `"conditional"`: Update the integral term only if output is within bounds
@@ -159,7 +159,7 @@ class ClosedLoop(ABC):
         y = y0
         for t in t_eval:
             e_hist.append(r(t) - 0)
-            u = self.controller_time_step(t, dt, y, set_point=r(t), anti_windup=anti_windup)
+            u = self.controller_time_step(t, dt, y, set_point=r(t), anti_windup_method=anti_windup_method)
             if method == "RK4":
                 x, y = self._plant.rk4_step(u, dt, x)
             else:
@@ -175,7 +175,7 @@ class ClosedLoop(ABC):
                              dt: float,
                              y: float,
                              set_point: float | None = None,
-                             anti_windup: str = "clamping"
+                             anti_windup_method: str = "clamping"
                              ) -> float:
         """
         Compute the controller output in discrete time using internal state memory.
@@ -201,7 +201,7 @@ class ClosedLoop(ABC):
                 Desired reference value for the process variable. If None, the controller
                 may use the last stored set point or a default value. Defaults to None.
 
-            anti_windup (str, optional):
+            anti_windup_method (str, optional):
                 Anti-windup method to prevent integrator windup. Possible values include:
                     - `"clamping"`: Limit the integral term to actuator bounds.
                     - `"conditional"`: Update the integral term only if output is within bounds
