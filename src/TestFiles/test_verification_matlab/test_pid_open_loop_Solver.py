@@ -1,7 +1,7 @@
 from src.Matlab import MatlabInterface
 from src.controlsys import Plant, PIDClosedLoop, itae
 import matplotlib.pyplot as plt
-import numpy as np
+
 
 def main():
     num = [1]
@@ -22,13 +22,32 @@ def main():
         t_mat = mat.t
         y_mat = mat.values['value_y']['value']
 
-    #np.savetxt("C:/Users/Flo/Desktop/mat_t.csv", t_mat, delimiter=",", header="t_mat", comments='')
+    # **************************************************************
+    # Closed Loop Python
+    # **************************************************************
+    method = ['RK4', 'RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']
 
     plt.figure("Unit step Matlab vs Python")
     plt.plot(t_mat, y_mat, label="y (Matlab)")
 
     itae_mat = itae(t_mat, y_mat, 1)
     print(f"ITAE Matlab: {itae_mat}")
+    for meth in method:
+
+        t_py, y_py, u_py, e_py = pid.step_response(t0=0, t1=10, dt=1e-4, method=meth)
+
+        plt.plot(t_py, y_py, label=f"y (Python {meth})")
+
+        # **************************************************************
+        # ITAE
+        # **************************************************************
+        itae_py = itae(t_py, y_py, 1)
+
+        print(f"ITAE Python ({meth}): {itae_py}")
+
+    '''print(
+        f"ITAE der Schrittantwort einer Beispiels-PT2-Strecke unterscheidet sich um {abs(100 * (itae_py - itae_mat) / itae_mat)} % "
+        f"zwischen Matlab und Python (ITAE in Python gerechnet)")'''
 
     plt.legend()
     plt.show()
