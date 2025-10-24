@@ -1,4 +1,3 @@
-from src.controlsys import PsoFunc
 import random
 import numpy as np
 import copy
@@ -196,7 +195,7 @@ class SwarmNew:
             self.__updateVelocity(i, p)
             self.__updatePosition(p)
 
-        costs: List[float] = self.__getCosts()
+        costs = self.__getCosts()
 
         for particle, cost in zip(self.particles, costs):
             particle.cost = cost

@@ -1,11 +1,7 @@
-from concurrent.futures import ProcessPoolExecutor
-from src.controlsys import PsoFunc, Plant, PIDClosedLoop
-import random
+from src.controlsys import Plant, PIDClosedLoop
 import time
-import timeit
 
-from src.PSO import SwarmNew
-from src.controlsys.performance import _pso_func_jit
+from src.PSO import SwarmNew, PsoFunc
 
 
 def main():
@@ -16,7 +12,8 @@ def main():
 
     pid: PIDClosedLoop = PIDClosedLoop(plant, Kp=10, Ti=5, Td=3)
 
-    obj_func = PsoFunc(plant, 0, 10, 1e-4, 0.01, pid.control_constraint, "clamping", swarm_size)
+    pid.anti_windup_method = "clamping"
+    obj_func = PsoFunc(pid, 0, 10, 1e-4, swarm_size)
 
     average = 0
     av_Kp = 0
@@ -63,9 +60,6 @@ def main():
     av_itae /= n
     av_iterations /= n
     print(f"Average best swarm results: {n=} {av_Kp=:0.2f}, {av_Ti=:0.2f}, {av_Td=:0.2f}, {av_itae=:0.4f}, {av_iterations=}")
-
-    print(_pso_func_jit.nopython_signatures)
-    print(len(_pso_func_jit.nopython_signatures))
 
 
 if __name__ == "__main__":

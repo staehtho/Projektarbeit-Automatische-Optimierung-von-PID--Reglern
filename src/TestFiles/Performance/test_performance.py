@@ -1,6 +1,7 @@
 import timeit
-from src.controlsys import Plant, PIDClosedLoop, PsoFunc
+from src.controlsys import Plant, PIDClosedLoop
 import numpy as np
+from src.PSO import PsoFunc
 
 
 def main():
@@ -14,9 +15,9 @@ def main():
     swarm_size = 40
     plant = Plant(num, den)
     pid = PIDClosedLoop(plant, Kp=10, Ti=9.6, Td=0.3)
-    Tf = pid.Tf
+    pid.anti_windup_method = "clamping"
     
-    func = PsoFunc(plant, t0, t1, dt, Tf, pid.control_constraint, "clamping", swarm_size)
+    func = PsoFunc(pid, t0, t1, dt, swarm_size)
 
     average = timeit.timeit(lambda: func(np.array([[10, 9.6, 0.3] for _ in range(swarm_size)], dtype=np.float64)), number=n) / n
     print(f"Average with jit: {average} sec")

@@ -1,3 +1,5 @@
+from abc import ABC
+
 from .plant import Plant
 from .closedLoop import ClosedLoop
 import numpy as np
@@ -90,6 +92,8 @@ class PIDClosedLoop(ClosedLoop):
         # Control output constraints
         self._control_constraint = control_constraint or [-5.0, 5.0]
 
+        self._anti_windup_method: str = ""
+
         # Internal states for time-domain simulation
         self._e_prev: float = 0.0
         self._e_prev2: float = 0.0
@@ -147,6 +151,14 @@ class PIDClosedLoop(ClosedLoop):
     @property
     def control_constraint(self) -> list[float]:
         return self._control_constraint
+
+    @property
+    def anti_windup_method(self) -> str:
+        return self._anti_windup_method
+
+    @anti_windup_method.setter
+    def anti_windup_method(self, anti_windup_method) -> None:
+        self._anti_windup_method = anti_windup_method
 
     # -------------------- Frequency Domain --------------------
 
