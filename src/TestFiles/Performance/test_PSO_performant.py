@@ -1,7 +1,9 @@
-from src.controlsys import Plant, PIDClosedLoop
+import sys
+
+from src.controlsys import Plant, PIDClosedLoop, PsoFunc
 import time
 
-from src.PSO import SwarmNew, PsoFunc
+from src.PSO import SwarmNew
 
 
 def main():
@@ -16,12 +18,12 @@ def main():
     obj_func = PsoFunc(pid, 0, 10, 1e-4, swarm_size)
 
     average = 0
-    av_Kp = 0
-    av_Ti = 0
-    av_Td = 0
-    av_itae = 0
-    av_iterations = 0
-    n = 20
+    min_Kp = 0
+    min_Ti = 0
+    min_Td = 0
+    min_itae = sys.float_info.max
+    min_iterations = 0
+    n = 25
 
     for i in range(n):
         # Swarm-Optimierung
@@ -44,22 +46,18 @@ def main():
         space_precision = terminated_swarm.spaceFactor
         stall_precision = terminated_swarm.convergenceFactor
 
-        av_Kp += Kp
-        av_Ti += Ti
-        av_Td += Td
-        av_itae += itae
-        av_iterations += iterations
+        if itae < min_itae:
+            min_itae = itae
+            min_Kp = Kp
+            min_Ti = Ti
+            min_Td = Td
+            min_iterations = iterations
 
         print(f"Best swarm results: {i=} {Kp=:0.2f}, {Ti=:0.2f}, {Td=:0.2f}, {itae=:0.4f}, {iterations=}")
     average /= n
     print(f"{average=:0.2f} sec, {n=}")
 
-    av_Kp /= n
-    av_Ti /= n
-    av_Td /= n
-    av_itae /= n
-    av_iterations /= n
-    print(f"Average best swarm results: {n=} {av_Kp=:0.2f}, {av_Ti=:0.2f}, {av_Td=:0.2f}, {av_itae=:0.4f}, {av_iterations=}")
+    print(f"Min swarm results: {min_Kp=:0.2f}, {min_Ti=:0.2f}, {min_Td=:0.2f}, {min_itae=:0.4f}, {min_iterations=}")
 
 
 if __name__ == "__main__":

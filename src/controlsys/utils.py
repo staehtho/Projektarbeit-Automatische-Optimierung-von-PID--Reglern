@@ -1,7 +1,6 @@
 import numpy as np
 from typing import Callable, Union
 import matplotlib.pyplot as plt
-from numba import njit
 
 SystemData = Union[Callable[[np.ndarray], np.ndarray], tuple[np.ndarray, np.ndarray, np.ndarray]]
 
@@ -105,7 +104,6 @@ def bode_plot(
     plt.show()
 
 
-@njit
 def itae(t: np.ndarray, y: np.ndarray, set_point: float) -> float:
     """Compute the Integral of Time-weighted Absolute Error (ITAE).
 
