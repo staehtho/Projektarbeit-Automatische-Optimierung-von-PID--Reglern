@@ -1,6 +1,6 @@
-from abc import ABC
+from typing import Callable
 
-from .plant import Plant
+from .system import System
 from .closedLoop import ClosedLoop
 import numpy as np
 
@@ -18,7 +18,7 @@ class PIDClosedLoop(ClosedLoop):
         Kp, Ti, Td
 
     The derivative term is filtered using a first-order (PT1) filter with time constant:
-        Tf = derivative_filter_ratio * plant.t1
+        Tf = derivative_filter_ratio * system.t1
 
     Only one parameterization method should be used per initialization.
     Conversion between forms is handled automatically.
@@ -28,7 +28,7 @@ class PIDClosedLoop(ClosedLoop):
     """
 
     def __init__(self,
-                 plant: Plant,
+                 system: System,
                  *,
                  # Gain form
                  Kp: float = None,
@@ -38,26 +38,27 @@ class PIDClosedLoop(ClosedLoop):
                  Ti: float = None,
                  Td: float = None,
                  derivative_filter_ratio: float = 0.01,
-                 control_constraint: list[float] = None
+                 control_constraint: list[float] = None,
+                 anti_windup_method: str = "clamping"
                  ) -> None:
         """
         Initialize a PID closed-loop controller.
 
         Args:
-            plant (Plant): The controlled plant instance.
+            system (System): The controlled system instance.
             Kp (float, optional): Proportional gain (gain form).
             Ki (float, optional): Integral gain (gain form).
             Kd (float, optional): Derivative gain (gain form).
             Ti (float, optional): Integral time constant (time form).
             Td (float, optional): Derivative time constant (time form).
             derivative_filter_ratio (float, optional): Ratio to compute derivative filter time constant.
-                Tf = derivative_filter_ratio * plant.t1 (default: 0.01).
+                Tf = derivative_filter_ratio * system.t1 (default: 0.01).
             control_constraint (list[float], optional): [u_min, u_max] saturation limits. Defaults to [-5, 5].
 
         Raises:
             ValueError: If both or neither of the parameter sets (gain form, time form) are provided.
         """
-        super().__init__(plant)
+        super().__init__(system)
 
         # --- Parameter Validation ---
         gain_form = all(v is not None for v in (Kp, Ki, Kd))
@@ -86,23 +87,13 @@ class PIDClosedLoop(ClosedLoop):
 
         # Derivative filter time constant
         # TODO: Achtung hier für die Verifikation von Büchi diese gleich wie in Simulink implementieren
-        # self._tf = self._plant.t1 * derivative_filter_ratio
+        # self._tf = self._system.t1 * derivative_filter_ratio
         self._tf = 0.01
 
         # Control output constraints
         self._control_constraint = control_constraint or [-5.0, 5.0]
 
-        self._anti_windup_method: str = ""
-
-        # Internal states for time-domain simulation
-        self._e_prev: float = 0.0
-        self._e_prev2: float = 0.0
-        self._filtered_prev: float = 0.0
-        self._integral: float = 0.0
-
-        self._P_hist = []
-        self._I_hist = []
-        self._D_hist = []
+        self._anti_windup_method: str = anti_windup_method
 
     # -------------------- Properties --------------------
 
@@ -135,18 +126,6 @@ class PIDClosedLoop(ClosedLoop):
     def Tf(self) -> float:
         """Derivative filter time constant."""
         return self._tf
-
-    @property
-    def P_hist(self) -> np.ndarray:
-        return np.ndarray(self._P_hist)
-
-    @property
-    def I_hist(self) -> np.ndarray:
-        return np.ndarray(self._I_hist)
-
-    @property
-    def D_hist(self) -> np.ndarray:
-        return np.ndarray(self._D_hist)
 
     @property
     def control_constraint(self) -> list[float]:
@@ -204,149 +183,97 @@ class PIDClosedLoop(ClosedLoop):
 
     # -------------------- Time Domain --------------------
 
-    def controller_time_step(self,
-                             t: float,
-                             dt: float,
-                             y: float,
-                             set_point: float | None = None,
-                             anti_windup_method: str = "clamping"
-                             ) -> float:
+    def system_response(
+            self,
+            r: Callable[[np.ndarray], np.ndarray],
+            t0: float,
+            t1: float,
+            dt: float,
+            x0: np.ndarray | None = None,
+            y0: float = 0
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
-        Compute the controller output in discrete time (time-domain formulation).
+        Compute the system response for a given reference signal.
 
-        This method updates the internal states of a continuous-time PID (or similar)
-        controller using the current measurement `y`, the desired set point, and
-        the elapsed time step `dt`. It supports multiple anti-windup mechanisms to
-        prevent integrator windup when actuator limits are reached.
+        This method simulates the closed-loop response of a system with a PID controller
+        over a specified time interval. It numerically integrates the system dynamics
+        based on the system’s state-space representation (A, B, C, D) and applies the
+        selected anti-windup strategy.
 
         Args:
-            t (float):
-                Current simulation or control time in seconds.
-
+            r (Callable[[np.ndarray], np.ndarray]):
+                Reference signal as a function of time. Must accept a NumPy array of time
+                values and return an array of the same shape.
+            t0 (float):
+                Start time of the simulation.
+            t1 (float):
+                End time of the simulation.
             dt (float):
-                Time step since the previous controller update in seconds.
-                Used to correctly scale the integral and derivative terms.
-
-            y (float):
-                Current measured process variable (feedback signal).
-
-            set_point (float, optional):
-                Desired reference value for the process variable. If `None`, the
-                last internally stored set point (`self._set_point`) is used.
-                Defaults to `None`.
-
-            anti_windup_method (str, optional):
-                Method used to prevent integrator windup when actuator limits are hit.
-                Must be one of:
-
-                - `"clamping"`: Directly clamps the integral term to actuator limits.
-                - `"conditional"`: Updates the integrator only if the output is within
-                  actuator bounds or in a direction that reduces saturation.
-
-                Defaults to `"clamping"`.
+                Time step for numerical integration.
+            x0 (np.ndarray | None, optional):
+                Initial state vector of the system. If None, a zero vector of appropriate
+                dimension is used. Defaults to None.
+            y0 (float, optional):
+                Initial output value. Defaults to 0.
 
         Returns:
-            float:
-                Controller output signal `u(t)`, typically representing the actuator input.
-                The value is saturated according to the internal control constraints
-                (`self._control_constraint`).
+            tuple[np.ndarray, np.ndarray]:
+                A tuple containing:
+
+                - **t_eval** (*np.ndarray*): Array of time points over the simulation interval.
+                - **y** (*np.ndarray*): System output values corresponding to `t_eval`.
 
         Raises:
             NotImplementedError:
-                If `anti_windup_method` is not one of the supported options.
+                If an unsupported anti-windup method is specified.
 
         Notes:
-            - The controller keeps its internal state between calls.
-              It should therefore be called sequentially in a real-time loop or simulation.
-            - Proper choice of `dt` is critical for stability and accuracy.
-            - Derivative action uses a first-order (PT1) filter with time constant `self._tf`.
-            - Internal histories (`P_hist`, `I_hist`, `D_hist`, `U_temp_hist`) are updated
-              at each step for logging or plotting purposes.
-            - The proportional (`P`), integral (`I`), and derivative (`D`) components are
-              combined as:
-
-                  u(t) = P + I + D
-
-              before output saturation and anti-windup correction.
-
-        Example:
-            >>> # Assume controller instance `pid` has been properly initialized
-            >>> u = pid.controller_time_step(
-            ...     t=0.1,
-            ...     dt=0.01,
-            ...     y=2.5,
-            ...     set_point=3.0,
-            ...     anti_windup_method="conditional"
-            ... )
-            >>> print(u)
-            0.742
+            - The system dynamics are obtained from the state-space matrices (A, B, C, D).
+            - Supported anti-windup methods are:
+                - `"conditional"`: Update the integrator only when output is within limits or reduces saturation.
+                - `"clamping"`: Clamp the integrator term when the actuator saturates.
+            - Internally calls the compiled function `pid_system_response()` for performance.
         """
+        from .pso_system_optimization import pid_system_response
 
-        # ------------------------------
-        # Setpoint and Error
-        # ------------------------------
-        r = self._set_point if set_point is None else set_point
-        e = r - y
+        t_eval = np.arange(t0, t1 + dt, dt)
 
-        # --- Proportional term ---
-        P = self._kp * e
+        r_eval = r(t_eval)
 
-        # --- Derivative term (mit PT1-Filter) ---
-        de = (e - self._e_prev) / dt
-        alpha = dt / (self._tf + dt)
-        d_filtered = (1 - alpha) * self._filtered_prev + alpha * de
-        D = self._kp * self._td * d_filtered
+        if x0 is None:
+            x0 = np.zeros(self._system.get_system_order())
 
-        if anti_windup_method == "conditional":
-            # Integral term
-            I = self._kp * (1 / self._ti) * self._integral
-
-            # --- Conditional Integration Logik ---
-            # Integrator nur updaten, wenn keine Sättigung ODER Entlastungsrichtung
-            u_temp = P + I + D
-
-            u_min, u_max = self._control_constraint
-            if (u_max > u_temp > u_min) or \
-                    (u_temp >= u_max and e < 0) or \
-                    (u_temp <= u_min and e > 0):
-                self._integral += e * dt
-                # Integral term
-                I = self._kp * (1 / self._ti) * self._integral
-        elif anti_windup_method == "clamping":
-            # Integral term
-            self._integral += e * dt
-            I = self._kp * (1 / self._ti) * self._integral
-            I = float(np.clip(I, *self._control_constraint))
-
+        if self._anti_windup_method == "conditional":
+            anti_windup = 0
+        elif self._anti_windup_method == "clamping":
+            anti_windup = 1
         else:
-            raise NotImplementedError(f"Unsupported anti windup method: '{anti_windup_method}'")
+            raise NotImplementedError(f"Unsupported anti windup method: '{self._anti_windup_method}'")
 
-        # --- Gesamtausgang berechnen ---
-        u_unsat = P + I + D
+        A, B, C, D = self._system.get_ABCD()
 
-        # --- Stellgrößenbegrenzung am Reglerausgang ---
-        u_sat = float(np.clip(u_unsat, *self._control_constraint))
+        A = np.ascontiguousarray(A, dtype=np.float64)
+        # SISO → (n x 1)
+        B = B.flatten()
+        B = np.ascontiguousarray(B, dtype=np.float64)
+        # SISO → (1 x n) wird aber in ein (n x 1) umgeschrieben (Performance)
+        C = C.flatten()
+        C = np.ascontiguousarray(C, dtype=np.float64)
+        # SISO → D ist ein skalar
+        D = float(D[0, 0])
 
-        # Save filtered derivative for next step
-        self._filtered_prev = d_filtered
-
-        # Save histories for debugging / plotting
-        self._P_hist.append(P)
-        self._I_hist.append(I)
-        self._D_hist.append(D)
-
-        # Update previous error values
-        self._e_prev2 = self._e_prev
-        self._e_prev = e
-
-        return u_sat
-
-    def _reset_controller_time_step(self) -> None:
-        """Reset PID internal states before simulation."""
-        self._e_prev = 0.0
-        self._e_prev2 = 0.0
-        self._filtered_prev = 0.0
-        self._integral = 0.0
-        self._P_hist.clear()
-        self._I_hist.clear()
-        self._D_hist.clear()
+        y = pid_system_response(Kp=self._kp,
+                                Ti=self._ti,
+                                Td=self._td,
+                                Tf=self._tf,
+                                t_eval=t_eval,
+                                dt=dt,
+                                r_eval=r_eval,
+                                x=x0,
+                                control_constraint=np.array(self._control_constraint),
+                                anti_windup_method=anti_windup,
+                                A=A,
+                                B=B,
+                                C=C,
+                                D=D)
+        return t_eval, y

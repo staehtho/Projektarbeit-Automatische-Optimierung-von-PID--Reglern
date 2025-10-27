@@ -1,22 +1,22 @@
 import timeit
-from src.controlsys import Plant, PIDClosedLoop, PsoFunc
+from src.controlsys import System, PIDClosedLoop, PsoFunc
 import numpy as np
 
 
 def main():
 
-    n = 20
+    n = 10
     num = [1]
     den = [1, 2, 1]
 
     t0, t1 = 0, 10
     dt = 1e-4
     swarm_size = 40
-    plant = Plant(num, den)
-    pid = PIDClosedLoop(plant, Kp=10, Ti=9.6, Td=0.3)
+    system = System(num, den)
+    pid = PIDClosedLoop(system, Kp=10, Ti=9.6, Td=0.3)
     pid.anti_windup_method = "clamping"
     
-    func = PsoFunc(pid, t0, t1, dt, swarm_size)
+    func = PsoFunc(pid, t0, t1, dt, swarm_size=swarm_size)
     X = np.array([[10, 9.6, 0.3] for _ in range(swarm_size)], dtype=np.float64)
     average = timeit.timeit(lambda: func(X), number=n) / n
     print(f"Average with jit: {average: 0.6f} sec")

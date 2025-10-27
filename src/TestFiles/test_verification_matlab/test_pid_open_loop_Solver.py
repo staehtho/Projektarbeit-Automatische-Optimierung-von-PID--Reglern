@@ -1,17 +1,19 @@
+import numpy as np
+
 from src.Matlab import MatlabInterface
-from src.controlsys import Plant, PIDClosedLoop, itae
+from src.controlsys import System, PIDClosedLoop, itae
 import matplotlib.pyplot as plt
 
 
 def main():
     num = [1]
-    den = [1, 2, 1]
-    plant: Plant = Plant(num, den)
-    pid: PIDClosedLoop = PIDClosedLoop(plant=plant, Kp=10, Ti=9.6, Td=0.3)
+    den = [1, 0.6, 1]
+    system: System = System(num, den)
+    pid: PIDClosedLoop = PIDClosedLoop(system=system, Kp=10, Ti=3, Td=0.8)
 
     with MatlabInterface() as mat:
-        G_num = f"{pid.plant: num}"
-        G_den = f"{pid.plant: den}"
+        G_num = f"{pid.system: num}"
+        G_den = f"{pid.system: den}"
         F_num = f"{pid: tf_num}"
         F_den = f"{pid: tf_den}"
         Kp = pid.Kp
@@ -25,25 +27,23 @@ def main():
     # **************************************************************
     # Closed Loop Python
     # **************************************************************
-    method = ['RK4', 'RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']
 
     plt.figure("Unit step Matlab vs Python")
     plt.plot(t_mat, y_mat, label="y (Matlab)")
 
-    itae_mat = itae(t_mat, y_mat, 1)
+    itae_mat = itae(t_mat, y_mat, np.ones_like(t_mat))
     print(f"ITAE Matlab: {itae_mat}")
-    for meth in method:
 
-        t_py, y_py, u_py, e_py = pid.step_response(t0=0, t1=10, dt=1e-4, method=meth)
+    t_py, y_py = pid.step_response(t0=0, t1=10, dt=1e-4)
 
-        plt.plot(t_py, y_py, label=f"y (Python {meth})")
+    plt.plot(t_py, y_py, label=f"y (Python)")
 
-        # **************************************************************
-        # ITAE
-        # **************************************************************
-        itae_py = itae(t_py, y_py, 1)
+    # **************************************************************
+    # ITAE
+    # **************************************************************
+    itae_py = itae(t_py, y_py, np.ones_like(t_py))
 
-        print(f"ITAE Python ({meth}): {itae_py}")
+    print(f"ITAE Python: {itae_py}")
 
     '''print(
         f"ITAE der Schrittantwort einer Beispiels-PT2-Strecke unterscheidet sich um {abs(100 * (itae_py - itae_mat) / itae_mat)} % "

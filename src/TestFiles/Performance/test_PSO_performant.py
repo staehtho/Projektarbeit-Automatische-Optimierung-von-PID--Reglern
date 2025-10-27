@@ -1,6 +1,6 @@
 import sys
 
-from src.controlsys import Plant, PIDClosedLoop, PsoFunc
+from src.controlsys import System, PIDClosedLoop, PsoFunc
 import time
 
 from src.PSO import SwarmNew
@@ -8,14 +8,14 @@ from src.PSO import SwarmNew
 
 def main():
     swarm_size = 40
-    bounds = [[0, 0.1, 0], [100, 10000, 10]]
+    bounds = [[0, 0.1, 0], [10, 10, 10]]
 
-    plant: Plant = Plant([1], [1, 2, 1])
+    system: System = System([1], [1, 0.6, 1])
 
-    pid: PIDClosedLoop = PIDClosedLoop(plant, Kp=10, Ti=5, Td=3)
+    pid: PIDClosedLoop = PIDClosedLoop(system, Kp=10, Ti=5, Td=3)
 
     pid.anti_windup_method = "clamping"
-    obj_func = PsoFunc(pid, 0, 10, 1e-4, swarm_size)
+    obj_func = PsoFunc(pid, 0, 10, 1e-4, swarm_size=swarm_size)
 
     average = 0
     min_Kp = 0
@@ -42,9 +42,6 @@ def main():
         Td = terminated_swarm.gBest.pBest_position[2]
         itae = terminated_swarm.gBest.pBest_cost
         iterations = terminated_swarm.iterations
-        maxStall = terminated_swarm.maxStall
-        space_precision = terminated_swarm.spaceFactor
-        stall_precision = terminated_swarm.convergenceFactor
 
         if itae < min_itae:
             min_itae = itae

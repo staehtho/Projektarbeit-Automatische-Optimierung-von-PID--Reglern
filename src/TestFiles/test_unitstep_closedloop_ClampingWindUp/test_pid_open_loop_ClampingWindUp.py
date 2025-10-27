@@ -1,21 +1,18 @@
 from src.Matlab import MatlabInterface
-from src.controlsys import Plant, PIDClosedLoop, itae
+from src.controlsys import System, PIDClosedLoop, itae
 import matplotlib.pyplot as plt
 
 
 def main():
-    # TODO: Mit Simulink von Büchi prüfen -> [1], [1, 2, 1] im Verzeichnis: ITAE Examples
-    #  Alles zu erst in Simulink hardcoden und dann Schritt für Schritt diese ablösen, gleiche Einstellungen wie in
-    #  Simulink (Solver, Zeitschritte, variable Zeitschritte)
-    #  wo sind die unterschiede?
+
     num = [1]
     den = [1, 2, 1]
-    plant: Plant = Plant(num, den)
-    pid: PIDClosedLoop = PIDClosedLoop(plant=plant, Kp=10, Ti=9.6, Td=0.3)
+    system: System = System(num, den)
+    pid: PIDClosedLoop = PIDClosedLoop(system=system, Kp=10, Ti=9.6, Td=0.3)
 
     with MatlabInterface() as mat:
-        G_num = f"{pid.plant: num}"
-        G_den = f"{pid.plant: den}"
+        G_num = f"{pid.system: num}"
+        G_den = f"{pid.system: den}"
         F_num = "[1 0];"
         F_den = "[0.01 1];"
         Kp = pid.Kp
@@ -31,7 +28,7 @@ def main():
     # **************************************************************
     # Closed Loop Python
     # **************************************************************
-    t_py, y_py, u_py, e_py = pid.step_response(t0=0, t1=10, dt=1e-4, method="ODE45", anti_windup=False)
+    t_py, y_py, u_py, e_py = pid.step_response(t0=0, t1=10, dt=1e-4, method="ODE45")
     P_py = pid.P_hist
     I_py = pid.I_hist
     D_py = pid.D_hist

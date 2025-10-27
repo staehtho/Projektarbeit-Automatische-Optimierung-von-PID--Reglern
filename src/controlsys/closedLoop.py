@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from typing import Callable
-from .plant import Plant
+from .system import System
 
 
 class ClosedLoop(ABC):
-    def __init__(self, plant: Plant):
+    def __init__(self, system: System):
 
-        self._plant = plant
+        self._system = system
 
         # Standard-Sollwert (Einheitssprung)
         self._set_point: float = 1.0
@@ -19,9 +19,9 @@ class ClosedLoop(ABC):
         This produces the symbolic closed-loop transfer function:
             G_cl(s) = (C(s) * G(s)) / (1 + C(s) * G(s))
 
-        The controller and plant are formatted using their own __format__ methods:
+        The controller and system are formatted using their own __format__ methods:
             - Controller:  f"{self:controller}"
-            - Plant:       f"{self._plant:plant}"
+            - System:       f"{self._system:system}"
 
         Args:
             format_spec (str): Format type.
@@ -38,17 +38,17 @@ class ClosedLoop(ABC):
 
         if format_spec == "cl":
             controller_str = format(self, "controller")
-            plant_str = format(self._plant, "plant")
+            system_str = format(self._system, "system")
 
-            num_str = f"{controller_str} * {plant_str}"
-            den_str = f"1 + {controller_str} * {plant_str}"
+            num_str = f"{controller_str} * {system_str}"
+            den_str = f"1 + {controller_str} * {system_str}"
             return f"({num_str}) / ({den_str})"
         else:
             raise NotImplementedError(f"Unsupported format specifier: '{format_spec}'")
 
     @property
-    def plant(self) -> Plant:
-        return self._plant
+    def system(self) -> System:
+        return self._system
 
     @abstractmethod
     def controller(self, s: complex | np.ndarray) -> complex | np.ndarray:
@@ -66,7 +66,7 @@ class ClosedLoop(ABC):
     def closed_loop(self, s: complex | np.ndarray) -> complex | np.ndarray:
         """Closed-loop transfer function."""
         C = self.controller(s)
-        G = self._plant.system(s)
+        G = self._system.system(s)
         return (C * G) / (1 + C * G)
 
     # ToDo: Integration Stoeruebertragungsfunktion
@@ -75,154 +75,46 @@ class ClosedLoop(ABC):
             self,
             t0: float = 0,
             t1: float = 10,
-            dt: float = 1e-4,
-            method: str = "RK23",
-            anti_windup_method: str = "clamping"
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+            dt: float = 1e-4
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Compute the step response of the system.
 
-        This method generates a step input signal and computes the system response
-        over the specified time interval using the specified numerical integration method.
+        This method generates a unit step input signal and computes the corresponding
+        system response over a specified time interval using the defined numerical
+        integration method.
 
         Args:
-            t0 (float): Start time of the simulation. Defaults to 0.
-            t1 (float): End time of the simulation. Defaults to 10.
-            dt (float): Time step for the simulation. Defaults to 0.01.
-            method (str): Numerical integration method to use. Options are "RK23" or "RK4".
-                Defaults to "RK23".
-            anti_windup_method (str, optional):
-                Anti-windup method to prevent integrator windup. Possible values include:
-                    - `"clamping"`: Limit the integral term to actuator bounds.
-                    - `"conditional"`: Update the integral term only if output is within bounds
-                      or acts to reduce saturation.
-                If None, anti-windup may be disabled. Defaults to None.
+            t0 (float, optional): Start time of the simulation. Defaults to 0.
+            t1 (float, optional): End time of the simulation. Defaults to 10.
+            dt (float, optional): Time step for the simulation. Defaults to 1e-4.
 
         Returns:
             tuple[np.ndarray, np.ndarray]:
                 A tuple containing:
-                - t_eval (np.ndarray): Array of time points.
-                - y_hist (np.ndarray): Array of system output values corresponding to `t_eval`.
-        """
-        r = lambda t: 1
-        return self.system_response(r, t0, t1, dt, method=method, anti_windup_method=anti_windup_method)
 
+                - **t_eval** (*np.ndarray*): Array of time points.
+                - **y_hist** (*np.ndarray*): Array of system output values corresponding to `t_eval`.
+
+        Notes:
+            The step input `r(t)` is defined as a constant signal equal to 1 for all `t >= 0`.
+
+            This method internally calls :meth:`system_response`, which performs the actual
+            system simulation given the reference signal.
+        """
+        r = lambda t: np.ones_like(t)
+        return self.system_response(r, t0, t1, dt)
+
+    @abstractmethod
     def system_response(
             self,
-            r: Callable[[float], float],
+            r: Callable[[np.ndarray], np.ndarray],
             t0: float,
             t1: float,
             dt: float,
             x0: np.ndarray | None = None,
-            y0: float = 0,
-            method: str = "RK23",
-            anti_windup_method: str = "clamping"
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """
-        Compute the system response to a given reference input signal.
+            y0: float = 0
+    ) -> tuple[np.ndarray, np.ndarray]:
 
-        This method simulates the system over the specified time interval using the
-        provided reference function `r(t)` and numerical integration method.
-
-        Args:
-            r (Callable[[float], float]): Reference input function of time.
-            t0 (float): Start time of the simulation.
-            t1 (float): End time of the simulation.
-            dt (float): Time step for the simulation.
-            x0 (np.ndarray | None, optional): Initial state of the system. If None, defaults
-                to zero vector of system order. Defaults to None.
-            y0 (float, optional): Initial output of the system. Defaults to 0.
-            method (str, optional): Numerical integration method. Options are "RK23" or "RK4".
-                Defaults to "RK23".
-            anti_windup_method (str, optional):
-                Anti-windup method to prevent integrator windup. Possible values include:
-                    - `"clamping"`: Limit the integral term to actuator bounds.
-                    - `"conditional"`: Update the integral term only if output is within bounds
-                      or acts to reduce saturation.
-                If None, anti-windup may be disabled. Defaults to None.
-
-        Returns:
-            tuple[np.ndarray, np.ndarray]:
-                - t_eval (np.ndarray): Array of time points.
-                - y_hist (np.ndarray): Array of system output values corresponding to `t_eval`.
-        """
-        if x0 is None:
-            x0 = np.zeros(self._plant.get_system_order())
-
-        self._reset_controller_time_step()
-
-        t_eval = np.arange(t0, t1, dt)
-        y_hist = []
-        u_hist = []
-        e_hist = []
-        x = x0
-        y = y0
-        for t in t_eval:
-            e_hist.append(r(t) - 0)
-            u = self.controller_time_step(t, dt, y, set_point=r(t), anti_windup_method=anti_windup_method)
-            if method == "RK4":
-                x, y = self._plant.rk4_step(u, dt, x)
-            else:
-                x, y = self._plant.tf2ivp(u, t, t + dt, x, method=method)
-            y_hist.append(y)
-            u_hist.append(u)
-
-        return t_eval, np.array(y_hist), np.array(u_hist), np.array(e_hist)
-
-    @abstractmethod
-    def controller_time_step(self,
-                             t: float,
-                             dt: float,
-                             y: float,
-                             set_point: float | None = None,
-                             anti_windup_method: str = "clamping"
-                             ) -> float:
-        """
-        Compute the controller output in discrete time using internal state memory.
-
-        This method updates the internal states of a discrete-time controller
-        (e.g., PID) based on the current measurement `y`, the desired set point,
-        and the time step `dt`. The controller output `u(t)` can be limited
-        according to actuator constraints, and an optional anti-windup mechanism
-        can prevent integrator windup when saturation occurs.
-
-        Args:
-            t (float):
-                Current simulation or control time in seconds.
-
-            dt (float):
-                Time step since the last controller update in seconds.
-                Used to scale the integral and derivative contributions correctly.
-
-            y (float):
-                Current measured process variable (feedback signal).
-
-            set_point (float | None, optional):
-                Desired reference value for the process variable. If None, the controller
-                may use the last stored set point or a default value. Defaults to None.
-
-            anti_windup_method (str, optional):
-                Anti-windup method to prevent integrator windup. Possible values include:
-                    - `"clamping"`: Limit the integral term to actuator bounds.
-                    - `"conditional"`: Update the integral term only if output is within bounds
-                      or acts to reduce saturation.
-                If None, anti-windup may be disabled. Defaults to None.
-
-        Returns:
-            float:
-                Controller output `u(t)`, typically in the actuator's valid range.
-                The output may be limited according to internal constraints, and the
-                integrator state may be adjusted if anti-windup is active.
-
-        Notes:
-            - The controller maintains internal state between calls, so it must be called
-              sequentially in simulation or real-time control.
-            - Accurate selection of `dt` is essential for stable and correct control behavior.
-            - Implementations may include proportional, integral, and derivative contributions,
-              with optional filtering on the derivative term.
-        """
         pass
 
-    @abstractmethod
-    def _reset_controller_time_step(self) -> None:
-        pass

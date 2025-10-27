@@ -1,7 +1,9 @@
 import numpy as np
 import time
 from numba import njit, prange, types, float64, int8
-from src.controlsys import ClosedLoop, PIDClosedLoop
+from .closedLoop import ClosedLoop
+from .PIDClosedLoop import PIDClosedLoop
+from typing import Callable
 
 
 class PsoFunc:
@@ -12,10 +14,12 @@ class PsoFunc:
     for a given set of PID parameters. It pre-compiles Numba functions for speed.
 
     Attributes:
-        _controller (ClosedLoop): The PID controller instance.
+        controller (ClosedLoop): The PID controller instance.
         t0 (float): Simulation start time.
         t1 (float): Simulation end time.
         dt (float): Simulation time step.
+        r (Callable[[np.ndarray], np.ndarray] | None): Reference (setpoint) function
+            defining the desired output over time. If None, a unit step is used.
         A (np.ndarray): State-space matrix A.
         B (np.ndarray): State-space input vector B.
         C (np.ndarray): State-space output vector C.
@@ -25,18 +29,35 @@ class PsoFunc:
         swarm_size (int): Number of particles in the PSO swarm.
     """
 
-    def __init__(self, controller: ClosedLoop, t0: float, t1: float, dt: float, swarm_size: int):
+    def __init__(self, controller: ClosedLoop, t0: float, t1: float, dt: float,
+                 r: Callable[[np.ndarray], np.ndarray] | None = None, swarm_size: int = 40) -> None:
+        """Initialize the PSO function wrapper.
 
-        self._controller = controller
+        Args:
+            controller (ClosedLoop): PID controller instance.
+            t0 (float): Simulation start time.
+            t1 (float): Simulation end time.
+            dt (float): Simulation time step.
+            r (Callable[[np.ndarray], np.ndarray] | None, optional): Reference function.
+                If None, a unit step is used. Defaults to None.
+            swarm_size (int, optional): Number of particles in the swarm. Defaults to 40.
+        """
+        self.controller = controller
 
         self.t0 = t0
         self.t1 = t1
         self.dt = dt
         self.t_eval = np.arange(t0, t1 + dt, dt)
-        self.r_eval = np.ones_like(self.t_eval)
+
+        self.r = r
+
+        if self.r is None:
+            self.r = lambda t: np.ones_like(t)
+
+        self.r_eval = self.r(self.t_eval)
 
         # Extract state-space matrices and ensure they are contiguous for Numba
-        A, B, C, D = self._controller.plant.get_ABCD()
+        A, B, C, D = self.controller.system.get_ABCD()
         self.A = A
         self.A = np.ascontiguousarray(A, dtype=np.float64)
         # SISO → (n x 1)
@@ -48,16 +69,16 @@ class PsoFunc:
         # SISO → D ist ein skalar
         self.D = float(D[0, 0])
 
-        self.system_order = self._controller.plant.get_system_order()
+        self.system_order = self.controller.system.get_system_order()
 
         self.controller_param: dict[str, str | float | np.ndarray]
 
         self.swarm_size = swarm_size
 
         # Extract PID-specific parameters
-        if isinstance(self._controller, PIDClosedLoop):
+        if isinstance(self.controller, PIDClosedLoop):
 
-            pid: PIDClosedLoop = self._controller
+            pid: PIDClosedLoop = self.controller
 
             if pid.anti_windup_method == "conditional":
                 anti_windup = 0
@@ -82,19 +103,28 @@ class PsoFunc:
         end = time.time()
         print(f"pre-compiling: {end - start: 0.6f} sec")
 
-    def __call__(self, X) -> np.ndarray:
-        """Evaluate ITAE for a batch of PID parameters using PSO."""
+    def __call__(self, X: np.ndarray) -> np.ndarray:
+        """Evaluate the ITAE criterion for a batch of PID parameter sets.
+
+        Args:
+            X (np.ndarray): PID parameter matrix of shape (swarm_size, 3).
+
+        Returns:
+            np.ndarray: ITAE values for each particle.
+        """
         start = time.time()
         X = np.array(X, dtype=np.float64)
         if X.ndim == 1:
             X = X.reshape(1, -1)
 
-        itae_val = []
-        if isinstance(self._controller, PIDClosedLoop):
+        if isinstance(self.controller, PIDClosedLoop):
             itae_val = _pid_pso_func(X, self.t_eval, self.dt, self.r_eval, self.A, self.B, self.C, self.D,
                                      self.system_order, self.controller_param["Tf"],
                                      self.controller_param["control_constraint"], self.controller_param["anti_windup"],
                                      self.swarm_size)
+
+        else:
+            raise NotImplementedError(f"Unsupported controller type: '{type(self.controller)}'")
 
         end = time.time()
         # print(f"{end - start:0.3f} sec")
@@ -104,7 +134,7 @@ class PsoFunc:
 # =============================================================================
 # Helper Functions
 # =============================================================================
-@njit(float64[:](float64[:, :], float64[:]), fastmath=True, cache=True, inline="always")
+@njit(float64[:](float64[:, :], float64[:]), cache=True, inline="always")
 def _matvec_auto(A: np.ndarray, x: np.ndarray) -> np.ndarray:
     """Perform matrix-vector multiplication manually for Numba.
 
@@ -127,16 +157,16 @@ def _matvec_auto(A: np.ndarray, x: np.ndarray) -> np.ndarray:
     return y
 
 
-@njit(float64(float64[:], float64[:]), fastmath=True, cache=True, inline="always")
+@njit(float64(float64[:], float64[:]), cache=True, inline="always")
 def dot1D(x: np.ndarray, y: np.ndarray) -> float:
-    """Compute dot product of 1D arrays manually for Numba.
+    """Compute dot product of two 1D vectors manually for Numba.
 
     Args:
         x (np.ndarray): Vector x.
         y (np.ndarray): Vector y.
 
     Returns:
-        float: Dot product.
+        float: Dot product result.
     """
     acc = 0.0
     for i in range(x.shape[0]):
@@ -151,7 +181,7 @@ def dot1D(x: np.ndarray, y: np.ndarray) -> float:
     types.UniTuple(float64, 3)(
         float64, float64, float64, float64, float64, float64, float64, float64, float64, float64, float64, int8
     ),
-    fastmath=True, cache=True, inline="always"
+    cache=True, inline="always"
 )
 def pid_update(e: float, e_prev: float, filtered_prev: float, integral: float,
                Kp: float, Ti: float, Td: float, Tf: float, dt: float, u_min: float, u_max: float,
@@ -161,19 +191,19 @@ def pid_update(e: float, e_prev: float, filtered_prev: float, integral: float,
     Args:
         e (float): Current error.
         e_prev (float): Previous error.
-        filtered_prev (float): Previous filtered derivative.
+        filtered_prev (float): Previous filtered derivative term.
         integral (float): Current integral term.
-        Kp (float): PID parameter.
-        Ti (float): PID parameter.
-        Td (float): PID parameter.
-        Tf (float): PID parameter.
-        dt (float): Time step.
-        u_min (float): lower Control limits.
-        u_max (float): upper Control limits.
-        anti_windup_method (int): 0=Conditional, 1=Clamping.
+        Kp (float): Proportional gain.
+        Ti (float): Integral time constant.
+        Td (float): Derivative time constant.
+        Tf (float): Derivative filter time constant.
+        dt (float): Simulation time step.
+        u_min (float): Lower control limit.
+        u_max (float): Upper control limit.
+        anti_windup_method (int): Anti-windup strategy (0=Conditional, 1=Clamping).
 
     Returns:
-        tuple[float, float, float]: (control signal, updated integral, updated derivative)
+        tuple[float, float, float]: Updated (control signal, integral, derivative).
     """
     # PID terms
     P = Kp * e
@@ -208,19 +238,19 @@ def pid_update(e: float, e_prev: float, filtered_prev: float, integral: float,
 # =============================================================================
 # ODE Solver
 # =============================================================================
-@njit(float64[:](float64[:, :], float64[:], float64[:], float64, float64), fastmath=True, cache=True, inline="always")
+@njit(float64[:](float64[:, :], float64[:], float64[:], float64, float64), cache=True, inline="always")
 def rk4(A: np.ndarray, B: np.ndarray, x: np.ndarray, u: float, dt: float) -> np.ndarray:
-    """Runge-Kutta 4 integration step.
+    """Perform a single Runge–Kutta 4th order (RK4) integration step.
 
     Args:
-        A  (np.ndarray): State-space matrix (SISO).
-        B (np.ndarray): State-space vector (SISO).
+        A (np.ndarray): System matrix.
+        B (np.ndarray): Input matrix.
         x (np.ndarray): Current state.
         u (float): Control input.
-        dt (float): Time step.
+        dt (float): Integration time step.
 
     Returns:
-        np.ndarray: Updated state.
+        np.ndarray: Updated state vector.
     """
     Bu = B * u
     k1 = _matvec_auto(A, x) + Bu
@@ -235,28 +265,29 @@ def rk4(A: np.ndarray, B: np.ndarray, x: np.ndarray, u: float, dt: float) -> np.
 # =============================================================================
 # ITAE Cost Function
 # =============================================================================
-@njit(float64(float64[:], float64[:], float64[:]), fastmath=True, cache=True, inline="always")
+@njit(float64(float64[:], float64[:], float64[:]), cache=True, inline="always")
 def itae(t: np.ndarray, y: np.ndarray, r: np.ndarray) -> float:
     """Compute the Integral of Time-weighted Absolute Error (ITAE).
 
     The ITAE criterion is defined as:
 
-        ITAE = ∫ t * |set_point - y(t)| dt
+        ITAE = ∫ t * |r(t) - y(t)| dt
 
-    It penalizes errors that persist over time, emphasizing fast
-    settling and minimal steady-state error.
+    It penalizes long-lasting errors, promoting fast settling and
+    small steady-state deviation.
 
     Args:
         t (np.ndarray): Time vector [s].
-        y (np.ndarray): System output corresponding to `t`.
-        r (np.ndarray): Desired reference value.
+        y (np.ndarray): System output trajectory.
+        r (np.ndarray): Reference trajectory.
 
     Returns:
-        float: The computed ITAE value.
+        float: Computed ITAE value.
     """
     # berechnet delta t, beginnend mit t[0] - t[0]
     val = 0
     for i in range(1, t.shape[0]):
+
         val += t[i] * np.abs(r[i] - y[i]) * (t[i] - t[i - 1])
 
     return val
@@ -266,10 +297,56 @@ def itae(t: np.ndarray, y: np.ndarray, r: np.ndarray) -> float:
 # System Response
 # =============================================================================
 @njit(float64[:](
-        float64, float64, float64, float64, float64[:], float64, float64[:], float64[:], float64[:], int8,
-        float64[:, :], float64[:], float64[:], float64
-    ),
-    fastmath=True, cache=True, inline="always"
+    float64[:], float64, float64[:], float64[:],
+    float64[:, :], float64[:], float64[:], float64
+),
+    cache=True, inline="always"
+)
+def system_response(t_eval: np.ndarray, dt: float, u_eval: np.ndarray,
+                    x: np.ndarray, A: np.ndarray, B: np.ndarray,
+                    C: np.ndarray, D: float) -> np.ndarray:
+    """Simulate the open-loop (uncontrolled) response of a SISO system.
+
+    This function computes the output of a single-input single-output (SISO)
+    linear time-invariant (LTI) system described in state-space form:
+
+        dx/dt = A * x + B * r
+        y = C * x + D * r
+
+    Args:
+        t_eval (np.ndarray): Time vector for simulation.
+        dt (float): Integration time step.
+        u_eval (np.ndarray): Input trajectory (e.g., step input).
+        x (np.ndarray): Initial state vector.
+        A (np.ndarray): System matrix.
+        B (np.ndarray): Input matrix.
+        C (np.ndarray): Output matrix.
+        D (float): Feedthrough term.
+
+    Returns:
+        np.ndarray: System output trajectory y(t).
+    """
+    n_steps = len(t_eval)
+    y_hist = np.zeros(n_steps)
+
+    for i in range(n_steps):
+        u = float(u_eval[i])
+
+        # Zustand aktualisieren (numerische Integration)
+        x = rk4(A, B, x, u, dt)
+
+        # Ausgang berechnen
+        y = dot1D(C, x)
+        y_hist[i] = y + D * u
+
+    return y_hist
+
+
+@njit(float64[:](
+    float64, float64, float64, float64, float64[:], float64, float64[:], float64[:], float64[:], int8,
+    float64[:, :], float64[:], float64[:], float64
+),
+    cache=True, inline="always"
 )
 def pid_system_response(Kp: float, Ti: float, Td: float, Tf: float,
                         t_eval: np.ndarray, dt: float, r_eval: np.ndarray,
@@ -279,23 +356,23 @@ def pid_system_response(Kp: float, Ti: float, Td: float, Tf: float,
     """Simulate a SISO system under PID control.
 
     Args:
-        Kp (float): PID parameter.
-        Ti (float): PID parameter.
-        Td (float): PID parameter.
-        Tf (float): PID parameter.
+        Kp (float): Proportional gain.
+        Ti (float): Integral time constant.
+        Td (float): Derivative time constant.
+        Tf (float): Derivative filter time constant.
         t_eval (np.ndarray): Time vector.
-        dt (float): Time step.
+        dt (float): Simulation time step.
         r_eval (np.ndarray): Reference trajectory.
-        x (np.ndarray): Initial state.
-        control_constraint (np.ndarray): [u_min, u_max].
-        anti_windup_method (int): Anti-windup strategy.
-        A (np.ndarray, float): State-space matrix (SISO).
-        B (np.ndarray, float): State-space vector (SISO).
-        C (np.ndarray, float): State-space vector (SISO).
-        D (float): State-space skalar (SISO).
+        x (np.ndarray): Initial state vector.
+        control_constraint (np.ndarray): Control limits [u_min, u_max].
+        anti_windup_method (int): Anti-windup strategy (0=Conditional, 1=Clamping).
+        A (np.ndarray): System matrix.
+        B (np.ndarray): Input matrix.
+        C (np.ndarray): Output matrix.
+        D (float): Feedthrough scalar.
 
     Returns:
-        np.ndarray: Output trajectory y(t).
+        np.ndarray: System output trajectory y(t).
     """
     # Initialisierung
     e_prev = 0.0
@@ -331,7 +408,7 @@ def pid_system_response(Kp: float, Ti: float, Td: float, Tf: float,
 # =============================================================================
 # PSO Function
 # =============================================================================
-@njit(parallel=True, fastmath=True, cache=True)
+@njit(parallel=True, cache=True)
 def _pid_pso_func(X: np.ndarray, t_eval: np.ndarray, dt: float, r_eval: np.ndarray,
                   A: np.ndarray, B: np.ndarray, C: np.ndarray, D: float,
                   system_order: int, Tf: float, control_constraint: np.ndarray, anti_windup_method: int,
@@ -339,30 +416,30 @@ def _pid_pso_func(X: np.ndarray, t_eval: np.ndarray, dt: float, r_eval: np.ndarr
     """Compute ITAE values for multiple PID parameter sets in parallel.
 
     Args:
-        X (np.ndarray): PID parameters for each particle, shape (swarm_size, 3).
+        X (np.ndarray): PID parameters (Kp, Ti, Td) for each particle, shape (swarm_size, 3).
         t_eval (np.ndarray): Time vector.
         dt (float): Simulation time step.
-        r_eval (np.ndarray): step.
-        A (np.ndarray, float): State-space matrix (SISO).
-        B (np.ndarray, float): State-space vector (SISO).
-        C (np.ndarray, float): State-space vector (SISO).
-        D (float): State-space skalar (SISO).
-        system_order (int): Plant order.
+        r_eval (np.ndarray): Reference trajectory.
+        A (np.ndarray): System matrix.
+        B (np.ndarray): Input matrix.
+        C (np.ndarray): Output matrix.
+        D (float): Feedthrough scalar.
+        system_order (int): Order of the system.
         Tf (float): Derivative filter time constant.
-        control_constraint (np.ndarray): [u_min, u_max].
-        anti_windup_method (int): 0=Conditional, 1=Clamping.
+        control_constraint (np.ndarray): Control limits [u_min, u_max].
+        anti_windup_method (int): Anti-windup strategy (0=Conditional, 1=Clamping).
         swarm_size (int): Number of particles.
 
     Returns:
-        np.ndarray: ITAE values for each particle, shape (swarm_size,).
+        np.ndarray: ITAE values for each particle.
     """
     itae_val = np.zeros(swarm_size)
 
-    for s in prange(swarm_size):
+    for i in prange(swarm_size):
         # Simulation des PID-regulierten Systems
-        Kp = float(X[s, 0])
-        Ti = float(X[s, 1])
-        Td = float(X[s, 2])
+        Kp = float(X[i, 0])
+        Ti = float(X[i, 1])
+        Td = float(X[i, 2])
 
         x = np.zeros(system_order, dtype=np.float64)  # Anfangszustand
 
@@ -370,6 +447,6 @@ def _pid_pso_func(X: np.ndarray, t_eval: np.ndarray, dt: float, r_eval: np.ndarr
                                 anti_windup_method, A, B, C, D)
 
         # ITAE-Kosten berechnen
-        itae_val[s] = itae(t_eval, y, r_eval)
+        itae_val[i] = itae(t_eval, y, r_eval)
 
     return itae_val

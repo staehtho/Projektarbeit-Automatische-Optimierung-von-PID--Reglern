@@ -102,29 +102,3 @@ def bode_plot(
     ax_mag.legend()
     plt.tight_layout()
     plt.show()
-
-
-def itae(t: np.ndarray, y: np.ndarray, set_point: float) -> float:
-    """Compute the Integral of Time-weighted Absolute Error (ITAE).
-
-    The ITAE criterion is defined as:
-
-        ITAE = ∫ t * |set_point - y(t)| dt
-
-    It penalizes errors that persist over time, emphasizing fast
-    settling and minimal steady-state error.
-
-    Args:
-        t (np.ndarray): Time vector [s].
-        y (np.ndarray): System output corresponding to `t`.
-        set_point (float): Desired reference value.
-
-    Returns:
-        float: The computed ITAE value.
-    """
-    # berechnet delta t, beginnend mit t[0] - t[0]
-    val = 0
-    for i in range(1, t.shape[0]):
-        val += t[i] * np.abs(set_point - y[i]) * (t[i] - t[i - 1])
-
-    return val

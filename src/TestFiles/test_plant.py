@@ -1,43 +1,30 @@
 import numpy as np
-from src.controlsys import Plant, PIDClosedLoop, bode_plot, itae
+from src.controlsys import System, PIDClosedLoop, bode_plot, itae
 from src.Matlab import MatlabInterface
 import matplotlib.pyplot as plt
+import time
 
 
 def main():
     num = [1]
     den = [1, 0.6, 1]
-    plant: Plant = Plant(num, den)
+    system: System = System(num, den)
 
-    pid: PIDClosedLoop = PIDClosedLoop(plant, Kp=10, Ti=3, Td=0.8, derivative_filter_ratio=0.01)
+    pid: PIDClosedLoop = PIDClosedLoop(system, Kp=10, Ti=3, Td=0.8, derivative_filter_ratio=0.01)
 
-    with MatlabInterface() as mat:
-        s = "tf('s');"
-        G = f"{plant: plant};"
-        mat.write_in_workspace(s=s, G=G)
-        # mag, phase, omega = mat.bode("G", -2, 3, 1000)
+    start = time.time()
+    t, y = pid.step_response(t1=20)
+    itae_val = itae(t, y, np.ones_like(t))
+    end = time.time()
+    print(f"ITAE: {itae_val: 0.3f}, Duration: {(end - start):0.3f}s")
 
-        # bode_plot({
-        #    "Plant": plant.system,
-        #    "ClosedLoop": pid.closed_loop,
-        #    "Matlab": (omega, mag, phase),
-        # })
-        Kp = pid.Kp
-        Td = pid.Td
-        Ti = pid.Ti
-        F = f"s / ({pid.Tf} * s + 1);"
-        mat.write_in_workspace(Kp=Kp, Td=Td, Ti=Ti, F=F)
-        mat.run_simulation("model", "yout", stop_time=20, max_step=0.001)
-        mat.plot_simulation("1", "Test", show=False)
-        print(f"Matlab ITEA: {itae(mat.t, mat.values['value_y']['value'], 1)}")
+    t1, y1 = system.step_response(t1=20)
 
-        # t, y = plant.step_response(method="RK4")
-        t_cl, y_cl = pid.step_response(t0=0, t1=20, dt=0.001, method="RK23")
-        print(f"Python ITEA: {itae(t_cl, y_cl, 1)}")
-        plt.plot(t_cl, y_cl, label="python cl")
-        plt.legend()
-        # plt.plot(t, y)
-        plt.show()
+    plt.figure()
+    plt.plot(t, y, label="Closed Loop")
+    plt.plot(t1, y1, label="System")
+    plt.grid()
+    plt.show()
 
 
 if __name__ == "__main__":

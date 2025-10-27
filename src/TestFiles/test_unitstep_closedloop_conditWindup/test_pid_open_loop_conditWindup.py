@@ -1,5 +1,5 @@
 from src.Matlab import MatlabInterface
-from src.controlsys import Plant, PIDClosedLoop, itae
+from src.controlsys import System, PIDClosedLoop, itae
 import matplotlib.pyplot as plt
 
 from src.SystemsOld import SecondOrderSystem
@@ -8,12 +8,12 @@ from src.SystemsOld import SecondOrderSystem
 def main():
     num = [1, 1]
     den = [1, 0.6, 1]
-    plant: Plant = Plant(num, den)
-    pid: PIDClosedLoop = PIDClosedLoop(plant=plant, Kp=10, Ti=3, Td=0.8)
+    system: System = System(num, den)
+    pid: PIDClosedLoop = PIDClosedLoop(system=system, Kp=10, Ti=3, Td=0.8)
 
     with MatlabInterface() as mat:
         s = "tf('s');"
-        G = f"{plant: plant};"
+        G = f"{system: system};"
         Kp = pid.Kp
         Td = pid.Td
         Ti = pid.Ti

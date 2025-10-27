@@ -234,7 +234,7 @@ class SwarmNew:
         particle_space: float = (max_Kp - min_Kp) * (max_Ti - min_Ti) * (max_Td - min_Td)
         return particle_space
 
-    def simulate_swarm(self, iterate_func: Optional[Callable[['Swarm', float], None]] = None) -> 'Swarm':
+    def simulate_swarm(self, iterate_func: Optional[Callable[['SwarmNew', float], None]] = None) -> 'SwarmNew':
         """Runs the swarm optimization until convergence.
 
         Args:
