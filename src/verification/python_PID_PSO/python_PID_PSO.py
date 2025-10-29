@@ -169,7 +169,7 @@ def main():
     pt2_pid_params = [
         # D = D[0]
         {"D": D[0], "num": [1], "den": [1, 2*D[0], 1], "Kp": 10, "Ti": 9.6, "Td": 0.3, "constraint": control_constraints[0]},
-        {"D": D[0], "num": [1], "den": [1, 2*D[0], 1], "Kp": 10, "Ti": 6.8, "Td": 0.3, "constraint": control_constraints[1]},
+        {"D": D[0], "num": [1], "den": [1, 2*D[0], 1], "Kp": 10, "Ti": 7.3, "Td": 0.3, "constraint": control_constraints[1]},
         {"D": D[0], "num": [1], "den": [1, 2*D[0], 1], "Kp": 9.6, "Ti": 5.4, "Td": 0.3, "constraint": control_constraints[2]},
         {"D": D[0], "num": [1], "den": [1, 2*D[0], 1], "Kp": 9.8, "Ti": 4.7, "Td": 0.3, "constraint": control_constraints[3]},
 
@@ -239,6 +239,7 @@ def main():
     total_odes = tot_iterations * swarm_size * (t1 - t0) / dt
     print(f"PT2: Total ODEs solved ≈ {total_odes:.3e} in {(end - start):.2f} sec")
     '''8 Kernen und 4.2 GHZ PT2: Total ODEs solved ≈ 1.511e+11 in 899.76 sec'''
+
 
 if __name__ == "__main__":
     main()
