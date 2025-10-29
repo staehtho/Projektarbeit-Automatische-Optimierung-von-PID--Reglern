@@ -7,10 +7,10 @@ import time
 
 def main():
     num = [1]
-    den = [1, 0.6, 1]
+    den = [1, 6, 15, 20, 15, 6, 1]
     system: System = System(num, den)
 
-    pid: PIDClosedLoop = PIDClosedLoop(system, Kp=10, Ti=3, Td=0.8, derivative_filter_ratio=0.01)
+    pid: PIDClosedLoop = PIDClosedLoop(system, Kp=1.1, Ti=5.3, Td=1.7, control_constraint=[-10, 10], derivative_filter_ratio=0.01)
 
     start = time.time()
     t, y = pid.step_response(t1=20)
@@ -24,6 +24,7 @@ def main():
     plt.plot(t, y, label="Closed Loop")
     plt.plot(t1, y1, label="System")
     plt.grid()
+    plt.legend()
     plt.show()
 
 

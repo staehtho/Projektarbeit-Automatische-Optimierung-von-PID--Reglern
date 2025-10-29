@@ -1,6 +1,6 @@
 import numpy as np
 import time
-from numba import njit, prange, types, float64, int8
+from numba import njit, prange, types, float64, int64
 from .closedLoop import ClosedLoop
 from .PIDClosedLoop import PIDClosedLoop
 from typing import Callable
@@ -179,7 +179,7 @@ def dot1D(x: np.ndarray, y: np.ndarray) -> float:
 # =============================================================================
 @njit(
     types.UniTuple(float64, 3)(
-        float64, float64, float64, float64, float64, float64, float64, float64, float64, float64, float64, int8
+        float64, float64, float64, float64, float64, float64, float64, float64, float64, float64, float64, int64
     ),
     cache=True, inline="always"
 )
@@ -343,7 +343,7 @@ def system_response(t_eval: np.ndarray, dt: float, u_eval: np.ndarray,
 
 
 @njit(float64[:](
-    float64, float64, float64, float64, float64[:], float64, float64[:], float64[:], float64[:], int8,
+    float64, float64, float64, float64, float64[:], float64, float64[:], float64[:], float64[:], int64,
     float64[:, :], float64[:], float64[:], float64
 ),
     cache=True, inline="always"

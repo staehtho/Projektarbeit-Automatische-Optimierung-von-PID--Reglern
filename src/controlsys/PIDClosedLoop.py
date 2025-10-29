@@ -270,7 +270,7 @@ class PIDClosedLoop(ClosedLoop):
                                 dt=dt,
                                 r_eval=r_eval,
                                 x=x0,
-                                control_constraint=np.array(self._control_constraint),
+                                control_constraint=np.array(self._control_constraint, dtype=np.float64),
                                 anti_windup_method=anti_windup,
                                 A=A,
                                 B=B,
