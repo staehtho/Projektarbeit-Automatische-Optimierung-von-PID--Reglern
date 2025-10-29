@@ -138,7 +138,7 @@ def main():
         start = time.time()
         pid_parameter = PidParameter(n, num, den, params.get("Kp"), params.get("Ti"), params.get("Td"),
                                      0, 20, 1e-4, params.get("control_constraint"))
-        pid_parameter.simulate_swarm(n=5)
+        pid_parameter.simulate_swarm(n=20)
         end = time.time()
 
         results.append(pid_parameter.to_dict())
