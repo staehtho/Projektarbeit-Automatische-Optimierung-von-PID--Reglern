@@ -16,8 +16,8 @@ den_list = {
 
 % Limitierungen (4 Stück)
 limits = [
-    1  -1;
     2  -2;
+    3  -3;
     5  -5;
     10 -10
 ];
@@ -83,7 +83,7 @@ for i = 1:length(den_list)
         Tv = pid_params{i,j}(3);
 
         % Simulink-Modell starten (verwende Variablen aus aktuellem Workspace)
-        sim('PTn_closedloop_model','SrcWorkspace','current');
+        sim('PTn_model','SrcWorkspace','current');
 
         % Signale extrahieren
         t = ans.simout.time;
@@ -112,6 +112,6 @@ T = array2table(results, ...
     'VariableNames', {'SystemIndex','LimitIndex','Kp','Tn','Tv','UpperLimit','LowerLimit','ITAE'});
 
 % CSV speichern
-writetable(T, 'PTn_simulation_results.csv');
+writetable(T, 'PTn_results.csv');
 
 disp('✅ Alle Simulationen abgeschlossen. Ergebnisse in "simulation_results.csv" gespeichert.');

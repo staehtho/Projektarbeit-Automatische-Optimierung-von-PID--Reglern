@@ -97,7 +97,7 @@ for i = 1:length(D_list)
         t_start = tic;
 
         % Simulink-Modell starten (verwende Variablen aus aktuellem Workspace)
-        sim('PT2_Schwingungsfaehig_closedloop_model','SrcWorkspace','current');
+        sim('PT2_schwingfaehig_model','SrcWorkspace','current');
 
         % Simulationszeit stoppen
         sim_duration = toc(t_start);
