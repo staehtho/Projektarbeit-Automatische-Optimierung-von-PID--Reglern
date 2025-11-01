@@ -44,13 +44,13 @@ class PidParameter:
         iterations = 0
 
         for _ in range(n):
-            swarm = SwarmNew(obj_func, swarm_size, bounds)
+            swarm = SwarmNew(obj_func, swarm_size, 3, bounds)
             terminated_swarm = swarm.simulate_swarm()
 
-            self._kp_pso.append(terminated_swarm.gBest.pBest_position[0])
-            self._ti_pso.append(terminated_swarm.gBest.pBest_position[1])
-            self._td_pso.append(terminated_swarm.gBest.pBest_position[2])
-            self._itae_pso.append(terminated_swarm.gBest.pBest_cost)
+            self._kp_pso.append(terminated_swarm.gBest.p_best_position[0])
+            self._ti_pso.append(terminated_swarm.gBest.p_best_position[1])
+            self._td_pso.append(terminated_swarm.gBest.p_best_position[2])
+            self._itae_pso.append(terminated_swarm.gBest.p_best_cost)
 
             iterations += terminated_swarm.iterations
 
@@ -77,7 +77,6 @@ class PidParameter:
             "ITAE_ref": self._itae,
             "ITAE_PSO": self._min_itae
         }
-
 
 
 def pascal(n: int):

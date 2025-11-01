@@ -28,7 +28,7 @@ def main():
     for i in range(n):
         # Swarm-Optimierung
         start = time.time()
-        swarm = SwarmNew(obj_func, swarm_size, bounds)
+        swarm = SwarmNew(obj_func, swarm_size, 3, bounds)
         terminated_swarm = swarm.simulate_swarm()
         end = time.time()
 
@@ -37,10 +37,10 @@ def main():
         average += (end - start)
 
         # Best parameters from the swarm
-        Kp = terminated_swarm.gBest.pBest_position[0]
-        Ti = terminated_swarm.gBest.pBest_position[1]
-        Td = terminated_swarm.gBest.pBest_position[2]
-        itae = terminated_swarm.gBest.pBest_cost
+        Kp = terminated_swarm.gBest.p_best_position[0]
+        Ti = terminated_swarm.gBest.p_best_position[1]
+        Td = terminated_swarm.gBest.p_best_position[2]
+        itae = terminated_swarm.gBest.p_best_cost
         iterations = terminated_swarm.iterations
 
         if itae < min_itae:
