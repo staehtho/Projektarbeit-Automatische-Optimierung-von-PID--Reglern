@@ -2,17 +2,19 @@
 
 # TODO: Weitere Gütekriterien in Python implementieren und mit MATLAB verifizieren
 
-# TODO: Schrittanwortgenerierung aus PIDCL&PLANT rauslöschen/optimierte aufrufen (Thooomas)
-# TODO: Plant umbenennen -> system (Thooomas)
-
 # TODO: Ordnerstrukur aufräumen; Verfikation-Ordner erstellen, Tests ins Archiv (FLO)
-# TODO: ((Gütekriterium ITEA in Python mit MATLAB verifizieren (mit weiteren systemen: komplexere, zb PT4, überschiwngend D>1) (FLO))) vermutlich abgedeckt durch verifikation unten
-
-# TODO: publizierte Systeme aus Büchi-Arbeit in PSO simulieren und P,I,D, ITAE dokumentieren. (Thoooomas)
-# TODO: Für gegebenen P,I,D aus Büchi-Arbeit ITAE berechnen (python) (Thoooomas)
-
-# TODO: Für gegebenen P,I,D aus Büchi-Arbeit ITAE berechnen (matlab) (flo)
-# TODO: Für gegebenen P,I,D aus PSO ITAE berechnen (matlab) (flo)
 
 # TODO: PID (PSO) finden für RCRC und Voicecoil
 # TODO: Voicecoil und RCRC regeln und aufzeichnen
+
+# TODO: main-File für PSO erstellen, mit Plots (geregelt und ungeregelt) von Sprungantwort (geregelt und ungeregelt)
+#  und Bode-Diagramm (Flo)
+#  TODO: Config-Read-Modul erstellen (einlesen von .yaml - Fiel, siehe test.yaml) (Thomas)
+
+# TODO: Test exe von test_PSO_performant.py (Thomas)
+
+# TODO: Störübertragungsfunktion Z1, Z2 implementieren, Achtung neue Funktion im Zeitbereich
+# TODO: integration Auswahl, welcher Übertragungsweg :) (Thomas / Flo)
+
+# TODO: Generierung Tf -> Tf klein setzen, nach PSO omega_c definieren, min(Tf) = 10 * omega_c, max(Tf) = (omega_s /
+#  2) / 10 (Flo)
