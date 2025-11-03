@@ -1,0 +1,50 @@
+# ============================================================
+# Configuration file for PSO-based PID tuning
+#
+# This YAML file contains parameters for:
+# 1. System definition (plant transfer function, simulation time, anti-windup, control constraints)
+# 2. PSO (Particle Swarm Optimization) settings to optimize PID parameters
+# 3. Bounds for PID parameters (kp, ti, td) used during the PSO optimization
+#
+# Notes:
+# - All numerical values should be provided as numbers (floats or ints).
+# - Anti-windup can be either "clamping" or "conditional".
+# - Constraints define limits for controller outputs and the I-term.
+# - PSO bounds define the search space for PID gains.
+# ============================================================
+
+system:
+  plant:
+    # Transfer function
+    #     numerator                     1
+    # L = -----------    e.g.: L = -------------
+    #     denominator              s^2 + 2*s + 1
+    numerator: [1]
+    denominator: [1, 2, 1]
+
+  simulation_time:
+    start_time: 0      # Start time in [sec]
+    end_time: 10       # End time in [sec]
+    time_step: 1e-4    # Simulation time step in [sec]
+
+  # Anti-windup method: choose "clamping" or "conditional"
+  anti_windup: "clamping"
+
+  control_constraint:
+    # Control signal limits for both the I-term and the controller output
+    min_constraint: -5
+    max_constraint: 5
+
+pso:
+  swarm_size: 40     # Number of particles in the swarm
+  iterations: 25     # Number of PSO iterations to optimize PID parameters
+
+  bounds:
+    # Parameter search limits for PSO
+    # Define lower and upper boundaries for each PID parameter
+    kp_min: 0.0
+    kp_max: 10.0
+    ti_min: 0.1
+    ti_max: 10.0
+    td_min: 0.0
+    td_max: 10.0
