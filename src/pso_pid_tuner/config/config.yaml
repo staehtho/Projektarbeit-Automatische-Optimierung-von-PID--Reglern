@@ -24,7 +24,7 @@ system:
 
   simulation_time:
     start_time: 0      # Start time in [sec]
-    end_time: 10       # End time in [sec]
+    end_time: 20       # End time in [sec]
     time_step: 1e-4    # Simulation time step in [sec]
 
   # Anti-windup method: choose "clamping" or "conditional"
@@ -37,7 +37,7 @@ system:
 
 pso:
   swarm_size: 40     # Number of particles in the swarm
-  iterations: 25     # Number of PSO iterations to optimize PID parameters
+  iterations: 5      # Number of PSO iterations to optimize PID parameters
 
   bounds:
     # Parameter search limits for PSO

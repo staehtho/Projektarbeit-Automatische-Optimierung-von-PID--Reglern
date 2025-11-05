@@ -8,14 +8,14 @@ from src.PSO import SwarmNew
 
 def main():
     swarm_size = 40
-    bounds = [[0, 0.1, 0], [10, 10, 10]]
+    bounds = [[0, 0.1, 0], [10, 100, 10]]
 
-    system: System = System([1], [1, 0.6, 1])
+    system: System = System([0.337, 58.76, 5.554e5], [2.8e-5, 0.009148, 467, 0])
 
-    pid: PIDClosedLoop = PIDClosedLoop(system, Kp=10, Ti=5, Td=3)
+    pid: PIDClosedLoop = PIDClosedLoop(system, Kp=10, Ti=5, Td=3, control_constraint= [0, 24])
 
     pid.anti_windup_method = "clamping"
-    obj_func = PsoFunc(pid, 0, 10, 1e-4, swarm_size=swarm_size)
+    obj_func = PsoFunc(pid, 0, 20, 1e-4, swarm_size=swarm_size)
 
     average = 0
     min_Kp = 0
@@ -23,7 +23,7 @@ def main():
     min_Td = 0
     min_itae = sys.float_info.max
     min_iterations = 0
-    n = 25
+    n = 15
 
     for i in range(n):
         # Swarm-Optimierung

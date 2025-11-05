@@ -2,13 +2,10 @@
 
 # TODO: Weitere Gütekriterien in Python implementieren und mit MATLAB verifizieren
 
-# TODO: Ordnerstrukur aufräumen; Verfikation-Ordner erstellen, Tests ins Archiv (FLO)
 
 # TODO: PID (PSO) finden für RCRC und Voicecoil
 # TODO: Voicecoil und RCRC regeln und aufzeichnen
 
-# TODO: main-File für PSO erstellen, mit Plots (geregelt und ungeregelt) von Sprungantwort (geregelt und ungeregelt)
-#  und Bode-Diagramm (Flo)
 #  TODO: Config-Read-Modul erstellen (einlesen von .yaml - Fiel, siehe test.yaml) (Thomas)
 
 # TODO: Test exe von test_PSO_performant.py (Thomas)

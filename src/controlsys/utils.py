@@ -79,9 +79,10 @@ def bode_plot(
 
     all_mag = np.hstack(all_mag)
 
+
     # min und max dynamisch berechnen
     mag_min = np.floor(all_mag.min() / 20) * 20
-    mag_max = np.ceil(all_mag.max() / 20) * 20
+    mag_max = np.ceil(all_mag.max() / 20) * 20 + 20
     ax_mag.set_ylim(mag_min, mag_max)
     ax_mag.set_yticks(np.arange(mag_min, mag_max + 1, 20))
     ax_mag.set_ylabel("Magnitude / dB")
@@ -101,4 +102,4 @@ def bode_plot(
 
     ax_mag.legend()
     plt.tight_layout()
-    plt.show()
+    plt.show(block=False)
