@@ -20,7 +20,7 @@ system:
     # L = -----------    e.g.: L = -------------
     #     denominator              s^2 + 2*s + 1
     numerator: [1]
-    denominator: [1, 2, 1]
+    denominator: [1, 4, 6, 4, 1]
 
   simulation_time:
     start_time: 0      # Start time in [sec]
@@ -37,7 +37,7 @@ system:
 
 pso:
   swarm_size: 40     # Number of particles in the swarm
-  iterations: 5      # Number of PSO iterations to optimize PID parameters
+  iterations: 10      # Number of PSO iterations to optimize PID parameters
 
   bounds:
     # Parameter search limits for PSO

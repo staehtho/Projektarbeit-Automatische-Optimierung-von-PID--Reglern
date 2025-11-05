@@ -1,18 +1,19 @@
 import sys
-from src.controlsys import System, PIDClosedLoop, PsoFunc, bode_plot
+from src.controlsys import System, PIDClosedLoop, PsoFunc, bode_plot, crossover_frequency
 from src.PSO import SwarmNew
 from tqdm import tqdm
 from config_loader import load_config, ConfigError
 import matplotlib.pyplot as plt
+import numpy as np
 
 config = load_config("../config/config.yaml")
 
 
 def main():
     try:
-        print("✅ Konfiguration erfolgreich geladen!")
+        print("Configuration loaded successfully!")
     except ConfigError as e:
-        print("❌ Fehler in der Konfiguration:")
+        print("error in configuration!:")
         print(e)
         return
 
@@ -50,7 +51,13 @@ def main():
     best_Td = 0
     best_itae = sys.float_info.max
 
-    for i in tqdm(range(iterations), desc="Processing", unit="step"):
+    # einmaliges warm-up, damit JIT vor der tqdm kompiliert
+    _ = pid.step_response(start_time, start_time + time_step, time_step)
+
+    # progressbar
+    pbar = tqdm(range(iterations), desc="Processing", unit="step", colour="green")
+
+    for i in pbar:
         # Swarm-Optimierung
         swarm = SwarmNew(obj_func, swarm_size, 3, bounds)
         terminated_swarm = swarm.simulate_swarm()
@@ -60,7 +67,6 @@ def main():
         Ti = terminated_swarm.gBest.p_best_position[1]
         Td = terminated_swarm.gBest.p_best_position[2]
         itae = terminated_swarm.gBest.p_best_cost
-        iterations = terminated_swarm.iterations
 
         if itae < best_itae:
             best_itae = itae
@@ -68,10 +74,25 @@ def main():
             best_Ti = Ti
             best_Td = Td
 
-    print(f" swarm result: {best_Kp=:0.2f}, {best_Ti=:0.2f}, {best_Td=:0.2f}, {best_itae=:0.4f}")
+    print(f"\n✔ Optimization completed!\n\nswarm result:\n   {best_Kp=   :0.2f}\n   {best_Ti=   :0.2f}\n   {best_Td=   :0.2f}\n   {best_itae= :0.4f}\n")
     pid._kp = best_Kp
     pid._ti = best_Ti
     pid._td = best_Td
+
+    # Durchtrittsfrequenz bestimmen
+    L = lambda s: pid.controller(s) * system.system(s)
+    wc = crossover_frequency(L)  # oder crossover_frequency falls schon definiert
+
+    fs = 20000  # Hz, TODO: später aus System übernehmen
+
+    # Zeitkonstanten-Grenzen berechnen:
+    Tf_max = 1 / (10 * wc)  # darf nicht größer sein (Filter nicht "zu langsam")
+    Tf_min = 10 / (np.pi * fs)  # darf nicht kleiner sein (nicht zu nahe an Nyquist)
+
+    print("Recommended range for the filter time constant Tf:")
+    print(f"  Tf_min = {Tf_min:.6e} s   (limit imposed by the sampling frequency: {fs}Hz)")
+    print(f"  Tf_max = {Tf_max:.6e} s   (limit imposed by the crossover frequency)")
+    print(f"→ Choose Tf such that  {Tf_min:.6e}  ≤  Tf  ≤  {Tf_max:.6e}\n")
 
     # Geregelte Schrittantwort
     t_cl, y_cl = pid.step_response(
@@ -97,9 +118,9 @@ def main():
     plt.figure()
     plt.plot(t_ol, y_ol, label="Open Loop")
     plt.plot(t_cl, y_cl, label="Closed Loop")
-    plt.xlabel("Zeit / s")
-    plt.ylabel("Ausgang")
-    plt.title("Schrittantwort")
+    plt.xlabel("time / s")
+    plt.ylabel("output")
+    plt.title("stepresponse")
     plt.grid(True)
     plt.legend()
 

@@ -6,13 +6,13 @@ SystemData = Union[Callable[[np.ndarray], np.ndarray], tuple[np.ndarray, np.ndar
 
 
 def bode_plot(
-    systems: dict[str, SystemData],
-    *,
-    omega: np.ndarray | None = None,
-    low_exp: float = -2,
-    high_exp: float = 3,
-    num_points: int = 400,
-    grid: bool = True
+        systems: dict[str, SystemData],
+        *,
+        omega: np.ndarray | None = None,
+        low_exp: float = -2,
+        high_exp: float = 3,
+        num_points: int = 400,
+        grid: bool = True
 ):
     """
     Plot Bode diagrams (magnitude and phase) for multiple systems.
@@ -79,7 +79,6 @@ def bode_plot(
 
     all_mag = np.hstack(all_mag)
 
-
     # min und max dynamisch berechnen
     mag_min = np.floor(all_mag.min() / 20) * 20
     mag_max = np.ceil(all_mag.max() / 20) * 20 + 20
@@ -103,3 +102,70 @@ def bode_plot(
     ax_mag.legend()
     plt.tight_layout()
     plt.show(block=False)
+
+
+import numpy as np
+
+
+def crossover_frequency(L, omega=None, tol_db=1e-3):
+    """
+    Compute the *outermost* gain crossover frequency (Durchtrittsfrequenz) of the loop transfer function.
+
+    The gain crossover frequency is defined as the frequency `wc` where the loop gain satisfies:
+        |L(j*wc)| = 1     <=>     20*log10(|L(j*wc)|) = 0 dB
+
+    This implementation is robust to:
+        - 0 dB plateaus (regions where the magnitude stays near 0 dB),
+        - multiple crossover points (selects the outermost / highest frequency),
+        - numerical fluctuations (tolerance band around 0 dB).
+
+    Args:
+        L (callable):
+            Loop transfer function L(s) = C(s) * G(s), accepting complex frequency input.
+            Must support vectorized evaluation: L(1j * omega) -> np.ndarray.
+        omega (np.ndarray, optional):
+            Frequency vector in rad/s. If None, a default logarithmic sweep from 10^-3 to 10^4
+            with 4000 points is generated.
+        tol_db (float, optional):
+            Magnitude tolerance around 0 dB to identify a gain crossover (default: 1e-3 dB).
+
+    Returns:
+        float or None:
+            The *outermost* (highest) gain crossover frequency `wc` in rad/s, or
+            None if no crossover point exists.
+
+    Notes:
+        - The function interpolates in logarithmic frequency space for accuracy.
+        - If the magnitude never reaches 0 dB (e.g., always below), the function returns None.
+        - If the curve touches 0 dB and then falls, the edge point is used directly.
+
+    Example:
+        >>> L = lambda s: pid.controller(s) * system.system(s)
+        >>> wc = crossover_frequency(L)
+        >>> print(f"wc = {wc:.3f} rad/s")
+    """
+    if omega is None:
+        omega = np.logspace(-3, 4, 4000)
+
+    w = 1j * omega
+    mag_db = 20 * np.log10(np.abs(L(w)))
+
+    n = len(omega)
+    nonneg = np.where(mag_db >= -tol_db)[0]
+
+    if len(nonneg) == 0 or nonneg[-1] == n - 1:
+        return None
+
+    k = nonneg[-1]
+
+    m1, m2 = mag_db[k], mag_db[k + 1]
+    w1, w2 = omega[k], omega[k + 1]
+
+    if abs(m1) <= tol_db and m2 < -tol_db:
+        return w1
+
+    logw1, logw2 = np.log10(w1), np.log10(w2)
+    alpha = (0.0 - m1) / (m2 - m1)
+    logwc = logw1 + alpha * (logw2 - logw1)
+    wc = 10 ** logwc
+    return wc
