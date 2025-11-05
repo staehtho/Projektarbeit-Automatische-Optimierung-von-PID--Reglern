@@ -51,14 +51,13 @@ def main():
     best_Td = 0
     best_itae = sys.float_info.max
 
-    # einmaliges warm-up, damit JIT vor der tqdm kompiliert
+    # einmaliges warm-up, damit JIT vor der tqdm-progressbar kompiliert
     _ = pid.step_response(start_time, start_time + time_step, time_step)
 
     # progressbar
     pbar = tqdm(range(iterations), desc="Processing", unit="step", colour="green")
 
     for i in pbar:
-        # Swarm-Optimierung
         swarm = SwarmNew(obj_func, swarm_size, 3, bounds)
         terminated_swarm = swarm.simulate_swarm()
 
@@ -74,6 +73,7 @@ def main():
             best_Ti = Ti
             best_Td = Td
 
+    #print results
     print(f"\n✔ Optimization completed!\n\nswarm result:\n   {best_Kp=   :0.2f}\n   {best_Ti=   :0.2f}\n   {best_Td=   :0.2f}\n   {best_itae= :0.4f}\n")
     pid._kp = best_Kp
     pid._ti = best_Ti
@@ -82,7 +82,6 @@ def main():
     # Durchtrittsfrequenz bestimmen
     L = lambda s: pid.controller(s) * system.system(s)
     wc = crossover_frequency(L)  # oder crossover_frequency falls schon definiert
-
     fs = 20000  # Hz, TODO: später aus System übernehmen
 
     # Zeitkonstanten-Grenzen berechnen:
@@ -98,21 +97,18 @@ def main():
     t_cl, y_cl = pid.step_response(
         t0=start_time,
         t1=end_time,
-        dt=time_step
-    )
+        dt=time_step)
 
     # Ungeregelte Schrittantwort
     t_ol, y_ol = system.step_response(
         t0=start_time,
         t1=end_time,
-        dt=time_step
-    )
+        dt=time_step)
 
     # Bode
     systems_for_bode = {
         "Open Loop": system.system,
-        "Closed Loop": pid.closed_loop
-    }
+        "Closed Loop": pid.closed_loop}
 
     # Plot
     plt.figure()
