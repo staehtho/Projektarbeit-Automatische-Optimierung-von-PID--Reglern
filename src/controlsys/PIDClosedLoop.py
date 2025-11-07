@@ -60,30 +60,14 @@ class PIDClosedLoop(ClosedLoop):
         """
         super().__init__(system)
 
-        # --- Parameter Validation ---
-        gain_form = all(v is not None for v in (Kp, Ki, Kd))
-        time_form = all(v is not None for v in (Kp, Ti, Td))
+        self._kp: float = 0
+        self._ki: float = 0
+        self._kd: float = 0
 
-        if gain_form and time_form:
-            raise ValueError("Use either (Kp, Ki, Kd) or (Kp, Ti, Td), not both.")
-        if not (gain_form or time_form):
-            raise ValueError("You must provide either the gain form or the time-constant form.")
+        self._ti: float = 0
+        self._td: float = 0
 
-        # --- Assign Parameters and Convert if Needed ---
-        self._kp = Kp
-
-        if gain_form:
-            # Gain → Time conversion
-            self._ki = Ki
-            self._kd = Kd
-            self._ti = Kp / Ki
-            self._td = Kd / Kp
-        else:
-            # Time → Gain conversion
-            self._ti = Ti
-            self._td = Td
-            self._ki = Kp / Ti
-            self._kd = Kp * Td
+        self.set_pid_param(Kp=Kp, Ki=Ki, Kd=Kd, Ti=Ti, Td=Td)
 
         # Derivative filter time constant
         # TODO: Achtung hier für die Verifikation von Büchi diese gleich wie in Simulink implementieren
@@ -138,6 +122,41 @@ class PIDClosedLoop(ClosedLoop):
     @anti_windup_method.setter
     def anti_windup_method(self, anti_windup_method) -> None:
         self._anti_windup_method = anti_windup_method
+
+    def set_pid_param(self,
+                      *,
+                      # Gain form
+                      Kp: float = None,
+                      Ki: float = None,
+                      Kd: float = None,
+                      # Time-constant form
+                      Ti: float = None,
+                      Td: float = None,):
+
+        # --- Parameter Validation ---
+        gain_form = all(v is not None for v in (Kp, Ki, Kd))
+        time_form = all(v is not None for v in (Kp, Ti, Td))
+
+        if gain_form and time_form:
+            raise ValueError("Use either (Kp, Ki, Kd) or (Kp, Ti, Td), not both.")
+        if not (gain_form or time_form):
+            raise ValueError("You must provide either the gain form or the time-constant form.")
+
+        # --- Assign Parameters and Convert if Needed ---
+        self._kp = Kp
+
+        if gain_form:
+            # Gain → Time conversion
+            self._ki = Ki
+            self._kd = Kd
+            self._ti = Kp / Ki
+            self._td = Kd / Kp
+        else:
+            # Time → Gain conversion
+            self._ti = Ti
+            self._td = Td
+            self._ki = Kp / Ti
+            self._kd = Kp * Td
 
     # -------------------- Frequency Domain --------------------
 

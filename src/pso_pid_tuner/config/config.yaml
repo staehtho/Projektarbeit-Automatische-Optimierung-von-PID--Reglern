@@ -4,7 +4,7 @@
 # This YAML file contains parameters for:
 # 1. System definition (plant transfer function, simulation time, anti-windup, control constraints)
 # 2. PSO (Particle Swarm Optimization) settings to optimize PID parameters
-# 3. Bounds for PID parameters (kp, ti, td) used during the PSO optimization
+# 3. Bounds for PID parameters (Kp, Ti, Td) used during the PSO optimization
 #
 # Notes:
 # - All numerical values should be provided as numbers (floats or ints).
@@ -13,12 +13,15 @@
 # - PSO bounds define the search space for PID gains.
 # ============================================================
 
+# ============================================================
+# System parameter
+# ============================================================
 system:
   plant:
     # Transfer function
-    #     numerator                     1
-    # L = -----------    e.g.: L = -------------
-    #     denominator              s^2 + 2*s + 1
+    #     numerator                       1                  [1]
+    # G = -----------    e.g.: G = ----------------  => -------------
+    #     denominator              3*s^2 + 2*s + 1        [3, 2, 1]
     numerator: [1]
     denominator: [1, 4, 6, 4, 1]
 
@@ -35,6 +38,9 @@ system:
     min_constraint: -5
     max_constraint: 5
 
+# ============================================================
+# PSO parameter
+# ============================================================
 pso:
   swarm_size: 40     # Number of particles in the swarm
   iterations: 10      # Number of PSO iterations to optimize PID parameters

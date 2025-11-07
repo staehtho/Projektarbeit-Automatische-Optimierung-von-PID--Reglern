@@ -89,6 +89,7 @@ def main():
     """)'''
 
     print(f"\n✔ Optimization completed!\n\nswarm result:\n   {best_Kp=   :0.2f}\n   {best_Ti=   :0.2f}\n   {best_Td=   :0.2f}\n   {best_itae= :0.4f}\n")
+    # TODO: pid.set_pid_param(Kp=best_Kp, Ti=best_Ti, Td=best_Td) (neue Funktion)
     pid._kp = best_Kp
     pid._ti = best_Ti
     pid._td = best_Td
