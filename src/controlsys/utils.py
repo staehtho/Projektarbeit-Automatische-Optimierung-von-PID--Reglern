@@ -104,9 +104,6 @@ def bode_plot(
     plt.show(block=False)
 
 
-import numpy as np
-
-
 def crossover_frequency(L, omega=None, tol_db=1e-3):
     """
     Compute the *outermost* gain crossover frequency (Durchtrittsfrequenz) of the loop transfer function.

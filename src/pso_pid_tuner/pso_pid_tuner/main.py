@@ -11,6 +11,7 @@ config = load_config("../config/config.yaml")
 
 def main():
     try:
+        # TODO Flo bitte erklären
         print("Configuration loaded successfully!")
     except ConfigError as e:
         print("error in configuration!:")
@@ -52,6 +53,8 @@ def main():
     best_itae = sys.float_info.max
 
     # einmaliges warm-up, damit JIT vor der tqdm-progressbar kompiliert
+    # TODO guter Gedanke, ist meiner Meinung nach aber nicht notwendig, weil warm-up bei der Funktionszuweisung schon
+    #  ausgeführt wird obj_func = PsoFunc(pid, start_time, end_time, time_step, swarm_size=swarm_size)
     _ = pid.step_response(start_time, start_time + time_step, time_step)
 
     # progressbar
@@ -73,7 +76,18 @@ def main():
             best_Ti = Ti
             best_Td = Td
 
-    #print results
+    # print results
+    # TODO Vorschlag für Print
+    '''print(f"""
+    ✔ Optimization completed!
+
+    swarm result:
+       {'best_Kp':<10}= {best_Kp:8.2f}
+       {'best_Ti':<10}= {best_Ti:8.2f}
+       {'best_Td':<10}= {best_Td:8.2f}
+       {'best_itae':<10}= {best_itae:8.4f}
+    """)'''
+
     print(f"\n✔ Optimization completed!\n\nswarm result:\n   {best_Kp=   :0.2f}\n   {best_Ti=   :0.2f}\n   {best_Td=   :0.2f}\n   {best_itae= :0.4f}\n")
     pid._kp = best_Kp
     pid._ti = best_Ti
@@ -122,6 +136,7 @@ def main():
 
     bode_plot(systems_for_bode)
     plt.show()
+
 
 if __name__ == "__main__":
     main()
