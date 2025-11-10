@@ -1,12 +1,12 @@
+import math
 import sys
-from src.pso_pid_tuner.controlsys import System, PIDClosedLoop, PsoFunc, bode_plot, crossover_frequency
+from src.pso_pid_tuner.controlsys import System, PIDClosedLoop, PsoFunc, bode_plot, crossover_frequency, \
+    smallest_root_realpart
 from src.pso_pid_tuner.PSO import Swarm
 from tqdm import tqdm
 from config_loader import load_config, ConfigError
 import matplotlib.pyplot as plt
 import numpy as np
-
-
 
 
 def main():
@@ -40,11 +40,28 @@ def main():
     td_min = config["pso"]["bounds"]["td_min"]
     td_max = config["pso"]["bounds"]["td_max"]
 
+    # generate system
     system: System = System(plant_num, plant_den)
     bounds = [[kp_min, ti_min, td_min], [kp_max, ti_max, td_max]]
 
+    # generate closed loop
     pid: PIDClosedLoop = PIDClosedLoop(system, Kp=10, Ti=5, Td=3, control_constraint=[constraint_min, constraint_max])
     pid.anti_windup_method = anti_windup
+
+    # dominant pole (least negative real part)
+    p_dom = smallest_root_realpart(system.den)
+
+    # corresponding time constant
+    tau = 1 / abs(p_dom)
+
+    # set filter to be much faster than plant dynamics
+    pid.set_filter(Tf=tau/100)
+
+    # define simulation horizon so the plant settles
+    #TODO: funktioniert so nicht. für mehrfache polstellen m erhöht sich die zeit um faktor m. (und kompl. konj. PS mischen auch mit.
+    #end_time = math.ceil(5 * tau)
+
+    # generate function to be optimized
     obj_func = PsoFunc(pid, start_time, end_time, time_step, swarm_size=swarm_size)
 
     best_Kp = 0
@@ -76,7 +93,6 @@ def main():
             best_Td = Td
 
     # print results
-    # TODO Vorschlag für Print
     print(f"""
     ✔ Optimization completed!
 
@@ -87,29 +103,32 @@ def main():
        {'best_itae':<10}= {best_itae:8.4f}
     """)
 
+    # set new found parameters
     pid.set_pid_param(Kp=best_Kp, Ti=best_Ti, Td=best_Td)
 
-    # Durchtrittsfrequenz bestimmen
+    # determine crossoverfrequency
     L = lambda s: pid.controller(s) * system.system(s)
-    wc = crossover_frequency(L)  # oder crossover_frequency falls schon definiert
+    wc = crossover_frequency(L)
     fs = 20000  # Hz, TODO: später aus System übernehmen
 
-    # Zeitkonstanten-Grenzen berechnen:
-    Tf_max = 1 / (10 * wc)  # darf nicht größer sein (Filter nicht "zu langsam")
-    Tf_min = 10 / (np.pi * fs)  # darf nicht kleiner sein (nicht zu nahe an Nyquist)
+    # limitations of timeconstant of filter
+    Tf_max = 1 / (100 * wc)  # can't be bigger, or filter would be too slow and impact the stepresponse
+    Tf_min = 10 / (np.pi * fs)  # can't be smaller, or filter would be too close to Nyquistfrequency
+    pid.set_filter(Tf=Tf_max)
 
     print("Recommended range for the filter time constant Tf:")
     print(f"  Tf_min = {Tf_min:.6e} s   (limit imposed by the sampling frequency: {fs}Hz)")
     print(f"  Tf_max = {Tf_max:.6e} s   (limit imposed by the crossover frequency)")
     print(f"→ Choose Tf such that  {Tf_min:.6e}  ≤  Tf  ≤  {Tf_max:.6e}\n")
+    print(f"  For the generated plots, the filter time constant was set to Tf_max")
 
-    # Geregelte Schrittantwort
+    # stepresponse feedbackloop
     t_cl, y_cl = pid.step_response(
         t0=start_time,
         t1=end_time,
         dt=time_step)
 
-    # Ungeregelte Schrittantwort
+    # stepresponse plant without feedback
     t_ol, y_ol = system.step_response(
         t0=start_time,
         t1=end_time,

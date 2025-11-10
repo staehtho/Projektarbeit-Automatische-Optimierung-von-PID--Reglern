@@ -166,3 +166,38 @@ def crossover_frequency(L, omega=None, tol_db=1e-3):
     logwc = logw1 + alpha * (logw2 - logw1)
     wc = 10 ** logwc
     return wc
+
+
+def smallest_root_realpart(denominator):
+    """
+    Compute the smallest real part among the poles of a linear time-invariant (LTI) system.
+
+    The poles are obtained by computing the roots of the denominator polynomial:
+        denominator[0] * s^(n) + denominator[1] * s^(n-1) + ... + denominator[n]
+
+    The returned value corresponds to the pole lying farthest to the left
+    in the complex plane, i.e., the most negative real part.
+
+    Args:
+        denominator (array_like):
+            Polynomial coefficients in descending powers of `s`.
+            Example: [1, 4, 6, 4, 1] represents:
+                s^4 + 4*s^3 + 6*s^2 + 4*s + 1
+
+    Returns:
+        float:
+            The most negative real part among all poles.
+
+    Notes:
+        - Uses numpy.roots to compute poles.
+        - If multiple poles share the same real part, this function still returns
+          that real value (no further disambiguation needed since only the scalar
+          real part is desired).
+
+    Example:
+        >>> den = [1, 4, 6, 4, 1]
+        >>> r = smallest_root_realpart(den)
+        >>> print(r)
+    """
+    roots = np.roots(denominator)
+    return np.min(roots.real)

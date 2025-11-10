@@ -37,7 +37,6 @@ class PIDClosedLoop(ClosedLoop):
                  # Time-constant form
                  Ti: float = None,
                  Td: float = None,
-                 derivative_filter_ratio: float = 0.01,
                  control_constraint: list[float] = None,
                  anti_windup_method: str = "clamping"
                  ) -> None:
@@ -51,7 +50,6 @@ class PIDClosedLoop(ClosedLoop):
             Kd (float, optional): Derivative gain (gain form).
             Ti (float, optional): Integral time constant (time form).
             Td (float, optional): Derivative time constant (time form).
-            derivative_filter_ratio (float, optional): Ratio to compute derivative filter time constant.
                 Tf = derivative_filter_ratio * system.t1 (default: 0.01).
             control_constraint (list[float], optional): [u_min, u_max] saturation limits. Defaults to [-5, 5].
 
@@ -69,10 +67,8 @@ class PIDClosedLoop(ClosedLoop):
 
         self.set_pid_param(Kp=Kp, Ki=Ki, Kd=Kd, Ti=Ti, Td=Td)
 
-        # Derivative filter time constant
-        # TODO: Achtung hier für die Verifikation von Büchi diese gleich wie in Simulink implementieren
-        # self._tf = self._system.t1 * derivative_filter_ratio
-        self._tf = 0.01
+        # filter time constant
+        self._tf: float = 0.01
 
         # Control output constraints
         self._control_constraint = control_constraint or [-5.0, 5.0]
@@ -123,6 +119,9 @@ class PIDClosedLoop(ClosedLoop):
     def anti_windup_method(self, anti_windup_method) -> None:
         self._anti_windup_method = anti_windup_method
 
+    def set_filter(self, Tf):
+        self._tf = Tf
+
     def set_pid_param(self,
                       *,
                       # Gain form
@@ -131,7 +130,7 @@ class PIDClosedLoop(ClosedLoop):
                       Kd: float = None,
                       # Time-constant form
                       Ti: float = None,
-                      Td: float = None,):
+                      Td: float = None):
 
         # --- Parameter Validation ---
         gain_form = all(v is not None for v in (Kp, Ki, Kd))
