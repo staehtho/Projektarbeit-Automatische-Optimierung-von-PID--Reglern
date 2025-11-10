@@ -5,7 +5,6 @@
 
 # TODO: Test exe von test_PSO_performant.py (Thomas)
 
-# TODO: in matlab itae rechnen für PT2,Z1: Kp = 10, Ti = 9.6, Td = 0.3 +-2: Werte für Thomas als Referenz (Flo)
 # TODO: Störübertragungsfunktion Z1, Z2 implementieren (THomas)
 # TODO: integration Auswahl, welcher Übertragungsweg :) (Thomas)
 # TODO: Verfikation sämtlicher bekannter Strecken (beide)
