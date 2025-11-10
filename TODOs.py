@@ -1,17 +1,21 @@
 # TODO: Jede Funktion mit einem Docstring im Google-Style ergänzen (ChatGPT)
 
-# TODO: Weitere Gütekriterien in Python implementieren und mit MATLAB verifizieren
-
-
 # TODO: PID (PSO) finden für RCRC und Voicecoil
 # TODO: Voicecoil und RCRC regeln und aufzeichnen
 
-#  TODO: Config-Read-Modul erstellen (einlesen von .yaml - Fiel, siehe test.yaml) (Thomas)
-
 # TODO: Test exe von test_PSO_performant.py (Thomas)
 
-# TODO: Störübertragungsfunktion Z1, Z2 implementieren, Achtung neue Funktion im Zeitbereich
-# TODO: integration Auswahl, welcher Übertragungsweg :) (Thomas / Flo)
+# TODO: in matlab itae rechnen für PT2,Z1: Kp = 10, Ti = 9.6, Td = 0.3 +-2: Werte für Thomas als Referenz (Flo)
+# TODO: Störübertragungsfunktion Z1, Z2 implementieren (THomas)
+# TODO: integration Auswahl, welcher Übertragungsweg :) (Thomas)
+# TODO: Verfikation sämtlicher bekannter Strecken (beide)
 
-# TODO: Generierung Tf -> Tf klein setzen, nach PSO omega_c definieren, min(Tf) = 10 * omega_c, max(Tf) = (omega_s /
-#  2) / 10 (Flo)
+# TODO: Generierung initial-Tf dynamisch, abhängig von langsamsten pol in plant (utils)  (flo)
+# TODO: Resultat&Plot: Tf aktualisieren, gemäss Tf_max (Flo)
+# TODO: Parameter pidclosedloop derivatefilterratio entfernen  (Thomas)
+# TODO: neuer PArameter, setter für Tf   (Thomas)
+
+# TODO: dynamische integrationszeit, anhand einregelzeit plant (durchtrittsfrequenz -> tau, faktor 5,6,7, dann aufrunden auf schönen wert (flo)
+# TODO: integration dieser funktion in plantobjekt (thomas)
+
+# TODO: contional windup umsetzen oder rückbauen
