@@ -3,8 +3,8 @@ import time
 import numpy as np
 import pandas as pd
 
-from src.controlsys import System, PIDClosedLoop, PsoFunc, itae
-from src.PSO import SwarmNew
+from src.pso_pid_tuner.controlsys import System, PIDClosedLoop, PsoFunc, itae
+from src.pso_pid_tuner.PSO import SwarmNew
 
 
 class PidParameter:

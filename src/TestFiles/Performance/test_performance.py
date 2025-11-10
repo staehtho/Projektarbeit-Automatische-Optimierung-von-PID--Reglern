@@ -1,5 +1,5 @@
 import timeit
-from src.controlsys import System, PIDClosedLoop, PsoFunc
+from src.pso_pid_tuner.controlsys import System, PIDClosedLoop, PsoFunc
 import numpy as np
 
 

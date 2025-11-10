@@ -1,7 +1,7 @@
 import numpy as np
 
 from src.Matlab import MatlabInterface
-from src.controlsys import System, PIDClosedLoop, itae
+from src.pso_pid_tuner.controlsys import System, PIDClosedLoop, itae
 import matplotlib.pyplot as plt
 
 

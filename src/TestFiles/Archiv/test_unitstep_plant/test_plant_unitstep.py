@@ -1,4 +1,4 @@
-from src.controlsys import System, itae
+from src.pso_pid_tuner.controlsys import System, itae
 from src.Matlab import MatlabInterface
 import matplotlib.pyplot as plt
 

@@ -1,9 +1,9 @@
 import sys
 
-from src.controlsys import System, PIDClosedLoop, PsoFunc
+from src.pso_pid_tuner.controlsys import System, PIDClosedLoop, PsoFunc
 import time
 
-from src.PSO import SwarmNew
+from src.pso_pid_tuner.PSO import SwarmNew
 
 
 def main():

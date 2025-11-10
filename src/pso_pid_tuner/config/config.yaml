@@ -22,7 +22,7 @@ system:
     #     numerator                       1                  [1]
     # G = -----------    e.g.: G = ----------------  => -------------
     #     denominator              3*s^2 + 2*s + 1        [3, 2, 1]
-    numerator: [1]
+    numerator: [1, 1]
     denominator: [1, 4, 6, 4, 1]
 
   simulation_time:

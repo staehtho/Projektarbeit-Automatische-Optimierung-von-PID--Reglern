@@ -1,17 +1,17 @@
 import sys
-from src.controlsys import System, PIDClosedLoop, PsoFunc, bode_plot, crossover_frequency
-from src.PSO import SwarmNew
+from src.pso_pid_tuner.controlsys import System, PIDClosedLoop, PsoFunc, bode_plot, crossover_frequency
+from src.pso_pid_tuner.PSO import SwarmNew
 from tqdm import tqdm
 from config_loader import load_config, ConfigError
 import matplotlib.pyplot as plt
 import numpy as np
 
-config = load_config("../config/config.yaml")
+
 
 
 def main():
     try:
-        # TODO Flo bitte erklären
+        config = load_config("../pso_pid_tuner/config/config.yaml")
         print("Configuration loaded successfully!")
     except ConfigError as e:
         print("error in configuration!:")
@@ -53,9 +53,8 @@ def main():
     best_itae = sys.float_info.max
 
     # einmaliges warm-up, damit JIT vor der tqdm-progressbar kompiliert
-    # TODO guter Gedanke, ist meiner Meinung nach aber nicht notwendig, weil warm-up bei der Funktionszuweisung schon
-    #  ausgeführt wird obj_func = PsoFunc(pid, start_time, end_time, time_step, swarm_size=swarm_size)
-    _ = pid.step_response(start_time, start_time + time_step, time_step)
+    # TODO beobachten, ob problem noch auftritt auch ohne warm up
+    #_ = pid.step_response(start_time, start_time + time_step, time_step)
 
     # progressbar
     pbar = tqdm(range(iterations), desc="Processing", unit="step", colour="green")
@@ -78,7 +77,7 @@ def main():
 
     # print results
     # TODO Vorschlag für Print
-    '''print(f"""
+    print(f"""
     ✔ Optimization completed!
 
     swarm result:
@@ -86,13 +85,9 @@ def main():
        {'best_Ti':<10}= {best_Ti:8.2f}
        {'best_Td':<10}= {best_Td:8.2f}
        {'best_itae':<10}= {best_itae:8.4f}
-    """)'''
+    """)
 
-    print(f"\n✔ Optimization completed!\n\nswarm result:\n   {best_Kp=   :0.2f}\n   {best_Ti=   :0.2f}\n   {best_Td=   :0.2f}\n   {best_itae= :0.4f}\n")
-    # TODO: pid.set_pid_param(Kp=best_Kp, Ti=best_Ti, Td=best_Td) (neue Funktion)
-    pid._kp = best_Kp
-    pid._ti = best_Ti
-    pid._td = best_Td
+    pid.set_pid_param(Kp=best_Kp, Ti=best_Ti, Td=best_Td)
 
     # Durchtrittsfrequenz bestimmen
     L = lambda s: pid.controller(s) * system.system(s)

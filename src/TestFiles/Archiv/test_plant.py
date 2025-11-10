@@ -1,6 +1,5 @@
 import numpy as np
-from src.controlsys import System, PIDClosedLoop, bode_plot, itae
-from src.Matlab import MatlabInterface
+from src.pso_pid_tuner.controlsys import System, PIDClosedLoop, itae
 import matplotlib.pyplot as plt
 import time
 
