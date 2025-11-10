@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from src.pso_pid_tuner.controlsys import System, PIDClosedLoop, PsoFunc, itae
-from src.pso_pid_tuner.PSO import SwarmNew
+from src.pso_pid_tuner.PSO import Swarm
 
 
 class PidParameter:
@@ -44,7 +44,7 @@ class PidParameter:
         iterations = 0
 
         for _ in range(n):
-            swarm = SwarmNew(obj_func, swarm_size, 3, bounds)
+            swarm = Swarm(obj_func, swarm_size, 3, bounds)
             terminated_swarm = swarm.simulate_swarm()
 
             self._kp_pso.append(terminated_swarm.gBest.p_best_position[0])

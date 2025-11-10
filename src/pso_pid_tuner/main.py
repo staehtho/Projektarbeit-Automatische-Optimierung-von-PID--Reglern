@@ -1,6 +1,6 @@
 import sys
 from src.pso_pid_tuner.controlsys import System, PIDClosedLoop, PsoFunc, bode_plot, crossover_frequency
-from src.pso_pid_tuner.PSO import SwarmNew
+from src.pso_pid_tuner.PSO import Swarm
 from tqdm import tqdm
 from config_loader import load_config, ConfigError
 import matplotlib.pyplot as plt
@@ -60,7 +60,7 @@ def main():
     pbar = tqdm(range(iterations), desc="Processing", unit="step", colour="green")
 
     for i in pbar:
-        swarm = SwarmNew(obj_func, swarm_size, 3, bounds)
+        swarm = Swarm(obj_func, swarm_size, 3, bounds)
         terminated_swarm = swarm.simulate_swarm()
 
         # Best parameters from the swarm

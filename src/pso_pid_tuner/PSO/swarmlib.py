@@ -125,7 +125,7 @@ class Particle:
 # ============================================================================
 # Swarm class
 # ============================================================================
-class SwarmNew:
+class Swarm:
     """Particle Swarm Optimization (PSO) swarm manager.
 
     This class manages the entire swarm, including initialization, iteration,
@@ -296,17 +296,17 @@ class SwarmNew:
         # -------------------------------------------------------------------------
 
     def simulate_swarm(self,
-                       iterate_func: Optional[Callable[['SwarmNew', float], None]] = None
-                       ) -> 'SwarmNew':
+                       iterate_func: Optional[Callable[['Swarm', float], None]] = None
+                       ) -> 'Swarm':
         """Runs the PSO optimization until convergence criteria are met.
 
         Args:
-            iterate_func (Optional[Callable[['SwarmNew', float], None]]):
+            iterate_func (Optional[Callable[['Swarm', float], None]]):
                 Optional callback executed each iteration. Receives the swarm
                 and the particle space percentage.
 
         Returns:
-            SwarmNew: The swarm instance after convergence.
+            Swarm: The swarm instance after convergence.
         """
         swarm_state = [self.gBest.p_best_cost]
         termination_criteria = False
