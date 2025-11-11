@@ -204,10 +204,12 @@ class PIDClosedLoop(ClosedLoop):
 
     def system_response(
             self,
-            r: Callable[[np.ndarray], np.ndarray],
             t0: float,
             t1: float,
             dt: float,
+            r: Callable[[np.ndarray], np.ndarray] | None = None,
+            d1: Callable[[np.ndarray], np.ndarray] | None = None,
+            d2: Callable[[np.ndarray], np.ndarray] | None = None,
             x0: np.ndarray | None = None,
             y0: float = 0
     ) -> tuple[np.ndarray, np.ndarray]:
@@ -220,20 +222,22 @@ class PIDClosedLoop(ClosedLoop):
         selected anti-windup strategy.
 
         Args:
-            r (Callable[[np.ndarray], np.ndarray]):
-                Reference signal as a function of time. Must accept a NumPy array of time
-                values and return an array of the same shape.
-            t0 (float):
-                Start time of the simulation.
-            t1 (float):
-                End time of the simulation.
-            dt (float):
-                Time step for numerical integration.
-            x0 (np.ndarray | None, optional):
-                Initial state vector of the system. If None, a zero vector of appropriate
+            t0 (float): Start time of the simulation.
+            t1 (float): End time of the simulation.
+            dt (float): Time step for numerical integration.
+            r (Callable[[np.ndarray], np.ndarray] | None, optional):
+                Reference (setpoint) function as a function of time.
+                Must accept a NumPy array of time values and return an array of the same shape.
+                If None, a zero vector is used. Defaults to None.
+            d1 (Callable[[np.ndarray], np.ndarray] | None, optional):
+                Disturbance at the plant input (Z1) as a function of time.
+                If None, zero disturbance is assumed. Defaults to None.
+            d2 (Callable[[np.ndarray], np.ndarray] | None, optional):
+                Disturbance at the measurement/output (Z2) as a function of time.
+                If None, zero disturbance is assumed. Defaults to None.
+            x0 (np.ndarray | None, optional): Initial state vector of the system. If None, a zero vector of appropriate
                 dimension is used. Defaults to None.
-            y0 (float, optional):
-                Initial output value. Defaults to 0.
+            y0 (float, optional): Initial output value. Defaults to 0.
 
         Returns:
             tuple[np.ndarray, np.ndarray]:
@@ -257,7 +261,18 @@ class PIDClosedLoop(ClosedLoop):
 
         t_eval = np.arange(t0, t1 + dt, dt)
 
+        if r is None:
+            r = lambda t: np.zeros_like(t)
+
+        if d1 is None:
+            d1 = lambda t: np.zeros_like(t)
+
+        if d2 is None:
+            d2 = lambda t: np.zeros_like(t)
+
         r_eval = r(t_eval)
+        d1_eval = d1(t_eval)
+        d2_eval = d2(t_eval)
 
         if x0 is None:
             x0 = np.zeros(self._system.get_system_order())
@@ -281,18 +296,10 @@ class PIDClosedLoop(ClosedLoop):
         # SISO → D ist ein skalar
         D = float(D[0, 0])
 
-        y = pid_system_response(Kp=self._kp,
-                                Ti=self._ti,
-                                Td=self._td,
-                                Tf=self._tf,
-                                t_eval=t_eval,
-                                dt=dt,
-                                r_eval=r_eval,
-                                x=x0,
-                                control_constraint=np.array(self._control_constraint, dtype=np.float64),
+        y = pid_system_response(Kp=self._kp, Ti=self._ti, Td=self._td,
+                                Tf=self._tf, t_eval=t_eval, dt=dt,
+                                r_eval=r_eval, d1_eval=d1_eval, d2_eval=d2_eval,
+                                x=x0, control_constraint=np.array(self._control_constraint, dtype=np.float64),
                                 anti_windup_method=anti_windup,
-                                A=A,
-                                B=B,
-                                C=C,
-                                D=D)
+                                A=A, B=B, C=C, D=D)
         return t_eval, y

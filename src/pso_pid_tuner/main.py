@@ -7,8 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-
-
 def main():
     try:
         config = load_config("../pso_pid_tuner/config/config.yaml")
@@ -45,7 +43,10 @@ def main():
 
     pid: PIDClosedLoop = PIDClosedLoop(system, Kp=10, Ti=5, Td=3, control_constraint=[constraint_min, constraint_max])
     pid.anti_windup_method = anti_windup
-    obj_func = PsoFunc(pid, start_time, end_time, time_step, swarm_size=swarm_size)
+
+    # Sprungantwort
+    r = lambda t: np.ones_like(t)
+    obj_func = PsoFunc(pid, start_time, end_time, time_step, r=r, swarm_size=swarm_size)
 
     best_Kp = 0
     best_Ti = 0

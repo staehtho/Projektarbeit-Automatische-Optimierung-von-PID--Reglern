@@ -69,8 +69,6 @@ class ClosedLoop(ABC):
         G = self._system.system(s)
         return (C * G) / (1 + C * G)
 
-    # ToDo: Integration Stoeruebertragungsfunktion
-
     def step_response(
             self,
             t0: float = 0,
@@ -103,18 +101,69 @@ class ClosedLoop(ABC):
             system simulation given the reference signal.
         """
         r = lambda t: np.ones_like(t)
-        return self.system_response(r, t0, t1, dt)
+        return self.system_response(t0, t1, dt, r=r)
+
+    def z1_step_response(
+            self,
+            t0: float = 0,
+            t1: float = 10,
+            dt: float = 1e-4
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Compute the step response of the system to a disturbance at the plant input (Z1).
+
+        This method generates a unit step disturbance applied to the plant input (Z1)
+        and computes the corresponding system response over a specified time interval.
+
+        Args:
+            t0 (float, optional): Start time of the simulation. Defaults to 0.
+            t1 (float, optional): End time of the simulation. Defaults to 10.
+            dt (float, optional): Time step for the simulation. Defaults to 1e-4.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]:
+                - **t_eval** (*np.ndarray*): Array of time points.
+                - **y_hist** (*np.ndarray*): Array of system output values corresponding to `t_eval`.
+        """
+        d1 = lambda t: np.ones_like(t)
+        return self.system_response(t0, t1, dt, d1=d1)
+
+    def z2_step_response(
+            self,
+            t0: float = 0,
+            t1: float = 10,
+            dt: float = 1e-4
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Compute the step response of the system to a disturbance at the plant input (Z2).
+
+        This method generates a unit step disturbance applied to the plant input (Z2)
+        and computes the corresponding system response over a specified time interval.
+
+        Args:
+            t0 (float, optional): Start time of the simulation. Defaults to 0.
+            t1 (float, optional): End time of the simulation. Defaults to 10.
+            dt (float, optional): Time step for the simulation. Defaults to 1e-4.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]:
+                - **t_eval** (*np.ndarray*): Array of time points.
+                - **y_hist** (*np.ndarray*): Array of system output values corresponding to `t_eval`.
+        """
+        d2 = lambda t: np.ones_like(t)
+        return self.system_response(t0, t1, dt, d2=d2)
 
     @abstractmethod
     def system_response(
             self,
-            r: Callable[[np.ndarray], np.ndarray],
             t0: float,
             t1: float,
             dt: float,
+            r: Callable[[np.ndarray], np.ndarray] | None = None,
+            d1: Callable[[np.ndarray], np.ndarray] | None = None,
+            d2: Callable[[np.ndarray], np.ndarray] | None = None,
             x0: np.ndarray | None = None,
             y0: float = 0
     ) -> tuple[np.ndarray, np.ndarray]:
 
         pass
-
