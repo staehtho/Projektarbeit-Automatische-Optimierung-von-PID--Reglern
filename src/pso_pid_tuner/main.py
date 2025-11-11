@@ -48,10 +48,6 @@ def main():
     pid: PIDClosedLoop = PIDClosedLoop(system, Kp=10, Ti=5, Td=3, control_constraint=[constraint_min, constraint_max])
     pid.anti_windup_method = anti_windup
 
-    # Sprungantwort
-    r = lambda t: np.ones_like(t)
-    obj_func = PsoFunc(pid, start_time, end_time, time_step, r=r, swarm_size=swarm_size)
-
     # dominant pole (least negative real part)
     p_dom = smallest_root_realpart(system.den)
 
@@ -66,7 +62,8 @@ def main():
     #end_time = math.ceil(5 * tau)
 
     # generate function to be optimized
-    obj_func = PsoFunc(pid, start_time, end_time, time_step, swarm_size=swarm_size)
+    r = lambda t: np.ones_like(t)
+    obj_func = PsoFunc(pid, start_time, end_time, time_step, r=r, swarm_size=swarm_size)
 
     best_Kp = 0
     best_Ti = 0
