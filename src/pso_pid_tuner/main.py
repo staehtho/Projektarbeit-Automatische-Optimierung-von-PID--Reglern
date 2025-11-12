@@ -1,8 +1,8 @@
 import math
 import sys
-from src.pso_pid_tuner.controlsys import System, PIDClosedLoop, PsoFunc, bode_plot, crossover_frequency, \
+from controlsys import System, PIDClosedLoop, PsoFunc, bode_plot, crossover_frequency, \
     smallest_root_realpart
-from src.pso_pid_tuner.PSO import Swarm
+from PSO import Swarm
 from tqdm import tqdm
 from config_loader import load_config, ConfigError
 import matplotlib.pyplot as plt
@@ -11,7 +11,7 @@ import numpy as np
 
 def main():
     try:
-        config = load_config("../pso_pid_tuner/config/config.yaml")
+        config = load_config()
         print("Configuration loaded successfully!")
     except ConfigError as e:
         print("error in configuration!:")
@@ -26,6 +26,8 @@ def main():
     time_step = config["system"]["simulation_time"]["time_step"]
 
     anti_windup = config["system"]["anti_windup"]
+
+    excitation_target = config["system"]["excitation_target"]
 
     constraint_min = config["system"]["control_constraint"]["min_constraint"]
     constraint_max = config["system"]["control_constraint"]["max_constraint"]
@@ -62,8 +64,25 @@ def main():
     #end_time = math.ceil(5 * tau)
 
     # generate function to be optimized
-    r = lambda t: np.ones_like(t)
-    obj_func = PsoFunc(pid, start_time, end_time, time_step, r=r, swarm_size=swarm_size)
+    match excitation_target:
+        case "reference":
+            r = lambda t: np.ones_like(t)
+            d1 = lambda t: np.zeros_like(t)
+            d2 = lambda t: np.zeros_like(t)
+        case "input_disturbance":
+            r = lambda t: np.zeros_like(t)
+            d1 = lambda t: np.ones_like(t)
+            d2 = lambda t: np.zeros_like(t)
+        case "measurement_disturbance":
+            r = lambda t: np.zeros_like(t)
+            d1 = lambda t: np.zeros_like(t)
+            d2 = lambda t: np.ones_like(t)
+        case _:
+            r = lambda t: np.zeros_like(t)
+            d1 = lambda t: np.zeros_like(t)
+            d2 = lambda t: np.zeros_like(t)
+
+    obj_func = PsoFunc(pid, start_time, end_time, time_step, r=r, d1=d1, d2=d2, swarm_size=swarm_size)
 
     best_Kp = 0
     best_Ti = 0
@@ -123,17 +142,32 @@ def main():
     print(f"→ Choose Tf such that  {Tf_min:.6e}  ≤  Tf  ≤  {Tf_max:.6e}\n")
     print(f"  For the generated plots, the filter time constant was set to Tf_max")
 
-    # stepresponse feedbackloop
-    t_cl, y_cl = pid.step_response(
-        t0=start_time,
-        t1=end_time,
-        dt=time_step)
-
-    # stepresponse plant without feedback
+    # step response plant without feedback
     t_ol, y_ol = system.step_response(
         t0=start_time,
         t1=end_time,
         dt=time_step)
+
+    # step response feedbackloop
+    match excitation_target:
+        case "reference":
+            t_cl, y_cl = pid.step_response(
+                t0=start_time,
+                t1=end_time,
+                dt=time_step)
+        case "input_disturbance":
+            t_cl, y_cl = pid.z1_step_response(
+                t0=start_time,
+                t1=end_time,
+                dt=time_step)
+        case "measurement_disturbance":
+            t_cl, y_cl = pid.z2_step_response(
+                t0=start_time,
+                t1=end_time,
+                dt=time_step)
+        case _:
+            t_cl = np.zeros_like(t_ol)
+            y_cl = np.zeros_like(t_ol)
 
     # Bode
     systems_for_bode = {
@@ -146,7 +180,7 @@ def main():
     plt.plot(t_cl, y_cl, label="Closed Loop")
     plt.xlabel("time / s")
     plt.ylabel("output")
-    plt.title("stepresponse")
+    plt.title("step response")
     plt.grid(True)
     plt.legend()
 

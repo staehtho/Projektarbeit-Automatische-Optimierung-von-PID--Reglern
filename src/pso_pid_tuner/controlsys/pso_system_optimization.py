@@ -128,7 +128,8 @@ class PsoFunc:
         X = np.array([[10, 9.6, 0.3] for _ in range(swarm_size)], dtype=np.float64)
         self.__call__(X)
         end = time.time()
-        print(f"pre-compiling: {end - start: 0.6f} sec")
+        print(f"Pre-compiling: {end - start:0.6f} sec", flush=True)
+        time.sleep(0.05)
 
     def __call__(self, X: np.ndarray) -> np.ndarray:
         """Evaluate the ITAE criterion for a batch of PID parameter sets.

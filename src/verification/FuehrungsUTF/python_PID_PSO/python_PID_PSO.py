@@ -38,8 +38,8 @@ class PidParameter:
     def simulate_swarm(self, n: int, t0: float, t1: float, dt: float, bounds: list[list[float]] | None = None, swarm_size: int = 40) -> int:
         if bounds is None:
             bounds = [[0, 0.1, 0], [10, 10, 10]]
-
-        obj_func = PsoFunc(self._pid_verification, t0, t1, dt, swarm_size=swarm_size)
+        r = lambda t: np.ones_like(t)
+        obj_func = PsoFunc(self._pid_verification, t0, t1, dt, r=r, swarm_size=swarm_size)
 
         iterations = 0
 

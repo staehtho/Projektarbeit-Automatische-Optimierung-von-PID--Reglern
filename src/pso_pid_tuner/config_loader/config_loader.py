@@ -1,5 +1,6 @@
 import yaml
 from pathlib import Path
+import sys
 
 
 class ConfigError(Exception):
@@ -7,13 +8,20 @@ class ConfigError(Exception):
     pass
 
 
-def load_config(file_path="config.yaml"):
-    path = Path(file_path)
+def load_config():
+    if getattr(sys, "frozen", False):
+        # exe läuft
+        base_path = Path(sys.executable).parent.parent  # Ordner der exe
+    else:
+        base_path = Path(__file__).parent.parent
+
+    # Config liegt in Unterordner 'config' neben exe oder im Projekt
+    config_path = base_path / "config" / "config.yaml"
     errors = []  # Liste zur Sammlung aller Exceptions
 
     # YAML laden
     try:
-        with path.open("r", encoding="utf-8") as f:
+        with config_path.open("r", encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
     except Exception as e:
         raise ConfigError(f"Failed to load YAML: {e}")
@@ -67,6 +75,12 @@ def load_config(file_path="config.yaml"):
     anti_windup = system.get("anti_windup")
     if anti_windup not in ["clamping", "conditional"]:
         errors.append(f"'anti_windup' should be 'clamping' or 'conditional', got {anti_windup}.")
+
+    # excitation_target
+    excitation_target = system.get("excitation_target")
+    if excitation_target not in ["reference", "input_disturbance", "measurement_disturbance"]:
+        errors.append(f"'excitation_target' should be 'reference' or 'input_disturbance' or "
+                      f"'measurement_disturbance', got {excitation_target}.")
 
     # Control constraint
     constraint = system.get("control_constraint", {})
@@ -138,6 +152,6 @@ def load_config(file_path="config.yaml"):
 
 # --- Test ---
 if __name__ == "__main__":
-    config = load_config("../config/config.yaml")
+    config = load_config()
     print("Configuration successfully loaded!")
     print(config)

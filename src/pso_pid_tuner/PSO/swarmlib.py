@@ -296,12 +296,12 @@ class Swarm:
         # -------------------------------------------------------------------------
 
     def simulate_swarm(self,
-                       iterate_func: Optional[Callable[['Swarm', float], None]] = None
+                       iterate_func: Optional[Callable[['Swarm'], None]] = None
                        ) -> 'Swarm':
         """Runs the PSO optimization until convergence criteria are met.
 
         Args:
-            iterate_func (Optional[Callable[['Swarm', float], None]]):
+            iterate_func (Optional[Callable[['Swarm'], None]]):
                 Optional callback executed each iteration. Receives the swarm
                 and the particle space percentage.
 
@@ -326,7 +326,7 @@ class Swarm:
 
             # Execute user-provided callback if available
             if iterate_func:
-                iterate_func(self, particle_space_rel)
+                iterate_func(self)
 
             # Check convergence based on particle hypervolume
             if particle_space < initial_space * self._space_factor:
