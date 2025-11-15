@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from typing import Callable
-from .system import System
+from .plant import Plant
 
 
 class ClosedLoop(ABC):
-    def __init__(self, system: System):
+    def __init__(self, system: Plant):
 
         self._system = system
 
@@ -21,7 +21,7 @@ class ClosedLoop(ABC):
 
         The controller and system are formatted using their own __format__ methods:
             - Controller:  f"{self:controller}"
-            - System:       f"{self._system:system}"
+            - Plant:       f"{self._plant:system}"
 
         Args:
             format_spec (str): Format type.
@@ -47,7 +47,7 @@ class ClosedLoop(ABC):
             raise NotImplementedError(f"Unsupported format specifier: '{format_spec}'")
 
     @property
-    def system(self) -> System:
+    def system(self) -> Plant:
         return self._system
 
     @abstractmethod

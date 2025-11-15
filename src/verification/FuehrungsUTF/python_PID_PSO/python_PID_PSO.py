@@ -3,7 +3,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from src.pso_pid_tuner.controlsys import System, PIDClosedLoop, PsoFunc, itae
+from src.pso_pid_tuner.controlsys import Plant, PIDClosedLoop, PsoFunc, itae
 from src.pso_pid_tuner.PSO import Swarm
 
 
@@ -12,8 +12,8 @@ class PidParameter:
                  t0: float, t1: float, dt: float, control_constraint: list[float],
                  identifier_name: str = "n", identifier_value: float | int = 0):
 
-        self._system = System(num, den)
-        self._pid_verification = PIDClosedLoop(self._system, Kp=Kp, Ti=Ti, Td=Td, control_constraint=control_constraint)
+        self._plant = Plant(num, den)
+        self._pid_verification = PIDClosedLoop(self._plant, Kp=Kp, Ti=Ti, Td=Td, control_constraint=control_constraint)
         self._pid_verification.anti_windup_method = "clamping"
 
         self._kp = Kp

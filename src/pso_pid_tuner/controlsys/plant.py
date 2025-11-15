@@ -3,7 +3,7 @@ from scipy.signal import tf2ss
 from typing import Callable
 
 
-class System:
+class Plant:
     """
     Represents a linear time-invariant (LTI) system defined by its transfer function.
 
@@ -14,8 +14,8 @@ class System:
             in descending powers of s.
 
     Example:
-        >>> system = System(num=[1], den=[1, 2, 1])
-        >>> system.system(1j)
+        >>> plant = Plant(num=[1], den=[1, 2, 1])
+        >>> plant.system(1j)
     """
 
     def __init__(
@@ -48,7 +48,7 @@ class System:
 
         Args:
             format_spec (str): Format type. Supported values:
-                - "system": MATLAB-style transfer function representation.
+                - "plant": MATLAB-style transfer function representation.
                 - "num": Numerator coefficients only.
                 - "den": Denominator coefficients only.
 
@@ -59,14 +59,14 @@ class System:
             NotImplementedError: If the format specifier is not supported.
 
         Example:
-            >>> system = System(num=[1], den=[1, 2, 1])
-            >>> format(system, "system")
+            >>> plant = Plant(num=[1], den=[1, 2, 1])
+            >>> format(plant, "plant")
             'tf([1], [1 2 1])'
         """
         # Whitespace entfernen und lower() für Sicherheit
         format_spec = format_spec.strip().lower()
 
-        if format_spec == "system":
+        if format_spec == "plant":
             num_str = "[" + " ".join(map(str, self._num)) + "]"
             den_str = "[" + " ".join(map(str, self._den)) + "]"
             return f"tf({num_str}, {den_str})"
@@ -115,12 +115,12 @@ class System:
     # Methods
     # ******************************
 
-    def get_system_order(self) -> int:
+    def get_plant_order(self) -> int:
         """
-        Returns the order of the system.
+        Returns the order of the plant.
 
         Returns:
-            int: System order (number of states).
+            int: Plant order (number of states).
         """
         return self._A.shape[0]
 
@@ -140,8 +140,8 @@ class System:
               `numpy.polyval`, which expects the highest power first.
 
         Example:
-            >>> system = System(num=[1], den=[1, 2, 1])
-            >>> system.system(1j)
+            >>> plant = Plant(num=[1], den=[1, 2, 1])
+            >>> plant.system(1j)
         """
         return np.polyval(self._num, s) / np.polyval(self._den, s)
 
@@ -152,7 +152,7 @@ class System:
             dt: float = 0.01
     ) -> tuple[np.ndarray, np.ndarray]:
         """
-        Computes the open-loop step response of the system.
+        Computes the open-loop step response of the plant.
 
         Args:
             t0 (float): Start time of simulation. Default is 0.
@@ -190,14 +190,14 @@ class System:
         Returns:
             tuple[np.ndarray, np.ndarray]:
                 - Time vector (np.ndarray)
-                - System output trajectory (np.ndarray)
+                - Plant output trajectory (np.ndarray)
         """
         from .pso_system_optimization import system_response  # local import
         t_eval = np.arange(t0, t1 + dt, dt)
         u_eval = u(t_eval)
 
         if x0 is None:
-            x0 = np.zeros(self.get_system_order(), dtype=np.float64)
+            x0 = np.zeros(self.get_plant_order(), dtype=np.float64)
 
         A = np.ascontiguousarray(self._A, dtype=np.float64)
         B = np.ascontiguousarray(self._B.flatten(), dtype=np.float64)

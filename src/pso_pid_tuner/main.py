@@ -1,5 +1,5 @@
 import sys
-from controlsys import System, PIDClosedLoop, PsoFunc, bode_plot, crossover_frequency, \
+from controlsys import Plant, PIDClosedLoop, PsoFunc, bode_plot, crossover_frequency, \
     smallest_root_realpart
 from PSO import Swarm
 from tqdm import tqdm
@@ -43,16 +43,16 @@ def main():
     td_min = config["pso"]["bounds"]["td_min"]
     td_max = config["pso"]["bounds"]["td_max"]
 
-    # generate system
-    system: System = System(plant_num, plant_den)
+    # generate plant
+    plant: Plant = Plant(plant_num, plant_den)
     bounds = [[kp_min, ti_min, td_min], [kp_max, ti_max, td_max]]
 
     # generate closed loop
-    pid: PIDClosedLoop = PIDClosedLoop(system, Kp=10, Ti=5, Td=3, control_constraint=[constraint_min, constraint_max])
+    pid: PIDClosedLoop = PIDClosedLoop(plant, Kp=10, Ti=5, Td=3, control_constraint=[constraint_min, constraint_max])
     pid.anti_windup_method = anti_windup
 
     # dominant pole (least negative real part)
-    p_dom = smallest_root_realpart(system.den)
+    p_dom = smallest_root_realpart(plant.den)
 
     # corresponding time constant
     t_dom = 1 / abs(p_dom)
@@ -97,7 +97,7 @@ def main():
     # progressbar
     pbar = tqdm(range(iterations), desc="Processing", unit="step", colour="green")
 
-    for i in pbar:
+    for _ in pbar:
         swarm = Swarm(obj_func, swarm_size, 3, bounds)
         terminated_swarm = swarm.simulate_swarm()
 
@@ -128,9 +128,9 @@ def main():
     pid.set_pid_param(Kp=best_Kp, Ti=best_Ti, Td=best_Td)
 
     # determine crossoverfrequency
-    L = lambda s: pid.controller(s) * system.system(s)
+    L = lambda s: pid.controller(s) * plant.system(s)
     wc = crossover_frequency(L)
-    fs = 20000  # Hz, TODO: später aus System übernehmen
+    fs = 20000  # Hz, TODO: später aus Plant übernehmen
 
     # limitations of timeconstant of filter
     Tf_max = 1 / (100 * wc)  # can't be bigger, or filter would be too slow and impact the stepresponse
@@ -145,7 +145,7 @@ def main():
 
     # TODO: bei Z1 und Z2 ist step response nicht relevant
     # step response plant without feedback
-    t_ol, y_ol = system.step_response(
+    t_ol, y_ol = plant.step_response(
         t0=start_time,
         t1=end_time,
         dt=time_step)
@@ -173,7 +173,7 @@ def main():
 
     # Bode
     systems_for_bode = {
-        "Open Loop": system.system,
+        "Open Loop": plant.system,
         "Closed Loop": pid.closed_loop}
 
     # Plot
@@ -222,7 +222,7 @@ def main():
         f.write(f"- Time step: {time_step}\n")
         f.write(f"- Excitation target: `{excitation_target}`\n\n")
 
-        f.write("## System Model\n")
+        f.write("## Plant Model\n")
         f.write(f"- Plant numerator: {plant_num}\n")
         f.write(f"- Plant denominator: {plant_den}\n\n")
 

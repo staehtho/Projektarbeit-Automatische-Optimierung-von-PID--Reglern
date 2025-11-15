@@ -98,7 +98,7 @@ class PsoFunc:
         # SISO → D ist ein skalar
         self.D = float(D[0, 0])
 
-        self.system_order = self.controller.system.get_system_order()
+        self.system_order = self.controller.system.get_plant_order()
 
         self.controller_param: dict[str, str | float | np.ndarray]
 
@@ -276,7 +276,7 @@ def rk4(A: np.ndarray, B: np.ndarray, x: np.ndarray, u: float, dt: float) -> np.
     """Perform a single Runge–Kutta 4th order (RK4) integration step.
 
     Args:
-        A (np.ndarray): System matrix.
+        A (np.ndarray): Plant matrix.
         B (np.ndarray): Input matrix.
         x (np.ndarray): Current state.
         u (float): Control input.
@@ -311,7 +311,7 @@ def itae(t: np.ndarray, y: np.ndarray, r: np.ndarray) -> float:
 
     Args:
         t (np.ndarray): Time vector [s].
-        y (np.ndarray): System output trajectory.
+        y (np.ndarray): Plant output trajectory.
         r (np.ndarray): Reference trajectory.
 
     Returns:
@@ -326,7 +326,7 @@ def itae(t: np.ndarray, y: np.ndarray, r: np.ndarray) -> float:
 
 
 # =============================================================================
-# System Response
+# Plant Response
 # =============================================================================
 @njit(float64[:](
     float64[:], float64, float64[:], float64[:],
@@ -350,13 +350,13 @@ def system_response(t_eval: np.ndarray, dt: float, u_eval: np.ndarray,
         dt (float): Integration time step.
         u_eval (np.ndarray): Input trajectory (e.g., step input).
         x (np.ndarray): Initial state vector.
-        A (np.ndarray): System matrix.
+        A (np.ndarray): Plant matrix.
         B (np.ndarray): Input matrix.
         C (np.ndarray): Output matrix.
         D (float): Feedthrough term.
 
     Returns:
-        np.ndarray: System output trajectory y(t).
+        np.ndarray: Plant output trajectory y(t).
     """
     n_steps = len(t_eval)
     y_hist = np.zeros(n_steps)
@@ -401,7 +401,7 @@ def pid_system_response(Kp: float, Ti: float, Td: float, Tf: float,
         x (np.ndarray): Initial state vector.
         control_constraint (np.ndarray): Control limits [u_min, u_max].
         anti_windup_method (int): Anti-windup strategy (0=Conditional, 1=Clamping).
-        A (np.ndarray): System matrix.
+        A (np.ndarray): Plant matrix.
         B (np.ndarray): Input matrix.
         C (np.ndarray): Output matrix.
         D (float): Feedthrough scalar.
@@ -463,7 +463,7 @@ def _pid_pso_func(X: np.ndarray, t_eval: np.ndarray, dt: float, r_eval: np.ndarr
         t_eval (np.ndarray): Time vector.
         dt (float): Simulation time step.
         r_eval (np.ndarray): Reference trajectory.
-        A (np.ndarray): System matrix.
+        A (np.ndarray): Plant matrix.
         B (np.ndarray): Input matrix.
         C (np.ndarray): Output matrix.
         D (float): Feedthrough scalar.

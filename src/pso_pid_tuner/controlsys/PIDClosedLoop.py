@@ -1,6 +1,6 @@
 from typing import Callable
 
-from .system import System
+from .plant import Plant
 from .closedLoop import ClosedLoop
 import numpy as np
 
@@ -28,7 +28,7 @@ class PIDClosedLoop(ClosedLoop):
     """
 
     def __init__(self,
-                 system: System,
+                 system: Plant,
                  *,
                  # Gain form
                  Kp: float = None,
@@ -44,7 +44,7 @@ class PIDClosedLoop(ClosedLoop):
         Initialize a PID closed-loop controller.
 
         Args:
-            system (System): The controlled system instance.
+            system (Plant): The controlled system instance.
             Kp (float, optional): Proportional gain (gain form).
             Ki (float, optional): Integral gain (gain form).
             Kd (float, optional): Derivative gain (gain form).
@@ -243,7 +243,7 @@ class PIDClosedLoop(ClosedLoop):
                 A tuple containing:
 
                 - **t_eval** (*np.ndarray*): Array of time points over the simulation interval.
-                - **y** (*np.ndarray*): System output values corresponding to `t_eval`.
+                - **y** (*np.ndarray*): Plant output values corresponding to `t_eval`.
 
         Raises:
             NotImplementedError:
@@ -274,7 +274,7 @@ class PIDClosedLoop(ClosedLoop):
         d2_eval = d2(t_eval)
 
         if x0 is None:
-            x0 = np.zeros(self._system.get_system_order())
+            x0 = np.zeros(self._system.get_plant_order())
 
         if self._anti_windup_method == "conditional":
             anti_windup = 0
