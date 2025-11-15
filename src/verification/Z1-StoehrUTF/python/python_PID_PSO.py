@@ -69,13 +69,9 @@ class PidParameter:
             self._identifier_name: self._identifier_value,
             "LowerLimit": self._control_constraint[0],
             "UpperLimit": self._control_constraint[1],
-            "Kp_ref": self._kp,
             "Kp_PSO": self._min_kp,
-            "Ti_ref": self._ti,
             "Ti_PSO": self._min_ti,
-            "Td_ref": self._td,
             "Td_PSO": self._min_td,
-            "ITAE_ref": self._itae,
             "ITAE_PSO": self._min_itae
         }
 
