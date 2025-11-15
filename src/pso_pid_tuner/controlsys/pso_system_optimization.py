@@ -61,7 +61,7 @@ class PsoFunc:
                  r: Callable[[np.ndarray], np.ndarray] | None = None,
                  d1: Callable[[np.ndarray], np.ndarray] | None = None,
                  d2: Callable[[np.ndarray], np.ndarray] | None = None,
-                 swarm_size: int = 40) -> None:
+                 swarm_size: int = 40, pre_compiling: bool = True) -> None:
 
         self.controller = controller
 
@@ -69,6 +69,8 @@ class PsoFunc:
         self.t1 = t1
         self.dt = dt
         self.t_eval = np.arange(t0, t1 + dt, dt)
+
+        self._pre_compiling = pre_compiling
 
         if r is None:
             r = lambda t: np.zeros_like(t)
@@ -124,12 +126,15 @@ class PsoFunc:
             raise NotImplementedError(f"Unsupported controller type: '{type(controller)}'")
 
         # Pre-compile Numba functions
-        start = time.time()
-        X = np.array([[10, 9.6, 0.3] for _ in range(swarm_size)], dtype=np.float64)
-        self.__call__(X)
-        end = time.time()
-        print(f"Pre-compiling: {end - start:0.6f} sec", flush=True)
-        time.sleep(0.05)
+        if self._pre_compiling:
+            start = time.time()
+            X = np.array([[10, 9.6, 0.3] for _ in range(swarm_size)], dtype=np.float64)
+            self.__call__(X)
+            end = time.time()
+            print(f"Pre-compiling: {end - start:0.6f} sec", flush=True)
+            time.sleep(0.05)
+
+            self._pre_compiling = False
 
     def __call__(self, X: np.ndarray) -> np.ndarray:
         """Evaluate the ITAE criterion for a batch of PID parameter sets.
