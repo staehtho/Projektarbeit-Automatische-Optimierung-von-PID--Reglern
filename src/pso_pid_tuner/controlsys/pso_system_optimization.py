@@ -425,11 +425,8 @@ def pid_system_response(Kp: float, Ti: float, Td: float, Tf: float,
         d1 = float(d1_eval[i])  # Störung am Eingang (Z1)
         d2 = float(d2_eval[i])  # Störung im Messpfad (Z2)
 
-        # Messsignal, das der Regler sieht (mit Messrauschen)
-        y_meas = y + d2
-
-        # Reglerfehler
-        e = r - y_meas
+        # Reglerfehler (PID sieht die Messstörung)
+        e = r - (y + d2)
 
         # PID-Regler
         u, integral, filtered_prev = pid_update(
@@ -437,12 +434,14 @@ def pid_system_response(Kp: float, Ti: float, Td: float, Tf: float,
             dt, u_min, u_max, anti_windup_method
         )
 
-        # Systemzustand aktualisieren (Störung additiv zum Prozessinput)
+        # Systemzustand aktualisieren
         x = rk4(A, B, x, u + d1, dt)
 
         # Ausgang berechnen (reales y ohne Messrauschen)
         y = dot1D(C, x)
-        y_hist[i] = y + D * (u + d1)
+
+        # Historie: nur das reale Ausgangssignal plus Feedthrough
+        y_hist[i] = y + d2 + D * (u + d1)
 
         e_prev = e
 
