@@ -1,4 +1,3 @@
-import math
 import sys
 from controlsys import System, PIDClosedLoop, PsoFunc, bode_plot, crossover_frequency, \
     smallest_root_realpart
@@ -9,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from datetime import datetime
+
 
 def main():
     try:
@@ -143,6 +143,7 @@ def main():
     print(f"→ Choose Tf such that  {Tf_min:.6e}  ≤  Tf  ≤  {Tf_max:.6e}\n")
     print(f"  For the generated plots, the filter time constant was set to Tf_max")
 
+    # TODO: bei Z1 und Z2 ist step response nicht relevant
     # step response plant without feedback
     t_ol, y_ol = system.step_response(
         t0=start_time,
