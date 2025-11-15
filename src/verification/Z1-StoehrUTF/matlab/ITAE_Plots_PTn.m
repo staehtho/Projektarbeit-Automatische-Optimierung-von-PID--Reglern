@@ -23,7 +23,7 @@ limits = [
 ];
 
 % Lade PID-Parameter
-run('PTn_parameter_Referenz.m')
+run('PTn_parameter_PSO.m')
 
 % Ergebnisliste vorbereiten
 results = [];
@@ -42,7 +42,7 @@ for i = 1:length(den_list)
         Tv = pid_params{i,j}(3);
 
         % Simulink-Modell starten (verwende Variablen aus aktuellem Workspace)
-        sim('PTn_model','SrcWorkspace','current');
+        sim('PTn_model_Z1','SrcWorkspace','current');
 
         % Signale extrahieren
         t = ans.simout.time;
@@ -53,7 +53,7 @@ for i = 1:length(den_list)
         t_alt = 0;
         for r = 1:length(t)
             delta_t = t(r) - t_alt;
-            ITAE = ITAE + t(r) * abs((1 - x(r))) * delta_t;
+            ITAE = ITAE + t(r) * abs((x(r))) * delta_t;
             t_alt = t(r);
         end
 
@@ -71,6 +71,6 @@ T = array2table(results, ...
     'VariableNames', {'SystemIndex','LimitIndex','Kp','Tn','Tv','UpperLimit','LowerLimit','ITAE'});
 
 % CSV speichern
-writetable(T, 'PTn_Referenz_results_matlab.csv');
+writetable(T, 'PTn_PSO_results_matlab.csv');
 
 disp('Alle Simulationen abgeschlossen. Ergebnisse in "PTn_Referenz_results_matlab.csv" gespeichert.');

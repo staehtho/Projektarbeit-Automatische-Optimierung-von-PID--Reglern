@@ -41,7 +41,7 @@ for i = 1:length(D_list)
         t_start = tic;
 
         % Simulink-Modell starten (verwende Variablen aus aktuellem Workspace)
-        sim('PT2_schwingfaehig_model','SrcWorkspace','current');
+        sim('PT2_schwingfaehig_model_Z1','SrcWorkspace','current');
 
         % Simulationszeit stoppen
         sim_duration = toc(t_start);
@@ -55,7 +55,7 @@ for i = 1:length(D_list)
         t_alt = 0;
         for r = 1:length(t)
             delta_t = t(r) - t_alt;
-            ITAE = ITAE + t(r) * abs((1 - x(r))) * delta_t;
+            ITAE = ITAE + t(r) * abs((x(r))) * delta_t;
             t_alt = t(r);
         end
 
