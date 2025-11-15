@@ -75,4 +75,4 @@ T_out = array2table(results, ...
 % CSV speichern
 writetable(T_out, 'PT2_PSO_results_matlab.csv');
 
-disp('✅ Alle Simulationen abgeschlossen. Ergebnisse in "PT2_Buechi_results_matlab.csv" gespeichert.');
+disp('✅ Alle Simulationen abgeschlossen. Ergebnisse in "PT2_PSO_results_matlab.csv" gespeichert.');

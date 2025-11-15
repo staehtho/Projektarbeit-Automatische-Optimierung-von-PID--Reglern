@@ -7,7 +7,8 @@ from tqdm import tqdm
 from config_loader import load_config, ConfigError
 import matplotlib.pyplot as plt
 import numpy as np
-
+import os
+from datetime import datetime
 
 def main():
     try:
@@ -54,14 +55,14 @@ def main():
     p_dom = smallest_root_realpart(system.den)
 
     # corresponding time constant
-    tau = 1 / abs(p_dom)
+    t_dom = 1 / abs(p_dom)
 
     # set filter to be much faster than plant dynamics
-    pid.set_filter(Tf=tau/100)
+    pid.set_filter(Tf=t_dom/100)
 
     # define simulation horizon so the plant settles
     #TODO: funktioniert so nicht. für mehrfache polstellen m erhöht sich die zeit um faktor m. (und kompl. konj. PS mischen auch mit.
-    #end_time = math.ceil(5 * tau)
+    #end_time = math.ceil(5 * t_dom)
 
     # generate function to be optimized
     match excitation_target:
@@ -185,6 +186,64 @@ def main():
     plt.legend()
 
     bode_plot(systems_for_bode)
+
+    # create base folder
+    base_output_dir = os.path.join(os.path.dirname(__file__), "output")
+    os.makedirs(base_output_dir, exist_ok=True)
+
+    # timestamp
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    # create runspecific folder
+    run_output_dir = os.path.join(base_output_dir, timestamp)
+    os.makedirs(run_output_dir, exist_ok=True)
+
+    # write results in markdown
+    md_path = os.path.join(run_output_dir, f"results_{timestamp}.md")
+
+    with open(md_path, "w", encoding="utf-8") as f:
+        f.write("# PID Optimization Results\n\n")
+        f.write(f"Generated on **{timestamp}**\n\n")
+        f.write("## Best Found Parameters\n")
+        f.write(f"- **Kp** = {best_Kp:.4f}\n")
+        f.write(f"- **Ti** = {best_Ti:.4f}\n")
+        f.write(f"- **Td** = {best_Td:.4f}\n")
+        f.write(f"- **Best ITAE** = {best_itae:.6f}\n\n")
+
+        f.write("## Recommended Filter Time Constant (Tf)\n")
+        f.write(f"- **Tf_min** = {Tf_min:.6e} s\n")
+        f.write(f"- **Tf_max** = {Tf_max:.6e} s\n")
+        f.write(f"- For the generated plots, the filter time constant was set to **Tf_max**\n\n")
+
+        f.write("## Simulation Settings\n")
+        f.write(f"- Start time: {start_time}\n")
+        f.write(f"- End time: {end_time}\n")
+        f.write(f"- Time step: {time_step}\n")
+        f.write(f"- Excitation target: `{excitation_target}`\n\n")
+
+        f.write("## System Model\n")
+        f.write(f"- Plant numerator: {plant_num}\n")
+        f.write(f"- Plant denominator: {plant_den}\n\n")
+
+        f.write("## Plots\n")
+        f.write(f"- Step response plot: **step_response_{timestamp}.png**\n")
+        f.write(f"- Bode plot: **bode_{timestamp}.png**\n\n")
+
+    print(f"\n\n  {'Results written to:':<32}{md_path}")
+
+    # export plots
+    step_plot_path = os.path.join(run_output_dir, f"step_response_{timestamp}.png")
+    bode_plot_path = os.path.join(run_output_dir, f"bode_{timestamp}.png")
+
+    plt.figure(1)
+    plt.savefig(step_plot_path, dpi=600)
+
+    plt.figure(2)
+    plt.savefig(bode_plot_path, dpi=600)
+
+    print(f"  {'Step response plot saved to:':<32}{step_plot_path}")
+    print(f"  {'Bode plot saved to:':<32}{bode_plot_path}")
+
     plt.show()
 
 
