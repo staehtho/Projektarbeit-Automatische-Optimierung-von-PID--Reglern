@@ -8,15 +8,29 @@ class ConfigError(Exception):
     pass
 
 
-def load_config():
-    if getattr(sys, "frozen", False):
-        # exe läuft
-        base_path = Path(sys.executable).parent.parent  # Ordner der exe
-    else:
-        base_path = Path(__file__).parent.parent
+def get_config_path() -> Path:
+    """
+    Liefert den Pfad zur config.yaml – im Skriptmodus aus ./config/,
+    im EXE-Modus aus dem Ordner der EXE.
+    """
 
-    # Config liegt in Unterordner 'config' neben exe oder im Projekt
-    config_path = base_path / "config" / "config.yaml"
+    if getattr(sys, "frozen", False):
+        # EXE-Modus → config.yaml liegt neben der EXE
+        base_path = Path(sys.executable).parent
+        return base_path / "config.yaml"
+    else:
+        # Script-Modus → zurück zur Projekt-Wurzel gehen
+        # current file = main/config_loader/config_loader.py
+        # parent -> config_loader
+        # parent -> main/
+        project_root = Path(__file__).resolve().parent.parent
+        return project_root / "config" / "config.yaml"
+
+
+def load_config():
+
+    config_path = get_config_path()
+
     errors = []  # Liste zur Sammlung aller Exceptions
 
     # YAML laden
