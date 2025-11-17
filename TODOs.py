@@ -13,3 +13,7 @@
 # TODO: integration dieser funktion in plantobjekt (thomas)
 
 # TODO: contional windup umsetzen oder rückbauen
+
+# TODO: Name von uns hinzufügen, EXE erstellen und an Büchi senden, output PDF!!!
+
+# TODO: Stichworte zu BA, was solle diese beinhalten
