@@ -27,7 +27,7 @@ system:
 
   simulation_time:
     start_time: 0      # Start time in [sec]
-    end_time: 20       # End time in [sec]
+    end_time: 10       # End time in [sec]
     time_step: 1e-4    # Simulation time step in [sec]
 
   # Anti-windup method: choose "clamping" or "conditional"
@@ -51,7 +51,7 @@ pso:
     # Parameter search limits for PSO
     # Define lower and upper boundaries for each PID parameter
     kp_min: 0.0
-    kp_max: 10.0
+    kp_max: 100.0
     ti_min: 0.1
     ti_max: 10.0
     td_min: 0.0

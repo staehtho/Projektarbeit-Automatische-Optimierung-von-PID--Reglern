@@ -6,9 +6,27 @@ from tqdm import tqdm
 from config_loader import load_config, ConfigError
 import matplotlib.pyplot as plt
 import numpy as np
-import os
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, PageBreak, PageTemplate, Frame
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import cm
+from reportlab.pdfgen import canvas
 from datetime import datetime
+import os
 
+def add_footer(canvas, doc):
+    canvas.saveState()
+    width, height = A4
+
+    # links unten: Text "PID-Tuner"
+    canvas.setFont("Helvetica", 9)
+    canvas.drawString(2 * cm, 1 * cm, "PID-Optimizer")
+
+    # rechts unten: Seitenzahl
+    page_text = f"Page {doc.page}"
+    canvas.drawRightString(width - 2 * cm, 1 * cm, page_text)
+
+    canvas.restoreState()
 
 def main():
     try:
@@ -55,10 +73,12 @@ def main():
     p_dom = smallest_root_realpart(plant.den)
 
     # corresponding time constant
+    # TODO: 0 abfangen
     t_dom = 1 / abs(p_dom)
 
     # set filter to be much faster than plant dynamics
     pid.set_filter(Tf=t_dom/100)
+    # TODO: 0 abfangen
 
     # define simulation horizon so the plant settles
     #TODO: funktioniert so nicht. für mehrfache polstellen m erhöht sich die zeit um faktor m. (und kompl. konj. PS mischen auch mit.
@@ -140,8 +160,8 @@ def main():
     print("Recommended range for the filter time constant Tf:")
     print(f"  Tf_min = {Tf_min:.6e} s   (limit imposed by the sampling frequency: {fs}Hz)")
     print(f"  Tf_max = {Tf_max:.6e} s   (limit imposed by the crossover frequency)")
-    print(f"→ Choose Tf such that  {Tf_min:.6e}  ≤  Tf  ≤  {Tf_max:.6e}\n")
-    print(f"  For the generated plots, the filter time constant was set to Tf_max")
+    print(f"→ Choose Tf such that  {Tf_min:.6e}  ≤  Tf  ≤  {Tf_max:.6e}")
+    print(f"  For the generated plots, the filter time constant was set to Tf_max\n\n")
 
     # TODO: bei Z1 und Z2 ist step response nicht relevant
     # step response plant without feedback
@@ -174,65 +194,33 @@ def main():
     # Bode
     systems_for_bode = {
         "Open Loop": plant.system,
-        "Closed Loop": pid.closed_loop}
+        "Closed Loop": pid.closed_loop
+    }
 
-    # Plot
-    plt.figure()
+    # Plot Step Response
+    plt.figure(1)
     plt.plot(t_ol, y_ol, label="Open Loop")
     plt.plot(t_cl, y_cl, label="Closed Loop")
     plt.xlabel("time / s")
     plt.ylabel("output")
-    plt.title("step response")
+    plt.title("Step Response", fontweight="bold", fontname="Arial", pad=20)
     plt.grid(True)
     plt.legend()
 
-    bode_plot(systems_for_bode)
+    # Plot Bode
+    bode_fig = bode_plot(systems_for_bode)
 
-    # create base folder
-    base_output_dir = os.path.join(os.path.dirname(__file__), "output")
-    os.makedirs(base_output_dir, exist_ok=True)
+    # Get user's download directory
+    download_dir = os.path.join(os.path.expanduser("~"), "Downloads")
 
-    # timestamp
+    # Timestamp
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    # create runspecific folder
-    run_output_dir = os.path.join(base_output_dir, timestamp)
+    # Create run-specific folder with timestamp and label
+    run_output_dir = os.path.join(download_dir, f"PID_Optimization_Result_{timestamp}")
     os.makedirs(run_output_dir, exist_ok=True)
 
-    # write results in markdown
-    md_path = os.path.join(run_output_dir, f"results_{timestamp}.md")
-
-    with open(md_path, "w", encoding="utf-8") as f:
-        f.write("# PID Optimization Results\n\n")
-        f.write(f"Generated on **{timestamp}**\n\n")
-        f.write("## Best Found Parameters\n")
-        f.write(f"- **Kp** = {best_Kp:.4f}\n")
-        f.write(f"- **Ti** = {best_Ti:.4f}\n")
-        f.write(f"- **Td** = {best_Td:.4f}\n")
-        f.write(f"- **Best ITAE** = {best_itae:.6f}\n\n")
-
-        f.write("## Recommended Filter Time Constant (Tf)\n")
-        f.write(f"- **Tf_min** = {Tf_min:.6e} s\n")
-        f.write(f"- **Tf_max** = {Tf_max:.6e} s\n")
-        f.write(f"- For the generated plots, the filter time constant was set to **Tf_max**\n\n")
-
-        f.write("## Simulation Settings\n")
-        f.write(f"- Start time: {start_time}\n")
-        f.write(f"- End time: {end_time}\n")
-        f.write(f"- Time step: {time_step}\n")
-        f.write(f"- Excitation target: `{excitation_target}`\n\n")
-
-        f.write("## Plant Model\n")
-        f.write(f"- Plant numerator: {plant_num}\n")
-        f.write(f"- Plant denominator: {plant_den}\n\n")
-
-        f.write("## Plots\n")
-        f.write(f"- Step response plot: **step_response_{timestamp}.png**\n")
-        f.write(f"- Bode plot: **bode_{timestamp}.png**\n\n")
-
-    print(f"\n\n  {'Results written to:':<32}{md_path}")
-
-    # export plots
+    # export bodeplots
     step_plot_path = os.path.join(run_output_dir, f"step_response_{timestamp}.png")
     bode_plot_path = os.path.join(run_output_dir, f"bode_{timestamp}.png")
 
@@ -240,13 +228,125 @@ def main():
     plt.savefig(step_plot_path, dpi=600)
 
     plt.figure(2)
-    plt.savefig(bode_plot_path, dpi=600)
+    bode_fig.savefig(bode_plot_path, dpi=600)
 
-    print(f"  {'Step response plot saved to:':<32}{step_plot_path}")
-    print(f"  {'Bode plot saved to:':<32}{bode_plot_path}")
+    print(f"{'Step response saved to:':<32} {step_plot_path}")
+    print(f"{'Bode plot saved to:':<32} {bode_plot_path}")
+
+    # create pdf
+    pdf_path = os.path.join(run_output_dir, f"results_{timestamp}.pdf")
+
+    styles = getSampleStyleSheet()
+    style_h1 = styles["Heading1"]
+    style_h2 = styles["Heading2"]
+    style_body = styles["BodyText"]
+
+    doc = SimpleDocTemplate(pdf_path, pagesize=A4)
+
+    # Frame
+    frame = Frame(
+        doc.leftMargin,
+        doc.bottomMargin,
+        doc.width,
+        doc.height,
+        id='normal'
+    )
+
+    # PageTemplate with Footer
+    doc.addPageTemplates([
+        PageTemplate(id='AllPages', frames=frame, onPage=add_footer)
+    ])
+
+    elements = []
+
+    # LOGO
+    logo = Image("ZHAW_logo.png", width=3 * cm, height=3 * cm)
+
+    # Title + timestamp stacked in one cell
+    title_paragraph = Paragraph("PID Optimization Results", style_h1)
+    timestamp_paragraph = Paragraph(f"Generated on <b>{timestamp}</b>", style_body)
+
+    # Combine title + timestamp vertically
+    title_block = [title_paragraph, timestamp_paragraph]
+
+    # 2-column table: left title block, right logo
+    header_table = Table(
+        [[title_block, logo]],
+        colWidths=[13 * cm, 4 * cm]  # adjust if needed
+    )
+
+    header_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+
+        ("TOPPADDING", (1, 0), (1, 0), -16),
+
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+    ]))
+
+    elements.append(header_table)
+    elements.append(Spacer(1, 0.7 * cm))
+
+    # INFO BLOCK
+    elements.append(Paragraph("Information", style_h2))
+    elements.append(Paragraph(
+        '<font color="red"><b>PRELIMINARY – results have not been fully validated and the application is still under development'
+        '</b></font>', style_body))
+    elements.append(Paragraph("developed by: Thomas Staehli, Florin Büchi, Roland Büchi", style_body))
+    elements.append(Paragraph("enjoy tuning and leave us some feedback: https://buymeacoffee.com/SwarmAndOrder", style_body))
+    elements.append(Spacer(1, 1 * cm))
+
+    # PARAMETERS
+    elements.append(Paragraph("Best Found Parameters", style_h2))
+    elements.append(Paragraph(f"K<sub>p</sub> = {best_Kp:.4f}", style_body))
+    elements.append(Paragraph(f"T<sub>i</sub> = {best_Ti:.4f}", style_body))
+    elements.append(Paragraph(f"T<sub>d</sub> = {best_Td:.4f}", style_body))
+    elements.append(Paragraph(f"Best ITAE = {best_itae:.6f}", style_body))
+    elements.append(Spacer(1, 0.5 * cm))
+
+    # FILTER
+    elements.append(Paragraph("Recommended Filter Time Constant (T<sub>f</sub>)", style_h2))
+    elements.append(Paragraph(
+        f"T<sub>f,min</sub> = {Tf_min:.6e} s   "f"(limit imposed by the sampling frequency: {fs} Hz)",style_body))
+    elements.append(Paragraph(
+        f"T<sub>f-max</sub> = {Tf_max:.6e} s   "f"(limit imposed by the crossover frequency)",style_body))
+    elements.append(Paragraph(
+        f"&#8594; Choose T<sub>f</sub> such that  "f"{Tf_min:.6e}   &#8804;   T<sub>f</sub>   &#8804;   {Tf_max:.6e}",style_body))
+    elements.append(Paragraph(
+        "For the generated plots, the filter time constant was set to T<sub>f,max</sub>.",style_body))
+    elements.append(Spacer(1, 0.5 * cm))
+
+    # SIM SETTINGS
+    elements.append(Paragraph("Simulation Settings", style_h2))
+    elements.append(Paragraph(f"Start time: {start_time}", style_body))
+    elements.append(Paragraph(f"End time: {end_time}", style_body))
+    elements.append(Paragraph(f"Time step: {time_step}", style_body))
+    elements.append(Paragraph(f"Excitation target: {excitation_target}", style_body))
+    elements.append(Spacer(1, 0.5 * cm))
+
+    # PLANT MODEL
+    elements.append(Paragraph("Plant Model", style_h2))
+    elements.append(Paragraph(f"Numerator: {plant_num}", style_body))
+    elements.append(Paragraph(f"Denominator: {plant_den}", style_body))
+    elements.append(Spacer(1, 1 * cm))
+
+    # PAGE BREAK
+    elements.append(PageBreak())
+
+    # PLOTS
+    elements.append(Image(step_plot_path, width=16 * cm, height=11 * cm))
+    elements.append(Spacer(1, 1 * cm))
+    elements.append(Image(bode_plot_path, width=16 * cm, height=11 * cm))
+
+    # Build
+    doc.build(elements, onFirstPage=add_footer, onLaterPages=add_footer)
+
+    print(f"{'PDF written to:':<32} {pdf_path}")
+    os.startfile(run_output_dir)
 
     plt.show()
-
 
 if __name__ == "__main__":
     main()

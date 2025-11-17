@@ -1,19 +1,18 @@
 # TODO: Jede Funktion mit einem Docstring im Google-Style ergänzen (ChatGPT)
 
-# TODO: PID (PSO) finden für RCRC und Voicecoil
-# TODO: Voicecoil und RCRC regeln und aufzeichnen
+# TODO: PID (PSO) finden und Voicecoil
+# TODO: Voicecoil regeln und aufzeichnen
 
-# TODO: Test exe von test_PSO_performant.py (Thomas)
+# TODO: Ausgabe Z1/Z2 anpassen, openloop entfernen im fall Z und Bode entsprechend anpassen (Flo)
+# TODO: Ausgabe als PDF verschönern (Flo)
+# TODO: Namen hinterlegen im code(main) und in ausgabe (Flo)
+# TODO: dynamische integrationszeit, anhand sprungantwort plant (yaml: bandgrösse in %, endtime: auto oder wert (flo)
 
-# TODO: Störübertragungsfunktion Z1, Z2 implementieren (THomas)
-# TODO: integration Auswahl, welcher Übertragungsweg :) (Thomas)
-# TODO: Verfikation sämtlicher bekannter Strecken (beide)
+# TODO: vorbereiten alternative erregerfunktion (Thomas)
+# TODO: contional windup umsetzen oder rückbauen (Thomas)
+# TODO: IAE ergänzen (thomas)
+# TODO: Alternativer solver vorbereiten (thomas)
 
-# TODO: dynamische integrationszeit, anhand einregelzeit plant (durchtrittsfrequenz -> tau, faktor 5,6,7, dann aufrunden auf schönen wert (flo)
-# TODO: integration dieser funktion in plantobjekt (thomas)
-
-# TODO: contional windup umsetzen oder rückbauen
-
-# TODO: Name von uns hinzufügen, EXE erstellen und an Büchi senden, output PDF!!!
+# TODO: EXE erstellen und an Büchi senden (thomas)
 
 # TODO: Stichworte zu BA, was solle diese beinhalten
