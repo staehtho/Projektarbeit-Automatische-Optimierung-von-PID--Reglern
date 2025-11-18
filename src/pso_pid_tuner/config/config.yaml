@@ -33,7 +33,7 @@ system:
   # Anti-windup method: choose "clamping" or "conditional"
   anti_windup: "clamping"
   # Excitation_target: choose "reference" (r) or "input_disturbance" (z1) or "measurement_disturbance" (z2)
-  excitation_target: "reference"
+  excitation_target: "measurement_disturbance"
 
   control_constraint:
     # Control signal limits for both the I-term and the controller output

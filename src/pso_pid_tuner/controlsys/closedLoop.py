@@ -69,6 +69,18 @@ class ClosedLoop(ABC):
         G = self._system.system(s)
         return (C * G) / (1 + C * G)
 
+    def closed_loop_Z1(self, s: complex | np.ndarray) -> complex | np.ndarray:
+        """Closed-loop transfer function for Z1."""
+        C = self.controller(s)
+        G = self._system.system(s)
+        return G / (1 + C * G)
+
+    def closed_loop_Z2(self, s: complex | np.ndarray) -> complex | np.ndarray:
+        """Closed-loop transfer function for Z1."""
+        C = self.controller(s)
+        G = self._system.system(s)
+        return 1 / (1 + C * G)
+
     def step_response(
             self,
             t0: float = 0,

@@ -170,6 +170,11 @@ def main():
         t1=end_time,
         dt=time_step)
 
+    # build bode
+    systems_for_bode = {
+        "Open Loop": plant.system
+    }
+
     # step response feedbackloop
     match excitation_target:
         case "reference":
@@ -177,29 +182,27 @@ def main():
                 t0=start_time,
                 t1=end_time,
                 dt=time_step)
+            systems_for_bode["Closed Loop Reference"] = pid.closed_loop
         case "input_disturbance":
             t_cl, y_cl = pid.z1_step_response(
                 t0=start_time,
                 t1=end_time,
                 dt=time_step)
+            systems_for_bode["Closed Loop Z1"] = pid.closed_loop_Z1
         case "measurement_disturbance":
             t_cl, y_cl = pid.z2_step_response(
                 t0=start_time,
                 t1=end_time,
                 dt=time_step)
+            systems_for_bode["Closed Loop Z2"] = pid.closed_loop_Z2
         case _:
             t_cl = np.zeros_like(t_ol)
             y_cl = np.zeros_like(t_ol)
 
-    # Bode
-    systems_for_bode = {
-        "Open Loop": plant.system,
-        "Closed Loop": pid.closed_loop
-    }
-
     # Plot Step Response
     plt.figure(1)
-    plt.plot(t_ol, y_ol, label="Open Loop")
+    if excitation_target == "reference":
+        plt.plot(t_ol, y_ol, label="Open Loop")
     plt.plot(t_cl, y_cl, label="Closed Loop")
     plt.xlabel("time / s")
     plt.ylabel("output")
@@ -311,7 +314,7 @@ def main():
     elements.append(Paragraph(
         f"T<sub>f,min</sub> = {Tf_min:.6e} s   "f"(limit imposed by the sampling frequency: {fs} Hz)",style_body))
     elements.append(Paragraph(
-        f"T<sub>f-max</sub> = {Tf_max:.6e} s   "f"(limit imposed by the crossover frequency)",style_body))
+        f"T<sub>f,max</sub> = {Tf_max:.6e} s   "f"(limit imposed by the crossover frequency)",style_body))
     elements.append(Paragraph(
         f"&#8594; Choose T<sub>f</sub> such that  "f"{Tf_min:.6e}   &#8804;   T<sub>f</sub>   &#8804;   {Tf_max:.6e}",style_body))
     elements.append(Paragraph(

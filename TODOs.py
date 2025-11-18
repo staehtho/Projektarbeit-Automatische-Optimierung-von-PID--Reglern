@@ -3,9 +3,8 @@
 # TODO: PID (PSO) finden und Voicecoil
 # TODO: Voicecoil regeln und aufzeichnen
 
-# TODO: Ausgabe Z1/Z2 anpassen, openloop entfernen im fall Z und Bode entsprechend anpassen (Flo)
 # TODO: Ausgabe als PDF verschönern (Flo)
-# TODO: Namen hinterlegen im code(main) und in ausgabe (Flo)
+# TODO: Namen hinterlegen im code(main) (Flo)
 # TODO: dynamische integrationszeit, anhand sprungantwort plant (yaml: bandgrösse in %, endtime: auto oder wert (flo)
 
 # TODO: vorbereiten alternative erregerfunktion (Thomas)
