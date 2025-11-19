@@ -1,8 +1,9 @@
 from typing import Callable
+import numpy as np
 
 from .plant import Plant
 from .closedLoop import ClosedLoop
-import numpy as np
+from .enums import *
 
 
 class PIDClosedLoop(ClosedLoop):
@@ -48,7 +49,7 @@ class PIDClosedLoop(ClosedLoop):
         control_constraint (list[float], optional): Saturation limits for the
             control signal, in the format [u_min, u_max]. Defaults to [-5.0, 5.0].
 
-        anti_windup_method (str, optional): Method to reduce integral windup.
+        anti_windup_method (AntiWindup, optional): Method to reduce integral windup.
             Supported values:
             - "clamping": Stop integration when output saturates.
             - "conditional": Integrate only when output is not saturated.
@@ -72,7 +73,7 @@ class PIDClosedLoop(ClosedLoop):
                  # Filter
                  Tf: float = 0.01,
                  control_constraint: list[float] = None,
-                 anti_windup_method: str = "clamping"
+                 anti_windup_method: AntiWindup = AntiWindup.CLAMPING
                  ) -> None:
 
         super().__init__(plant)
@@ -92,7 +93,7 @@ class PIDClosedLoop(ClosedLoop):
         # Control output constraints
         self._control_constraint = control_constraint or [-5.0, 5.0]
 
-        self._anti_windup_method: str = anti_windup_method
+        self._anti_windup_method = anti_windup_method
 
     # -------------------- Properties --------------------
 
@@ -131,12 +132,8 @@ class PIDClosedLoop(ClosedLoop):
         return self._control_constraint
 
     @property
-    def anti_windup_method(self) -> str:
+    def anti_windup_method(self) -> AntiWindup:
         return self._anti_windup_method
-
-    @anti_windup_method.setter
-    def anti_windup_method(self, anti_windup_method) -> None:
-        self._anti_windup_method = anti_windup_method
 
     def set_filter(self, Tf):
         self._tf = Tf
@@ -295,13 +292,6 @@ class PIDClosedLoop(ClosedLoop):
         if x0 is None:
             x0 = np.zeros(self._plant.get_plant_order())
 
-        if self._anti_windup_method == "conditional":
-            anti_windup = 0
-        elif self._anti_windup_method == "clamping":
-            anti_windup = 1
-        else:
-            raise NotImplementedError(f"Unsupported anti windup method: '{self._anti_windup_method}'")
-
         A, B, C, D = self._plant.get_ABCD()
 
         A = np.ascontiguousarray(A, dtype=np.float64)
@@ -318,6 +308,6 @@ class PIDClosedLoop(ClosedLoop):
                                 Tf=self._tf, t_eval=t_eval, dt=dt,
                                 r_eval=r_eval, l_eval=l_eval, n_eval=n_eval,
                                 x=x0, control_constraint=np.array(self._control_constraint, dtype=np.float64),
-                                anti_windup_method=anti_windup,
-                                A=A, B=B, C=C, D=D)
+                                anti_windup_method=map_enum_to_int(self._anti_windup_method),
+                                A=A, B=B, C=C, D=D, solver=map_enum_to_int(self._plant.solver))
         return t_eval, y
