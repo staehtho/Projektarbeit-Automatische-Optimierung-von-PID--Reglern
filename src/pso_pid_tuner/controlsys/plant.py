@@ -2,6 +2,8 @@ import numpy as np
 from scipy.signal import tf2ss
 from typing import Callable
 
+from .enums import map_enum_to_int, MySolver
+
 
 class Plant:
     """
@@ -21,10 +23,13 @@ class Plant:
     def __init__(
             self,
             num: list[float] | np.ndarray,
-            den: list[float] | np.ndarray
+            den: list[float] | np.ndarray,
+            solver: MySolver = MySolver.RK4
     ) -> None:
         self._num = np.array(num, copy=False, dtype=float)
         self._den = np.array(den, copy=False, dtype=float)
+
+        self._solver = solver
 
         # Dominante Zeitkonstante T1 bestimmen
         roots = np.roots(self._den)
@@ -97,6 +102,10 @@ class Plant:
     def t1(self) -> float:
         """Dominant time constant (used for derivative filter)."""
         return self._t1
+
+    @property
+    def solver(self) -> MySolver:
+        return self._solver
 
     def get_ABCD(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -212,7 +221,8 @@ class Plant:
             A=A,
             B=B,
             C=C,
-            D=D
+            D=D,
+            solver=map_enum_to_int(self._solver)
         )
 
         return t_eval, np.array(y)

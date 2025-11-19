@@ -1,10 +1,14 @@
 import numpy as np
 import time
 from numba import njit, prange, types, float64, int64
-from .closedLoop import ClosedLoop
-from .PIDClosedLoop import PIDClosedLoop
 from typing import Callable
 
+from .closedLoop import ClosedLoop
+from .PIDClosedLoop import PIDClosedLoop
+from .enums import *
+
+
+# TODO: Doc-String überarbeiten
 
 class PsoFunc:
     """
@@ -61,7 +65,10 @@ class PsoFunc:
                  r: Callable[[np.ndarray], np.ndarray] | None = None,
                  l: Callable[[np.ndarray], np.ndarray] | None = None,
                  n: Callable[[np.ndarray], np.ndarray] | None = None,
-                 swarm_size: int = 40, pre_compiling: bool = True) -> None:
+                 solver: MySolver = MySolver.RK4,
+                 performance_index: PerformanceIndexInt = PerformanceIndexInt.ITAE,
+                 swarm_size: int = 40,
+                 pre_compiling: bool = True) -> None:
 
         self.controller = controller
 
@@ -102,6 +109,10 @@ class PsoFunc:
 
         self.controller_param: dict[str, str | float | np.ndarray]
 
+        self.performance_index = map_enum_to_int(performance_index)
+
+        self.solver = map_enum_to_int(solver)
+
         self.swarm_size = swarm_size
 
         # Extract PID-specific parameters
@@ -109,17 +120,10 @@ class PsoFunc:
 
             pid: PIDClosedLoop = self.controller
 
-            if pid.anti_windup_method == "conditional":
-                anti_windup = 0
-            elif pid.anti_windup_method == "clamping":
-                anti_windup = 1
-            else:
-                raise NotImplementedError(f"Unsupported anti windup method: '{pid.anti_windup_method}'")
-
             self.controller_param = {
                 "Tf": pid.Tf,
                 "control_constraint": np.array(pid.control_constraint, dtype=np.float64),
-                "anti_windup": anti_windup
+                "anti_windup": map_enum_to_int(pid.anti_windup_method)
             }
 
         else:
@@ -145,7 +149,6 @@ class PsoFunc:
         Returns:
             np.ndarray: ITAE values for each particle.
         """
-        start = time.time()
         X = np.array(X, dtype=np.float64)
         if X.ndim == 1:
             X = X.reshape(1, -1)
@@ -154,13 +157,11 @@ class PsoFunc:
             itae_val = _pid_pso_func(X, self.t_eval, self.dt, self.r_eval, self.l_eval, self.n_eval, self.A, self.B,
                                      self.C, self.D, self.system_order, self.controller_param["Tf"],
                                      self.controller_param["control_constraint"], self.controller_param["anti_windup"],
-                                     self.swarm_size)
+                                     self.solver, self.performance_index, self.swarm_size)
 
         else:
             raise NotImplementedError(f"Unsupported controller type: '{type(self.controller)}'")
 
-        end = time.time()
-        # print(f"{end - start:0.3f} sec")
         return itae_val
 
 
@@ -248,7 +249,7 @@ def pid_update(e: float, e_prev: float, filtered_prev: float, integral: float,
     u_temp = P + I_term + D_term
 
     # --- Anti-windup handling ---
-    if anti_windup_method == 0:  # Conditional
+    if anti_windup_method == AntiWindupInt.CONDITIONAL:
         if (u_min < u_temp < u_max) or \
                 (u_temp >= u_max and e < 0.0) or \
                 (u_temp <= u_min and e > 0.0):
@@ -256,7 +257,7 @@ def pid_update(e: float, e_prev: float, filtered_prev: float, integral: float,
             I_term = Kp / Ti * integral
         u = min(max(P + I_term + D_term, u_min), u_max)
 
-    elif anti_windup_method == 1:  # Clamping
+    elif anti_windup_method == AntiWindupInt.CLAMPING:
         integral += e * dt
         I_term = Kp / Ti * integral
         I_term = min(max(I_term, u_min), u_max)
@@ -296,8 +297,61 @@ def rk4(A: np.ndarray, B: np.ndarray, x: np.ndarray, u: float, dt: float) -> np.
 
 
 # =============================================================================
-# ITAE Cost Function
+# Performance index
 # =============================================================================
+@njit(float64(float64[:], float64[:], float64[:]), cache=True, inline="always")
+def iae(t: np.ndarray, y: np.ndarray, r: np.ndarray) -> float:
+    """Compute the Integral of Absolute Error (IAE).
+
+    The IAE criterion is defined as:
+
+        IAE = ∫ |r(t) - y(t)| dt
+
+    It measures the total absolute deviation of the plant output from
+    the reference trajectory over time, without weighting for time.
+    Minimizing IAE promotes small overall tracking error.
+
+    Args:
+        t (np.ndarray): Time vector [s].
+        y (np.ndarray): Plant output trajectory.
+        r (np.ndarray): Reference trajectory.
+
+    Returns:
+        float: Computed IAE value.
+    """
+    val = 0.0
+    for i in range(1, t.shape[0]):
+        dt = t[i] - t[i - 1]
+        val += abs(r[i] - y[i]) * dt
+    return val
+
+
+@njit(float64(float64[:], float64[:], float64[:]), cache=True, inline="always")
+def ise(t: np.ndarray, y: np.ndarray, r: np.ndarray) -> float:
+    """Compute the Integral of Squared Error (ISE).
+
+    The ISE criterion is defined as:
+
+        ISE = ∫ (r(t) - y(t))^2 dt
+
+    It penalizes large deviations more heavily due to squaring the error,
+    promoting smaller peaks in the system response.
+
+    Args:
+        t (np.ndarray): Time vector [s].
+        y (np.ndarray): Plant output trajectory.
+        r (np.ndarray): Reference trajectory.
+
+    Returns:
+        float: Computed ISE value.
+    """
+    val = 0.0
+    for i in range(1, t.shape[0]):
+        dt = t[i] - t[i - 1]
+        val += (r[i] - y[i])**2 * dt
+    return val
+
+
 @njit(float64(float64[:], float64[:], float64[:]), cache=True, inline="always")
 def itae(t: np.ndarray, y: np.ndarray, r: np.ndarray) -> float:
     """Compute the Integral of Time-weighted Absolute Error (ITAE).
@@ -318,10 +372,37 @@ def itae(t: np.ndarray, y: np.ndarray, r: np.ndarray) -> float:
         float: Computed ITAE value.
     """
     # berechnet delta t, beginnend mit t[0] - t[0]
-    val = 0
+    val = 0.0
     for i in range(1, t.shape[0]):
-        val += t[i] * np.abs(r[i] - y[i]) * (t[i] - t[i - 1])
+        dt = t[i] - t[i - 1]
+        val += t[i] * abs(r[i] - y[i]) * dt
 
+    return val
+
+
+@njit(float64(float64[:], float64[:], float64[:]), cache=True, inline="always")
+def itse(t: np.ndarray, y: np.ndarray, r: np.ndarray) -> float:
+    """Compute the Integral of Time-weighted Squared Error (ITSE).
+
+    The ITSE criterion is defined as:
+
+        ITSE = ∫ t * (r(t) - y(t))^2 dt
+
+    It penalizes large errors at later times, emphasizing fast settling
+    and small steady-state deviation with strong punishment for late deviations.
+
+    Args:
+        t (np.ndarray): Time vector [s].
+        y (np.ndarray): Plant output trajectory.
+        r (np.ndarray): Reference trajectory.
+
+    Returns:
+        float: Computed ITSE value.
+    """
+    val = 0.0
+    for i in range(1, t.shape[0]):
+        dt = t[i] - t[i - 1]
+        val += t[i] * (r[i] - y[i])**2 * dt
     return val
 
 
@@ -330,13 +411,13 @@ def itae(t: np.ndarray, y: np.ndarray, r: np.ndarray) -> float:
 # =============================================================================
 @njit(float64[:](
     float64[:], float64, float64[:], float64[:],
-    float64[:, :], float64[:], float64[:], float64
+    float64[:, :], float64[:], float64[:], float64, int64
 ),
     cache=True, inline="always"
 )
 def system_response(t_eval: np.ndarray, dt: float, u_eval: np.ndarray,
                     x: np.ndarray, A: np.ndarray, B: np.ndarray,
-                    C: np.ndarray, D: float) -> np.ndarray:
+                    C: np.ndarray, D: float, solver: int) -> np.ndarray:
     """Simulate the open-loop (uncontrolled) response of a SISO system.
 
     This function computes the output of a single-input single-output (SISO)
@@ -365,7 +446,8 @@ def system_response(t_eval: np.ndarray, dt: float, u_eval: np.ndarray,
         u = float(u_eval[i])
 
         # Zustand aktualisieren (numerische Integration)
-        x = rk4(A, B, x, u, dt)
+        if solver == MySolverInt.RK4:
+            x = rk4(A, B, x, u, dt)
 
         # Ausgang berechnen
         y = dot1D(C, x)
@@ -377,14 +459,14 @@ def system_response(t_eval: np.ndarray, dt: float, u_eval: np.ndarray,
 @njit(float64[:](
     float64, float64, float64, float64, float64[:], float64,
     float64[:], float64[:], float64[:], float64[:], float64[:],
-    int64, float64[:, :], float64[:], float64[:], float64
+    int64, float64[:, :], float64[:], float64[:], float64, int64
 ), cache=True, inline="always")
 def pid_system_response(Kp: float, Ti: float, Td: float, Tf: float,
                         t_eval: np.ndarray, dt: float,
                         r_eval: np.ndarray, l_eval: np.ndarray, n_eval: np.ndarray,
                         x: np.ndarray, control_constraint: np.ndarray,
                         anti_windup_method: int,
-                        A: np.ndarray, B: np.ndarray, C: np.ndarray, D: float) -> np.ndarray:
+                        A: np.ndarray, B: np.ndarray, C: np.ndarray, D: float, solver: int) -> np.ndarray:
     """
     Simulate a SISO system under PID control with reference input and two disturbance inputs (Z1, Z2).
 
@@ -435,7 +517,8 @@ def pid_system_response(Kp: float, Ti: float, Td: float, Tf: float,
         )
 
         # Systemzustand aktualisieren
-        x = rk4(A, B, x, u + l, dt)
+        if solver == MySolverInt.RK4:
+            x = rk4(A, B, x, u + l, dt)
 
         # Ausgang berechnen (reales y ohne Messrauschen)
         y = dot1D(C, x)
@@ -455,7 +538,7 @@ def pid_system_response(Kp: float, Ti: float, Td: float, Tf: float,
 def _pid_pso_func(X: np.ndarray, t_eval: np.ndarray, dt: float, r_eval: np.ndarray, l_eval: np.ndarray,
                   n_eval: np.ndarray, A: np.ndarray, B: np.ndarray, C: np.ndarray, D: float,
                   system_order: int, Tf: float, control_constraint: np.ndarray, anti_windup_method: int,
-                  swarm_size: int) -> np.ndarray:
+                  solver: int, performance_index: int, swarm_size: int) -> np.ndarray:
     """Compute ITAE values for multiple PID parameter sets in parallel.
 
     Args:
@@ -476,7 +559,7 @@ def _pid_pso_func(X: np.ndarray, t_eval: np.ndarray, dt: float, r_eval: np.ndarr
     Returns:
         np.ndarray: ITAE values for each particle.
     """
-    itae_val = np.zeros(swarm_size)
+    performance_index_val = np.zeros(swarm_size)
 
     for i in prange(swarm_size):
         # Simulation des PID-regulierten Systems
@@ -487,9 +570,19 @@ def _pid_pso_func(X: np.ndarray, t_eval: np.ndarray, dt: float, r_eval: np.ndarr
         x = np.zeros(system_order, dtype=np.float64)  # Anfangszustand
 
         y = pid_system_response(Kp, Ti, Td, Tf, t_eval, dt, r_eval, l_eval, n_eval, x, control_constraint,
-                                anti_windup_method, A, B, C, D)
+                                anti_windup_method, A, B, C, D, solver)
 
-        # ITAE-Kosten berechnen
-        itae_val[i] = itae(t_eval, y, r_eval)
+        # Kosten berechnen
+        if performance_index == PerformanceIndexInt.IAE:
+            performance_index_val[i] = iae(t_eval, y, r_eval)
 
-    return itae_val
+        elif performance_index == PerformanceIndexInt.ISE:
+            performance_index_val[i] = ise(t_eval, y, r_eval)
+
+        elif performance_index == PerformanceIndexInt.ITAE:
+            performance_index_val[i] = itae(t_eval, y, r_eval)
+
+        elif performance_index == PerformanceIndexInt.ITSE:
+            performance_index_val[i] = itse(t_eval, y, r_eval)
+
+    return performance_index_val
