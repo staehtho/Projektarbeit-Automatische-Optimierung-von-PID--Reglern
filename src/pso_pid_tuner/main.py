@@ -7,17 +7,6 @@ import numpy as np
 from report_generator.report_generator import report_generator
 
 
-
-def resource_path(relative_path):
-    if hasattr(sys, '_MEIPASS'):
-        # EXE → Ressourcen liegen in sys._MEIPASS
-        base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
-        return os.path.join(base_path, relative_path)
-    else:
-        # Script direkt → relativer Pfad zum Verzeichnis
-        return os.path.join(os.path.dirname(__file__), relative_path)
-
-
 def main():
 
     print("Loading Configuration..")
@@ -75,8 +64,8 @@ def main():
     # TODO: 0 abfangen
 
     # define simulation horizon so the plant settles
-    #TODO: funktioniert so nicht. für mehrfache polstellen m erhöht sich die zeit um faktor m. (und kompl. konj. PS mischen auch mit.
-    #end_time = math.ceil(5 * t_dom)
+    # TODO: funktioniert so nicht. für mehrfache polstellen m erhöht sich die zeit um faktor m. (und kompl. konj. PS mischen auch mit.
+    # end_time = math.ceil(5 * t_dom)
 
     # generate function to be optimized
     match excitation_target:
@@ -103,10 +92,6 @@ def main():
     best_Ti = 0
     best_Td = 0
     best_itae = sys.float_info.max
-
-    # einmaliges warm-up, damit JIT vor der tqdm-progressbar kompiliert
-    # TODO beobachten, ob problem noch auftritt auch ohne warm up
-    #_ = pid.step_response(start_time, start_time + time_step, time_step)
 
     # progressbar
     pbar = tqdm(range(iterations), desc="Processing", unit="step", colour="green")
@@ -146,6 +131,7 @@ def main():
     }
 
     report_generator(data)
+
 
 if __name__ == "__main__":
     main()
