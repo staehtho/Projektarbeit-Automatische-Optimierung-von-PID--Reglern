@@ -26,8 +26,8 @@ class PsoFunc:
         dt (float): Simulation time step.
         t_eval (np.ndarray): Array of time points for simulation.
         r_eval (np.ndarray): Evaluated reference trajectory over t_eval.
-        d1_eval (np.ndarray): Evaluated disturbance trajectory at plant input (Z1) over t_eval.
-        d2_eval (np.ndarray): Evaluated disturbance trajectory at measurement/output (Z2) over t_eval.
+        l_eval (np.ndarray): Evaluated disturbance trajectory at plant input (Z1) over t_eval.
+        n_eval (np.ndarray): Evaluated disturbance trajectory at measurement/output (Z2) over t_eval.
         A (np.ndarray): State-space system matrix A (contiguous for Numba).
         B (np.ndarray): State-space input vector B (contiguous for Numba).
         C (np.ndarray): State-space output vector C (contiguous for Numba).
@@ -44,9 +44,9 @@ class PsoFunc:
         dt (float): Simulation time step.
         r (Callable[[np.ndarray], np.ndarray] | None, optional): Reference (setpoint)
             function defining the desired output over time. If None, a zero vector is used.
-        d1 (Callable[[np.ndarray], np.ndarray] | None, optional): Disturbance function
+        l (Callable[[np.ndarray], np.ndarray] | None, optional): Disturbance function
             at the plant input (Z1). If None, zero disturbance is assumed.
-        d2 (Callable[[np.ndarray], np.ndarray] | None, optional): Disturbance function
+        n (Callable[[np.ndarray], np.ndarray] | None, optional): Disturbance function
             at the measurement/output (Z2). If None, zero disturbance is assumed.
         swarm_size (int, optional): Number of particles in the swarm for PSO. Defaults to 40.
 
@@ -59,8 +59,8 @@ class PsoFunc:
     """
     def __init__(self, controller: ClosedLoop, t0: float, t1: float, dt: float,
                  r: Callable[[np.ndarray], np.ndarray] | None = None,
-                 d1: Callable[[np.ndarray], np.ndarray] | None = None,
-                 d2: Callable[[np.ndarray], np.ndarray] | None = None,
+                 l: Callable[[np.ndarray], np.ndarray] | None = None,
+                 n: Callable[[np.ndarray], np.ndarray] | None = None,
                  swarm_size: int = 40, pre_compiling: bool = True) -> None:
 
         self.controller = controller
@@ -75,15 +75,15 @@ class PsoFunc:
         if r is None:
             r = lambda t: np.zeros_like(t)
 
-        if d1 is None:
-            d1 = lambda t: np.zeros_like(t)
+        if l is None:
+            l = lambda t: np.zeros_like(t)
 
-        if d2 is None:
-            d2 = lambda t: np.zeros_like(t)
+        if n is None:
+            n = lambda t: np.zeros_like(t)
 
         self.r_eval = r(self.t_eval)
-        self.d1_eval = d1(self.t_eval)
-        self.d2_eval = d2(self.t_eval)
+        self.l_eval = l(self.t_eval)
+        self.n_eval = n(self.t_eval)
 
         # Extract state-space matrices and ensure they are contiguous for Numba
         A, B, C, D = self.controller.system.get_ABCD()
@@ -151,7 +151,7 @@ class PsoFunc:
             X = X.reshape(1, -1)
 
         if isinstance(self.controller, PIDClosedLoop):
-            itae_val = _pid_pso_func(X, self.t_eval, self.dt, self.r_eval, self.d1_eval, self.d2_eval, self.A, self.B,
+            itae_val = _pid_pso_func(X, self.t_eval, self.dt, self.r_eval, self.l_eval, self.n_eval, self.A, self.B,
                                      self.C, self.D, self.system_order, self.controller_param["Tf"],
                                      self.controller_param["control_constraint"], self.controller_param["anti_windup"],
                                      self.swarm_size)
@@ -381,7 +381,7 @@ def system_response(t_eval: np.ndarray, dt: float, u_eval: np.ndarray,
 ), cache=True, inline="always")
 def pid_system_response(Kp: float, Ti: float, Td: float, Tf: float,
                         t_eval: np.ndarray, dt: float,
-                        r_eval: np.ndarray, d1_eval: np.ndarray, d2_eval: np.ndarray,
+                        r_eval: np.ndarray, l_eval: np.ndarray, n_eval: np.ndarray,
                         x: np.ndarray, control_constraint: np.ndarray,
                         anti_windup_method: int,
                         A: np.ndarray, B: np.ndarray, C: np.ndarray, D: float) -> np.ndarray:
@@ -396,8 +396,8 @@ def pid_system_response(Kp: float, Ti: float, Td: float, Tf: float,
         t_eval (np.ndarray): Time vector.
         dt (float): Simulation time step.
         r_eval (np.ndarray): Reference trajectory.
-        d1_eval (np.ndarray): Disturbance at plant input (affects process input) → Z1.
-        d2_eval (np.ndarray): Disturbance at measurement/output (affects feedback signal) → Z2.
+        l_eval (np.ndarray): Disturbance at plant input (affects process input) → Z1.
+        n_eval (np.ndarray): Disturbance at measurement/output (affects feedback signal) → Z2.
         x (np.ndarray): Initial state vector.
         control_constraint (np.ndarray): Control limits [u_min, u_max].
         anti_windup_method (int): Anti-windup strategy (0=Conditional, 1=Clamping).
@@ -422,11 +422,11 @@ def pid_system_response(Kp: float, Ti: float, Td: float, Tf: float,
 
     for i in range(n_steps):
         r = float(r_eval[i])
-        d1 = float(d1_eval[i])  # Störung am Eingang (Z1)
-        d2 = float(d2_eval[i])  # Störung im Messpfad (Z2)
+        l = float(l_eval[i])  # Störung am Eingang (Z1)
+        n = float(n_eval[i])  # Störung im Messpfad (Z2)
 
         # Reglerfehler (PID sieht die Messstörung)
-        e = r - (y + d2)
+        e = r - (y + n)
 
         # PID-Regler
         u, integral, filtered_prev = pid_update(
@@ -435,13 +435,13 @@ def pid_system_response(Kp: float, Ti: float, Td: float, Tf: float,
         )
 
         # Systemzustand aktualisieren
-        x = rk4(A, B, x, u + d1, dt)
+        x = rk4(A, B, x, u + l, dt)
 
         # Ausgang berechnen (reales y ohne Messrauschen)
         y = dot1D(C, x)
 
         # Historie: nur das reale Ausgangssignal plus Feedthrough
-        y_hist[i] = y + d2 + D * (u + d1)
+        y_hist[i] = y + n + D * (u + l)
 
         e_prev = e
 
@@ -452,8 +452,8 @@ def pid_system_response(Kp: float, Ti: float, Td: float, Tf: float,
 # PSO Function
 # =============================================================================
 @njit(parallel=True, cache=True)
-def _pid_pso_func(X: np.ndarray, t_eval: np.ndarray, dt: float, r_eval: np.ndarray, d1_eval: np.ndarray,
-                  d2_eval: np.ndarray, A: np.ndarray, B: np.ndarray, C: np.ndarray, D: float,
+def _pid_pso_func(X: np.ndarray, t_eval: np.ndarray, dt: float, r_eval: np.ndarray, l_eval: np.ndarray,
+                  n_eval: np.ndarray, A: np.ndarray, B: np.ndarray, C: np.ndarray, D: float,
                   system_order: int, Tf: float, control_constraint: np.ndarray, anti_windup_method: int,
                   swarm_size: int) -> np.ndarray:
     """Compute ITAE values for multiple PID parameter sets in parallel.
@@ -486,7 +486,7 @@ def _pid_pso_func(X: np.ndarray, t_eval: np.ndarray, dt: float, r_eval: np.ndarr
 
         x = np.zeros(system_order, dtype=np.float64)  # Anfangszustand
 
-        y = pid_system_response(Kp, Ti, Td, Tf, t_eval, dt, r_eval, d1_eval, d2_eval, x, control_constraint,
+        y = pid_system_response(Kp, Ti, Td, Tf, t_eval, dt, r_eval, l_eval, n_eval, x, control_constraint,
                                 anti_windup_method, A, B, C, D)
 
         # ITAE-Kosten berechnen

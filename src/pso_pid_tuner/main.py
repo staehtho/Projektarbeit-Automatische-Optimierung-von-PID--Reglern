@@ -10,9 +10,9 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Tabl
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
-from reportlab.pdfgen import canvas
 from datetime import datetime
 import os
+
 
 def add_footer(canvas, doc):
     canvas.saveState()
@@ -28,6 +28,17 @@ def add_footer(canvas, doc):
 
     canvas.restoreState()
 
+
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        # EXE → Ressourcen liegen in sys._MEIPASS
+        base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
+        return os.path.join(base_path, relative_path)
+    else:
+        # Script direkt → relativer Pfad zum Verzeichnis
+        return os.path.join(os.path.dirname(__file__), relative_path)
+
+
 def main():
     try:
         config = load_config()
@@ -35,6 +46,7 @@ def main():
     except ConfigError as e:
         print("error in configuration!:")
         print(e)
+        input("Press Enter to exit…")
         return
 
     plant_num = config["system"]["plant"]["numerator"]
@@ -88,22 +100,22 @@ def main():
     match excitation_target:
         case "reference":
             r = lambda t: np.ones_like(t)
-            d1 = lambda t: np.zeros_like(t)
-            d2 = lambda t: np.zeros_like(t)
+            l = lambda t: np.zeros_like(t)
+            n = lambda t: np.zeros_like(t)
         case "input_disturbance":
             r = lambda t: np.zeros_like(t)
-            d1 = lambda t: np.ones_like(t)
-            d2 = lambda t: np.zeros_like(t)
+            l = lambda t: np.ones_like(t)
+            n = lambda t: np.zeros_like(t)
         case "measurement_disturbance":
             r = lambda t: np.zeros_like(t)
-            d1 = lambda t: np.zeros_like(t)
-            d2 = lambda t: np.ones_like(t)
+            l = lambda t: np.zeros_like(t)
+            n = lambda t: np.ones_like(t)
         case _:
             r = lambda t: np.zeros_like(t)
-            d1 = lambda t: np.zeros_like(t)
-            d2 = lambda t: np.zeros_like(t)
+            l = lambda t: np.zeros_like(t)
+            n = lambda t: np.zeros_like(t)
 
-    obj_func = PsoFunc(pid, start_time, end_time, time_step, r=r, d1=d1, d2=d2, swarm_size=swarm_size)
+    obj_func = PsoFunc(pid, start_time, end_time, time_step, r=r, l=l, n=n, swarm_size=swarm_size)
 
     best_Kp = 0
     best_Ti = 0
@@ -263,7 +275,8 @@ def main():
     elements = []
 
     # LOGO
-    logo = Image("ZHAW_logo.png", width=3 * cm, height=3 * cm)
+    img_path = resource_path("icons/ZHAW_logo.png")
+    logo = Image(img_path, width=3 * cm, height=3 * cm)
 
     # Title + timestamp stacked in one cell
     title_paragraph = Paragraph("PID Optimization Results", style_h1)
@@ -297,7 +310,7 @@ def main():
     elements.append(Paragraph(
         '<font color="red"><b>PRELIMINARY – results have not been fully validated and the application is still under development'
         '</b></font>', style_body))
-    elements.append(Paragraph("developed by: Thomas Staehli, Florin Büchi, Roland Büchi", style_body))
+    elements.append(Paragraph("developed by: Thomas Stähli, Florin Büchi, Roland Büchi", style_body))
     elements.append(Paragraph("enjoy tuning and leave us some feedback: https://buymeacoffee.com/SwarmAndOrder", style_body))
     elements.append(Spacer(1, 1 * cm))
 
@@ -351,5 +364,8 @@ def main():
 
     plt.show()
 
+
 if __name__ == "__main__":
     main()
+    # Damit cmd offen bleibt
+    # input("Press Enter to exit…")

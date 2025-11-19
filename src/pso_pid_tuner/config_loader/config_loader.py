@@ -86,6 +86,7 @@ def load_config():
             errors.append(f"'{key}' should be a number, got {type(val).__name__}.")
 
     # Anti-windup
+    # cfg["system"]["anti_windup"] = "clamping"
     anti_windup = system.get("anti_windup")
     if anti_windup not in ["clamping", "conditional"]:
         errors.append(f"'anti_windup' should be 'clamping' or 'conditional', got {anti_windup}.")

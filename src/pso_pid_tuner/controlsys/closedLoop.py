@@ -5,12 +5,9 @@ from .plant import Plant
 
 
 class ClosedLoop(ABC):
-    def __init__(self, system: Plant):
+    def __init__(self, plant: Plant):
 
-        self._system = system
-
-        # Standard-Sollwert (Einheitssprung)
-        self._set_point: float = 1.0
+        self._plant = plant
 
     def __format__(self, format_spec: str) -> str:
         """
@@ -38,7 +35,7 @@ class ClosedLoop(ABC):
 
         if format_spec == "cl":
             controller_str = format(self, "controller")
-            system_str = format(self._system, "system")
+            system_str = format(self._plant, "system")
 
             num_str = f"{controller_str} * {system_str}"
             den_str = f"1 + {controller_str} * {system_str}"
@@ -48,7 +45,7 @@ class ClosedLoop(ABC):
 
     @property
     def system(self) -> Plant:
-        return self._system
+        return self._plant
 
     @abstractmethod
     def controller(self, s: complex | np.ndarray) -> complex | np.ndarray:
@@ -66,19 +63,19 @@ class ClosedLoop(ABC):
     def closed_loop(self, s: complex | np.ndarray) -> complex | np.ndarray:
         """Closed-loop transfer function."""
         C = self.controller(s)
-        G = self._system.system(s)
+        G = self._plant.system(s)
         return (C * G) / (1 + C * G)
 
     def closed_loop_Z1(self, s: complex | np.ndarray) -> complex | np.ndarray:
         """Closed-loop transfer function for Z1."""
         C = self.controller(s)
-        G = self._system.system(s)
+        G = self._plant.system(s)
         return G / (1 + C * G)
 
     def closed_loop_Z2(self, s: complex | np.ndarray) -> complex | np.ndarray:
         """Closed-loop transfer function for Z1."""
         C = self.controller(s)
-        G = self._system.system(s)
+        G = self._plant.system(s)
         return 1 / (1 + C * G)
 
     def step_response(
@@ -137,8 +134,8 @@ class ClosedLoop(ABC):
                 - **t_eval** (*np.ndarray*): Array of time points.
                 - **y_hist** (*np.ndarray*): Array of system output values corresponding to `t_eval`.
         """
-        d1 = lambda t: np.ones_like(t)
-        return self.system_response(t0, t1, dt, d1=d1)
+        l = lambda t: np.ones_like(t)
+        return self.system_response(t0, t1, dt, l=l)
 
     def z2_step_response(
             self,
@@ -162,8 +159,8 @@ class ClosedLoop(ABC):
                 - **t_eval** (*np.ndarray*): Array of time points.
                 - **y_hist** (*np.ndarray*): Array of system output values corresponding to `t_eval`.
         """
-        d2 = lambda t: np.ones_like(t)
-        return self.system_response(t0, t1, dt, d2=d2)
+        n = lambda t: np.ones_like(t)
+        return self.system_response(t0, t1, dt, n=n)
 
     @abstractmethod
     def system_response(
@@ -172,8 +169,8 @@ class ClosedLoop(ABC):
             t1: float,
             dt: float,
             r: Callable[[np.ndarray], np.ndarray] | None = None,
-            d1: Callable[[np.ndarray], np.ndarray] | None = None,
-            d2: Callable[[np.ndarray], np.ndarray] | None = None,
+            l: Callable[[np.ndarray], np.ndarray] | None = None,
+            n: Callable[[np.ndarray], np.ndarray] | None = None,
             x0: np.ndarray | None = None,
             y0: float = 0
     ) -> tuple[np.ndarray, np.ndarray]:
