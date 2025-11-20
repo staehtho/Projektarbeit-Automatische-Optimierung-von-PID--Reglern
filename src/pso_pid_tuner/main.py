@@ -1,16 +1,16 @@
-print("Starting the PID Optimizer. Loading modules, please wait...")
-
 import sys
-from controlsys import Plant, PIDClosedLoop, PsoFunc, smallest_root_realpart
-from PSO import Swarm
+from pso_pid_tuner.controlsys import Plant, PIDClosedLoop, PsoFunc, smallest_root_realpart
+from pso_pid_tuner.PSO import Swarm
 from tqdm import tqdm
-from config_loader import load_config, ConfigError
+from pso_pid_tuner.config_loader import load_config, ConfigError
 import numpy as np
-from report_generator.report_generator import report_generator
+from pso_pid_tuner.report_generator import report_generator
+
+
+print("Starting the PID Optimizer. Loading modules, please wait...")
 
 
 def main():
-
     print("Loading Configuration..")
 
     try:
@@ -66,7 +66,6 @@ def main():
     else:
         t_dom = 1 / abs(p_dom)
         pid.set_filter(Tf=t_dom / 100)
-
 
     # define simulation horizon so the plant settles
     # TODO: funktioniert so nicht. für mehrfache polstellen m erhöht sich die zeit um faktor m. (und kompl. konj. PS mischen auch mit.

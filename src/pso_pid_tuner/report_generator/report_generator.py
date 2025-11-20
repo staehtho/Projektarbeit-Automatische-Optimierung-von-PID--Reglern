@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 from datetime import datetime
 
 import matplotlib.pyplot as plt
@@ -11,12 +12,18 @@ from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle,
     PageBreak, PageTemplate, Frame)
 
-
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, ROOT)
 from ..controlsys import bode_plot, crossover_frequency, PerformanceIndex
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+def resource_path() -> Path:
+    """Gibt den richtigen Pfad zur Ressource, auch nach PyInstaller-Build."""
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS)
+    else:
+        # Script-Modus → zurück zur Projekt-Wurzel gehen
+        project_root = Path(__file__).resolve().parent.parent
+        return project_root
+
 
 def add_footer(canvas, doc):
     canvas.saveState()
@@ -81,7 +88,7 @@ def report_generator(data: dict):
     # --------------------------
     L = lambda s: pid.controller(s) * plant.system(s)
     wc = crossover_frequency(L)
-    fs = 20000 # Hz, TODO: später aus Plant übernehmen
+    fs = 20000  # Hz, TODO: später aus Plant übernehmen
 
     # limitations of timeconstant of filter
     Tf_max = 1 / (100 * wc)  # can't be bigger, or filter would be too slow and impact the stepresponse
@@ -194,7 +201,7 @@ def report_generator(data: dict):
     elements = []
 
     # LOGO
-    logo_path = os.path.join(BASE_DIR, "ZHAW_logo.png")
+    logo_path = os.path.join(resource_path(), os.path.join("report_generator", "ZHAW_logo.png"))
     logo = Image(logo_path, width=3 * cm, height=3 * cm)
 
     # Title + timestamp stacked in one cell
