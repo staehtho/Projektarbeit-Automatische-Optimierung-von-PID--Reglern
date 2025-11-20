@@ -1,3 +1,5 @@
+print("Starting the PID Optimizer. Loading modules, please wait...")
+
 import sys
 from controlsys import Plant, PIDClosedLoop, PsoFunc, smallest_root_realpart
 from PSO import Swarm
@@ -6,10 +8,7 @@ from config_loader import load_config, ConfigError
 import numpy as np
 from report_generator.report_generator import report_generator
 
-
 def main():
-
-    print("Loading Configuration..")
 
     try:
         config = load_config()
@@ -17,6 +16,7 @@ def main():
     except ConfigError as e:
         print("error in configuration!:")
         print(e)
+        input("Press Enter to exit..")
         return
 
     plant_num = config["system"]["plant"]["numerator"]

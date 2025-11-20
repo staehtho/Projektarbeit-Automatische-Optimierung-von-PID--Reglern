@@ -126,7 +126,8 @@ def report_generator(data: dict):
             t_cl = np.zeros_like(t_ol)
             y_cl = np.zeros_like(t_ol)
 
-        # Plot Step Response
+    # TODO: Closed Loop label anpassen, falls Z1/Z2 (wie bei bode)
+    # Plot Step Response
     plt.figure(1)
     if excitation_target == "reference":
         plt.plot(t_ol, y_ol, label="Open Loop")
@@ -227,7 +228,7 @@ def report_generator(data: dict):
         '</b></font>', style_body))
     elements.append(Paragraph("developed by: Thomas Staehli, Florin Büchi, Roland Büchi", style_body))
     elements.append(
-        Paragraph("enjoy tuning and leave us some feedback: https://buymeacoffee.com/SwarmAndOrder", style_body))
+        Paragraph("enjoy tuning and leave us some feedback: bhir@zhaw.ch", style_body))
     elements.append(Spacer(1, 1 * cm))
 
     # PARAMETERS
