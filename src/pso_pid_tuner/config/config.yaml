@@ -1,5 +1,5 @@
 # ============================================================
-# Configuration file for PSO-based PID tuning
+# Configuration file for PSO-based PID optimizing
 #
 # This YAML file contains parameters for:
 # 1. System definition (plant transfer function, simulation time, anti-windup, control constraints)
@@ -33,12 +33,25 @@ system:
   # Anti-windup method: choose "clamping" or "conditional"
   anti_windup: "clamping"
   # Excitation_target: choose "reference" (r) or "input_disturbance" (z1) or "measurement_disturbance" (z2)
-  excitation_target: "measurement_disturbance"
+  excitation_target: "reference"
 
   control_constraint:
     # Control signal limits for both the I-term and the controller output
     min_constraint: -2
     max_constraint: 2
+
+  # Performance index: defines the control quality criterion used for optimization.
+  # Common choices:
+  #   - "IAE"  (Integral of Absolute Error)
+  #            Measures the total absolute deviation over time.
+  #   - "ISE"  (Integral of Squared Error)
+  #            Squares the error, penalizing large deviations more strongly.
+  #   - "ITAE" (Integral of Time-weighted Absolute Error)
+  #            Weights errors by time to penalize long-lasting deviations.
+  #   - "ITSE" (Integral of Time-weighted Squared Error)
+  #            Squares and time-weights the error, emphasizing late and large errors.
+  # This metric is minimized during the PSO to evaluate controller performance.
+  performance_index: "ITAE"
 
 # ============================================================
 # PSO parameter
@@ -51,7 +64,7 @@ pso:
     # Parameter search limits for PSO
     # Define lower and upper boundaries for each PID parameter
     kp_min: 0.0
-    kp_max: 100.0
+    kp_max: 10.0
     ti_min: 0.1
     ti_max: 10.0
     td_min: 0.0

@@ -1,34 +1,67 @@
 from typing import Callable
+import numpy as np
 
 from .plant import Plant
 from .closedLoop import ClosedLoop
-import numpy as np
+from .enums import *
 
 
 class PIDClosedLoop(ClosedLoop):
     """
-    Represents a closed-loop control system with a PID controller in international form.
+    Closed-loop control system using a PID controller in international form.
 
-    The PID controller can be parameterized either in **gain form** or in **time-constant form**.
+    The PID controller can be parameterized using either **gain form** or
+    **time-constant form**:
 
     Gain form:
-        Kp, Ki, Kd
+        - Kp: Proportional gain
+        - Ki: Integral gain
+        - Kd: Derivative gain
 
     Time-constant form:
-        Kp, Ti, Td
+        - Kp: Proportional gain
+        - Ti: Integral time constant
+        - Td: Derivative time constant
 
-    The derivative term is filtered using a first-order (PT1) filter with time constant:
-        Tf = derivative_filter_ratio * system.t1
+    Only one parameterization method should be provided during initialization.
+    If one form is provided, the parameters of the other form are computed
+    automatically.
 
-    Only one parameterization method should be used per initialization.
-    Conversion between forms is handled automatically.
+    The derivative part of the PID controller is filtered using a first-order
+    (PT1) filter with time constant `Tf`.
 
-    PID Transfer Function:
-        Gc(s) = Kp * (1 + 1/(Ti*s) + (Td*s)/(Tf*s + 1))
+    PID Transfer Function (international form):
+        Gc(s) = Kp * (1 + 1/(Ti * s) + (Td * s) / (Tf * s + 1))
+
+    Args:
+        plant (Plant): The plant being controlled.
+
+        Kp (float, optional): Proportional gain (gain form).
+        Ki (float, optional): Integral gain (gain form).
+        Kd (float, optional): Derivative gain (gain form).
+
+        Ti (float, optional): Integral time constant (time-constant form).
+        Td (float, optional): Derivative time constant (time-constant form).
+
+        Tf (float, optional): Time constant of the derivative PT1 filter.
+            Defaults to 0.01.
+
+        control_constraint (list[float], optional): Saturation limits for the
+            control signal, in the format [u_min, u_max]. Defaults to [-5.0, 5.0].
+
+        anti_windup_method (AntiWindup, optional): Method to reduce integral windup.
+            Supported values:
+            - "clamping": Stop integration when output saturates.
+            - "conditional": Integrate only when output is not saturated.
+            Defaults to "clamping".
+
+    Raises:
+        ValueError: If both parameterization methods (gain and time-constant
+            form) are provided or if neither is provided.
     """
 
     def __init__(self,
-                 system: Plant,
+                 plant: Plant,
                  *,
                  # Gain form
                  Kp: float = None,
@@ -37,26 +70,13 @@ class PIDClosedLoop(ClosedLoop):
                  # Time-constant form
                  Ti: float = None,
                  Td: float = None,
+                 # Filter
+                 Tf: float = 0.01,
                  control_constraint: list[float] = None,
-                 anti_windup_method: str = "clamping"
+                 anti_windup_method: AntiWindup = AntiWindup.CLAMPING
                  ) -> None:
-        """
-        Initialize a PID closed-loop controller.
 
-        Args:
-            system (Plant): The controlled system instance.
-            Kp (float, optional): Proportional gain (gain form).
-            Ki (float, optional): Integral gain (gain form).
-            Kd (float, optional): Derivative gain (gain form).
-            Ti (float, optional): Integral time constant (time form).
-            Td (float, optional): Derivative time constant (time form).
-                Tf = derivative_filter_ratio * system.t1 (default: 0.01).
-            control_constraint (list[float], optional): [u_min, u_max] saturation limits. Defaults to [-5, 5].
-
-        Raises:
-            ValueError: If both or neither of the parameter sets (gain form, time form) are provided.
-        """
-        super().__init__(system)
+        super().__init__(plant)
 
         self._kp: float = 0
         self._ki: float = 0
@@ -68,12 +88,12 @@ class PIDClosedLoop(ClosedLoop):
         self.set_pid_param(Kp=Kp, Ki=Ki, Kd=Kd, Ti=Ti, Td=Td)
 
         # filter time constant
-        self._tf: float = 0.01
+        self._tf = Tf
 
         # Control output constraints
         self._control_constraint = control_constraint or [-5.0, 5.0]
 
-        self._anti_windup_method: str = anti_windup_method
+        self._anti_windup_method = anti_windup_method
 
     # -------------------- Properties --------------------
 
@@ -112,12 +132,8 @@ class PIDClosedLoop(ClosedLoop):
         return self._control_constraint
 
     @property
-    def anti_windup_method(self) -> str:
+    def anti_windup_method(self) -> AntiWindup:
         return self._anti_windup_method
-
-    @anti_windup_method.setter
-    def anti_windup_method(self, anti_windup_method) -> None:
-        self._anti_windup_method = anti_windup_method
 
     def set_filter(self, Tf):
         self._tf = Tf
@@ -207,8 +223,8 @@ class PIDClosedLoop(ClosedLoop):
             t1: float,
             dt: float,
             r: Callable[[np.ndarray], np.ndarray] | None = None,
-            d1: Callable[[np.ndarray], np.ndarray] | None = None,
-            d2: Callable[[np.ndarray], np.ndarray] | None = None,
+            l: Callable[[np.ndarray], np.ndarray] | None = None,
+            n: Callable[[np.ndarray], np.ndarray] | None = None,
             x0: np.ndarray | None = None,
             y0: float = 0
     ) -> tuple[np.ndarray, np.ndarray]:
@@ -228,10 +244,10 @@ class PIDClosedLoop(ClosedLoop):
                 Reference (setpoint) function as a function of time.
                 Must accept a NumPy array of time values and return an array of the same shape.
                 If None, a zero vector is used. Defaults to None.
-            d1 (Callable[[np.ndarray], np.ndarray] | None, optional):
+            l (Callable[[np.ndarray], np.ndarray] | None, optional):
                 Disturbance at the plant input (Z1) as a function of time.
                 If None, zero disturbance is assumed. Defaults to None.
-            d2 (Callable[[np.ndarray], np.ndarray] | None, optional):
+            n (Callable[[np.ndarray], np.ndarray] | None, optional):
                 Disturbance at the measurement/output (Z2) as a function of time.
                 If None, zero disturbance is assumed. Defaults to None.
             x0 (np.ndarray | None, optional): Initial state vector of the system. If None, a zero vector of appropriate
@@ -263,27 +279,20 @@ class PIDClosedLoop(ClosedLoop):
         if r is None:
             r = lambda t: np.zeros_like(t)
 
-        if d1 is None:
-            d1 = lambda t: np.zeros_like(t)
+        if l is None:
+            l = lambda t: np.zeros_like(t)
 
-        if d2 is None:
-            d2 = lambda t: np.zeros_like(t)
+        if n is None:
+            n = lambda t: np.zeros_like(t)
 
         r_eval = r(t_eval)
-        d1_eval = d1(t_eval)
-        d2_eval = d2(t_eval)
+        l_eval = l(t_eval)
+        n_eval = n(t_eval)
 
         if x0 is None:
-            x0 = np.zeros(self._system.get_plant_order())
+            x0 = np.zeros(self._plant.get_plant_order())
 
-        if self._anti_windup_method == "conditional":
-            anti_windup = 0
-        elif self._anti_windup_method == "clamping":
-            anti_windup = 1
-        else:
-            raise NotImplementedError(f"Unsupported anti windup method: '{self._anti_windup_method}'")
-
-        A, B, C, D = self._system.get_ABCD()
+        A, B, C, D = self._plant.get_ABCD()
 
         A = np.ascontiguousarray(A, dtype=np.float64)
         # SISO → (n x 1)
@@ -297,8 +306,8 @@ class PIDClosedLoop(ClosedLoop):
 
         y = pid_system_response(Kp=self._kp, Ti=self._ti, Td=self._td,
                                 Tf=self._tf, t_eval=t_eval, dt=dt,
-                                r_eval=r_eval, d1_eval=d1_eval, d2_eval=d2_eval,
+                                r_eval=r_eval, l_eval=l_eval, n_eval=n_eval,
                                 x=x0, control_constraint=np.array(self._control_constraint, dtype=np.float64),
-                                anti_windup_method=anti_windup,
-                                A=A, B=B, C=C, D=D)
+                                anti_windup_method=map_enum_to_int(self._anti_windup_method),
+                                A=A, B=B, C=C, D=D, solver=map_enum_to_int(self._plant.solver))
         return t_eval, y

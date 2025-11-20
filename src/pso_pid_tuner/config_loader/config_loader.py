@@ -2,6 +2,8 @@ import yaml
 from pathlib import Path
 import sys
 
+from src.pso_pid_tuner.controlsys.enums import AntiWindup, PerformanceIndex
+
 
 class ConfigError(Exception):
     """Custom exception for invalid configuration."""
@@ -86,9 +88,16 @@ def load_config():
             errors.append(f"'{key}' should be a number, got {type(val).__name__}.")
 
     # Anti-windup
+    # cfg["system"]["anti_windup"] = AntiWindup.CLAMPING
     anti_windup = system.get("anti_windup")
     if anti_windup not in ["clamping", "conditional"]:
         errors.append(f"'anti_windup' should be 'clamping' or 'conditional', got {anti_windup}.")
+    else:
+        match anti_windup:
+            case "clamping":
+                cfg["system"]["anti_windup"] = AntiWindup.CLAMPING
+            case "conditional":
+                cfg["system"]["anti_windup"] = AntiWindup.CONDITIONAL
 
     # excitation_target
     excitation_target = system.get("excitation_target")
@@ -110,6 +119,20 @@ def load_config():
     if isinstance(min_val, (int, float)) and isinstance(max_val, (int, float)):
         if min_val >= max_val:
             errors.append(f"'min_constraint' ({min_val}) must be less than 'max_constraint' ({max_val}).")
+
+    performance_index = system.get("performance_index")
+    if performance_index not in ["IAE", "ISE", "ITAE", "ITSE"]:
+        errors.append(f"'performance_index' should be 'ITAE' or 'IAE', got {performance_index}")
+    else:
+        match performance_index:
+            case "IAE":
+                cfg["system"]["performance_index"] = PerformanceIndex.IAE
+            case "ISE":
+                cfg["system"]["performance_index"] = PerformanceIndex.ISE
+            case "ITAE":
+                cfg["system"]["performance_index"] = PerformanceIndex.ITAE
+            case "ITSE":
+                cfg["system"]["performance_index"] = PerformanceIndex.ITSE
 
     # --- PSO ---
     pso = cfg.get("pso", {})

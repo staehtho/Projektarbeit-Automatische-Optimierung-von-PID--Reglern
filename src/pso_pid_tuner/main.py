@@ -8,7 +8,10 @@ from config_loader import load_config, ConfigError
 import numpy as np
 from report_generator.report_generator import report_generator
 
+
 def main():
+
+    print("Loading Configuration..")
 
     try:
         config = load_config()
@@ -33,6 +36,8 @@ def main():
     constraint_min = config["system"]["control_constraint"]["min_constraint"]
     constraint_max = config["system"]["control_constraint"]["max_constraint"]
 
+    performance_index = config["system"]["performance_index"]
+
     swarm_size = config["pso"]["swarm_size"]
     iterations = config["pso"]["iterations"]
 
@@ -48,8 +53,9 @@ def main():
     bounds = [[kp_min, ti_min, td_min], [kp_max, ti_max, td_max]]
 
     # generate closed loop
-    pid: PIDClosedLoop = PIDClosedLoop(plant, Kp=10, Ti=5, Td=3, control_constraint=[constraint_min, constraint_max])
-    pid.anti_windup_method = anti_windup
+    pid: PIDClosedLoop = PIDClosedLoop(plant, Kp=10, Ti=5, Td=3,
+                                       control_constraint=[constraint_min, constraint_max],
+                                       anti_windup_method=anti_windup)
 
     # dominant pole (least negative real part)
     p_dom = smallest_root_realpart(plant.den)
@@ -63,38 +69,35 @@ def main():
     # TODO: 0 abfangen
 
     # define simulation horizon so the plant settles
-    #TODO: funktioniert so nicht. für mehrfache polstellen m erhöht sich die zeit um faktor m. (und kompl. konj. PS mischen auch mit.
-    #end_time = math.ceil(5 * t_dom)
+    # TODO: funktioniert so nicht. für mehrfache polstellen m erhöht sich die zeit um faktor m. (und kompl. konj. PS mischen auch mit.
+    # end_time = math.ceil(5 * t_dom)
 
     # generate function to be optimized
     match excitation_target:
         case "reference":
             r = lambda t: np.ones_like(t)
-            d1 = lambda t: np.zeros_like(t)
-            d2 = lambda t: np.zeros_like(t)
+            l = lambda t: np.zeros_like(t)
+            n = lambda t: np.zeros_like(t)
         case "input_disturbance":
             r = lambda t: np.zeros_like(t)
-            d1 = lambda t: np.ones_like(t)
-            d2 = lambda t: np.zeros_like(t)
+            l = lambda t: np.ones_like(t)
+            n = lambda t: np.zeros_like(t)
         case "measurement_disturbance":
             r = lambda t: np.zeros_like(t)
-            d1 = lambda t: np.zeros_like(t)
-            d2 = lambda t: np.ones_like(t)
+            l = lambda t: np.zeros_like(t)
+            n = lambda t: np.ones_like(t)
         case _:
             r = lambda t: np.zeros_like(t)
-            d1 = lambda t: np.zeros_like(t)
-            d2 = lambda t: np.zeros_like(t)
+            l = lambda t: np.zeros_like(t)
+            n = lambda t: np.zeros_like(t)
 
-    obj_func = PsoFunc(pid, start_time, end_time, time_step, r=r, d1=d1, d2=d2, swarm_size=swarm_size)
+    obj_func = PsoFunc(pid, start_time, end_time, time_step, r=r, l=l, n=n,
+                       performance_index=performance_index, swarm_size=swarm_size)
 
     best_Kp = 0
     best_Ti = 0
     best_Td = 0
-    best_itae = sys.float_info.max
-
-    # einmaliges warm-up, damit JIT vor der tqdm-progressbar kompiliert
-    # TODO beobachten, ob problem noch auftritt auch ohne warm up
-    #_ = pid.step_response(start_time, start_time + time_step, time_step)
+    best_performance_index = sys.float_info.max
 
     # progressbar
     pbar = tqdm(range(iterations), desc="Processing", unit="step", colour="green")
@@ -107,10 +110,10 @@ def main():
         Kp = terminated_swarm.gBest.p_best_position[0]
         Ti = terminated_swarm.gBest.p_best_position[1]
         Td = terminated_swarm.gBest.p_best_position[2]
-        itae = terminated_swarm.gBest.p_best_cost
+        performance_index_val = terminated_swarm.gBest.p_best_cost
 
-        if itae < best_itae:
-            best_itae = itae
+        if performance_index_val < best_performance_index:
+            best_performance_index = performance_index_val
             best_Kp = Kp
             best_Ti = Ti
             best_Td = Td
@@ -119,7 +122,8 @@ def main():
         "best_Kp": best_Kp,
         "best_Ti": best_Ti,
         "best_Td": best_Td,
-        "best_itae": best_itae,
+        "performance_index": performance_index,
+        "best_performance_index": best_performance_index,
 
         "plant": plant,
         "pid": pid,
@@ -134,6 +138,7 @@ def main():
     }
 
     report_generator(data)
+
 
 if __name__ == "__main__":
     main()

@@ -1,19 +1,21 @@
-import numpy as np
-import matplotlib.pyplot as plt
+import os
+import sys
 from datetime import datetime
+
+import matplotlib.pyplot as plt
+import numpy as np
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import cm
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle,
     PageBreak, PageTemplate, Frame)
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import cm
-import sys, os
 
 # TODO: Lösung finden
 # Ensure project root (pso_pid_tuner) is in sys.path
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
-from controlsys.utils import bode_plot, crossover_frequency
+from src.pso_pid_tuner.controlsys import bode_plot, crossover_frequency, PerformanceIndex
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -44,7 +46,8 @@ def report_generator(data: dict):
     best_Kp = data["best_Kp"]
     best_Ti = data["best_Ti"]
     best_Td = data["best_Td"]
-    best_itae = data["best_itae"]
+    performance_index: PerformanceIndex = data["performance_index"]
+    best_performance_index = data["best_performance_index"]
 
     plant = data["plant"]
     pid = data["pid"]
@@ -60,14 +63,15 @@ def report_generator(data: dict):
     # --------------------------
     # Print results
     # --------------------------
+    n_char = 10
     print(f"""
     ✔ Optimization completed!
 
     swarm result:
-       {'best_Kp':<10}= {best_Kp:8.2f}
-       {'best_Ti':<10}= {best_Ti:8.2f}
-       {'best_Td':<10}= {best_Td:8.2f}
-       {'best_itae':<10}= {best_itae:8.4f}
+       {'best_Kp':<{n_char}}= {best_Kp:8.2f}
+       {'best_Ti':<{n_char}}= {best_Ti:8.2f}
+       {'best_Td':<{n_char}}= {best_Td:8.2f}
+       {"best_" + performance_index.name:<{n_char}}= {best_performance_index:8.4f}
     """)
 
     # Set parameters
@@ -236,7 +240,7 @@ def report_generator(data: dict):
     elements.append(Paragraph(f"K<sub>p</sub> = {best_Kp:.4f}", style_body))
     elements.append(Paragraph(f"T<sub>i</sub> = {best_Ti:.4f}", style_body))
     elements.append(Paragraph(f"T<sub>d</sub> = {best_Td:.4f}", style_body))
-    elements.append(Paragraph(f"Best ITAE = {best_itae:.6f}", style_body))
+    elements.append(Paragraph(f"Best {performance_index.name} = {best_performance_index:.6f}", style_body))
     elements.append(Spacer(1, 0.5 * cm))
 
     # FILTER
