@@ -1,9 +1,11 @@
 import yaml
+import os
 from pathlib import Path
 import sys
 
-from src.pso_pid_tuner.controlsys.enums import AntiWindup, PerformanceIndex
-
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, ROOT)
+from ..controlsys import AntiWindup, PerformanceIndex
 
 class ConfigError(Exception):
     """Custom exception for invalid configuration."""
@@ -89,7 +91,8 @@ def load_config():
 
     # Anti-windup
     # cfg["system"]["anti_windup"] = AntiWindup.CLAMPING
-    anti_windup = system.get("anti_windup")
+    # anti_windup = system.get("anti_windup") # TODO rückgängig
+    anti_windup = "clamping"
     if anti_windup not in ["clamping", "conditional"]:
         errors.append(f"'anti_windup' should be 'clamping' or 'conditional', got {anti_windup}.")
     else:

@@ -60,13 +60,13 @@ def main():
     # dominant pole (least negative real part)
     p_dom = smallest_root_realpart(plant.den)
 
-    # corresponding time constant
-    # TODO: 0 abfangen
-    t_dom = 1 / abs(p_dom)
+    # find corresponding time constant to dominant pole and set filter time constant
+    if p_dom == 0:
+        pid.set_filter(Tf=0.01)
+    else:
+        t_dom = 1 / abs(p_dom)
+        pid.set_filter(Tf=t_dom / 100)
 
-    # set filter to be much faster than plant dynamics
-    pid.set_filter(Tf=t_dom/100)
-    # TODO: 0 abfangen
 
     # define simulation horizon so the plant settles
     # TODO: funktioniert so nicht. für mehrfache polstellen m erhöht sich die zeit um faktor m. (und kompl. konj. PS mischen auch mit.

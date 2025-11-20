@@ -11,11 +11,10 @@ from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle,
     PageBreak, PageTemplate, Frame)
 
-# TODO: Lösung finden
-# Ensure project root (pso_pid_tuner) is in sys.path
+
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
-from src.pso_pid_tuner.controlsys import bode_plot, crossover_frequency, PerformanceIndex
+from ..controlsys import bode_plot, crossover_frequency, PerformanceIndex
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
