@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Callable, Union
 import matplotlib.pyplot as plt
+import math
 
 SystemData = Union[Callable[[np.ndarray], np.ndarray], tuple[np.ndarray, np.ndarray, np.ndarray]]
 
@@ -203,3 +204,79 @@ def smallest_root_realpart(denominator):
     """
     roots = np.roots(denominator)
     return np.min(roots.real)
+
+
+def settling_time(
+        t: np.ndarray,
+        y: np.ndarray,
+        r: Callable[[np.ndarray], np.ndarray],
+        tolerance: float = 0.02,
+        max_allowed_time: float = 60.0
+) -> int:
+    """Compute the strict settling time of a system response.
+
+    The strict settling time is defined as the earliest time after which the
+    output trajectory remains permanently within the tolerance band around the
+    reference trajectory ``r(t)``. The reference ``r`` must be a callable that
+    takes the time vector and returns a reference trajectory of equal length.
+
+    Temporary excursions before the settling point are allowed. If the output
+    never reaches a region where it stays within the tolerance band for the
+    remainder of the simulation, ``max_allowed_time`` is returned.
+
+    Args:
+        t (np.ndarray):
+            Time vector.
+        y (np.ndarray):
+            System output trajectory.
+        r (Callable):
+            Reference function. Must be callable as ``r(t)`` and return a
+            vector of same shape as ``t``.
+        tolerance (float, optional):
+            Relative tolerance band (e.g. 0.02 for ±2%). Defaults to 0.02.
+        max_allowed_time (float, optional):
+            Upper limit for returned settling time. Defaults to 60.0.
+
+    Returns:
+        int:
+            Settling time (rounded up and extended by 2 seconds), limited by
+            ``max_allowed_time``.
+    """
+    # Evaluate reference function
+    r_signal = r(t)
+
+    # Compute tolerance band
+    lower = r_signal * (1 - tolerance)
+    upper = r_signal * (1 + tolerance)
+
+    # In-band mask (True if inside tolerance)
+    in_band = (y >= lower) & (y <= upper)
+
+    # If the trajectory never enters the band, no settling possible
+    if not np.any(in_band):
+        return int(max_allowed_time)
+
+    # Identify all indices where the signal is out of the tolerance band
+    out_indices = np.where(~in_band)[0]
+
+    if len(out_indices) == 0:
+        # Always in-band, settled from the beginning
+        t_set = t[0]
+    else:
+        # Latest time when the signal was out of the band
+        last_out = out_indices[-1]
+
+        # If the last out-of-band index is the final sample, no settling possible
+        if last_out == len(t) - 1:
+            return int(max_allowed_time)
+
+        # Settling begins at the next sample after the last excursion
+        t_set = t[last_out + 1]
+
+    # Apply rounding + 2 seconds, enforce max limit
+    t_set_adjusted = math.ceil(t_set) + 2
+
+    if t_set_adjusted > max_allowed_time:
+        return int(max_allowed_time)
+
+    return int(t_set_adjusted)

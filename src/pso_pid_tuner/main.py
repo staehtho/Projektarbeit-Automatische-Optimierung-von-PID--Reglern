@@ -1,11 +1,10 @@
 import sys
-from pso_pid_tuner.controlsys import Plant, PIDClosedLoop, PsoFunc, smallest_root_realpart
-from pso_pid_tuner.PSO import Swarm
 from tqdm import tqdm
-from pso_pid_tuner.config_loader import load_config, ConfigError
 import numpy as np
-from pso_pid_tuner.report_generator import report_generator
-
+from src.pso_pid_tuner.report_generator import report_generator
+from src.pso_pid_tuner.config_loader import load_config, ConfigError
+from src.pso_pid_tuner.controlsys import Plant, PIDClosedLoop, PsoFunc, smallest_root_realpart, settling_time
+from src.pso_pid_tuner.PSO import Swarm
 
 print("Starting the PID Optimizer. Loading modules, please wait...")
 
@@ -25,6 +24,7 @@ def main():
     plant_num = config["system"]["plant"]["numerator"]
     plant_den = config["system"]["plant"]["denominator"]
 
+    sim_mode = config["system"]["simulation_time"]["mode"]
     start_time = config["system"]["simulation_time"]["start_time"]
     end_time = config["system"]["simulation_time"]["end_time"]
     time_step = config["system"]["simulation_time"]["time_step"]
@@ -61,15 +61,11 @@ def main():
     p_dom = smallest_root_realpart(plant.den)
 
     # find corresponding time constant to dominant pole and set filter time constant
-    if p_dom == 0:
+    if p_dom >= 0:
         pid.set_filter(Tf=0.01)
     else:
         t_dom = 1 / abs(p_dom)
         pid.set_filter(Tf=t_dom / 100)
-
-    # define simulation horizon so the plant settles
-    # TODO: funktioniert so nicht. für mehrfache polstellen m erhöht sich die zeit um faktor m. (und kompl. konj. PS mischen auch mit.
-    # end_time = math.ceil(5 * t_dom)
 
     # generate function to be optimized
     match excitation_target:
@@ -90,9 +86,16 @@ def main():
             l = lambda t: np.zeros_like(t)
             n = lambda t: np.zeros_like(t)
 
+    # in case of sim-mode 'auto', find settling time of plant
+    if sim_mode == "auto":
+        t, y = plant.system_response(u=r, t0=start_time, t1=end_time, dt=time_step)
+        end_time = settling_time(t=t, y=y, r=r, tolerance=0.05, max_allowed_time=end_time)
+
+    # generate function to be optimized
     obj_func = PsoFunc(pid, start_time, end_time, time_step, r=r, l=l, n=n,
                        performance_index=performance_index, swarm_size=swarm_size)
 
+    # init values
     best_Kp = 0
     best_Ti = 0
     best_Td = 0
