@@ -1,10 +1,10 @@
 import sys
 from tqdm import tqdm
 import numpy as np
-from pso_pid_tuner.report_generator import report_generator
-from pso_pid_tuner.config_loader import load_config, ConfigError
-from pso_pid_tuner.controlsys import Plant, PIDClosedLoop, PsoFunc, smallest_root_realpart, settling_time
-from pso_pid_tuner.PSO import Swarm
+from src.pso_pid_tuner.report_generator import report_generator
+from src.pso_pid_tuner.config_loader import load_config, ConfigError
+from src.pso_pid_tuner.controlsys import Plant, PIDClosedLoop, PsoFunc, smallest_root_realpart, settling_time
+from src.pso_pid_tuner.PSO import Swarm
 
 print("Starting the PID Optimizer. Loading modules, please wait...")
 
@@ -87,7 +87,7 @@ def main():
             n = lambda t: np.zeros_like(t)
 
     # in case of sim-mode 'auto', find settling time of plant
-    if sim_mode == "auto":
+    if sim_mode == "auto" and excitation_target == "reference":
         t, y = plant.system_response(u=r, t0=start_time, t1=end_time, dt=time_step)
         end_time = settling_time(t=t, y=y, r=r, tolerance=0.05, max_allowed_time=end_time)
 
@@ -133,6 +133,7 @@ def main():
         "start_time": start_time,
         "end_time": end_time,
         "time_step": time_step,
+        "sim_mode": sim_mode,
         "excitation_target": excitation_target,
 
         "plant_num": plant_num,

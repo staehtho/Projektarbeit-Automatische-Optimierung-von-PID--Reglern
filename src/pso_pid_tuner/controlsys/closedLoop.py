@@ -66,14 +66,14 @@ class ClosedLoop(ABC):
         G = self._plant.system(s)
         return (C * G) / (1 + C * G)
 
-    def closed_loop_Z1(self, s: complex | np.ndarray) -> complex | np.ndarray:
-        """Closed-loop transfer function for Z1."""
+    def closed_loop_l(self, s: complex | np.ndarray) -> complex | np.ndarray:
+        """Closed-loop transfer function for l, input disturbance."""
         C = self.controller(s)
         G = self._plant.system(s)
         return G / (1 + C * G)
 
-    def closed_loop_Z2(self, s: complex | np.ndarray) -> complex | np.ndarray:
-        """Closed-loop transfer function for Z1."""
+    def closed_loop_n(self, s: complex | np.ndarray) -> complex | np.ndarray:
+        """Closed-loop transfer function for measurement disturbance."""
         C = self.controller(s)
         G = self._plant.system(s)
         return 1 / (1 + C * G)
@@ -112,16 +112,16 @@ class ClosedLoop(ABC):
         r = lambda t: np.ones_like(t)
         return self.system_response(t0, t1, dt, r=r)
 
-    def z1_step_response(
+    def l_step_response(
             self,
             t0: float = 0,
             t1: float = 10,
             dt: float = 1e-4
     ) -> tuple[np.ndarray, np.ndarray]:
         """
-        Compute the step response of the system to a disturbance at the plant input (Z1).
+        Compute the step response of the system to a disturbance at the plant input (l).
 
-        This method generates a unit step disturbance applied to the plant input (Z1)
+        This method generates a unit step disturbance applied to the plant input (l)
         and computes the corresponding system response over a specified time interval.
 
         Args:
@@ -137,16 +137,16 @@ class ClosedLoop(ABC):
         l = lambda t: np.ones_like(t)
         return self.system_response(t0, t1, dt, l=l)
 
-    def z2_step_response(
+    def n_step_response(
             self,
             t0: float = 0,
             t1: float = 10,
             dt: float = 1e-4
     ) -> tuple[np.ndarray, np.ndarray]:
         """
-        Compute the step response of the system to a disturbance at the plant input (Z2).
+        Compute the step response of the system to a disturbance at the plant input (n).
 
-        This method generates a unit step disturbance applied to the plant input (Z2)
+        This method generates a unit step disturbance applied to the plant input (n)
         and computes the corresponding system response over a specified time interval.
 
         Args:
