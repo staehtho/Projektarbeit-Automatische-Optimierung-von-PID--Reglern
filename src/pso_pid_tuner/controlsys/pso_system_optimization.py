@@ -34,7 +34,7 @@ class PsoFunc:
         B (np.ndarray): State-space input vector B (contiguous for Numba).
         C (np.ndarray): State-space output vector C (contiguous for Numba).
         D (float): State-space scalar D.
-        system_order (int): Order of the system (number of states).
+        plant_order (int): Order of the system (number of states).
         controller_param (dict[str, str | float | np.ndarray]): PID-specific parameters
             including derivative filter time Tf, control constraints, and anti-windup method.
         swarm_size (int): Number of particles in the PSO swarm.
@@ -44,7 +44,7 @@ class PsoFunc:
                  l: Callable[[np.ndarray], np.ndarray] | None = None,
                  n: Callable[[np.ndarray], np.ndarray] | None = None,
                  solver: MySolver = MySolver.RK4,
-                 performance_index: PerformanceIndexInt = PerformanceIndexInt.ITAE,
+                 performance_index: PerformanceIndex = PerformanceIndex.ITAE,
                  swarm_size: int = 40,
                  pre_compiling: bool = True) -> None:
         """
@@ -91,7 +91,7 @@ class PsoFunc:
         self.n_eval = n(self.t_eval)
 
         # Extract state-space matrices and ensure they are contiguous for Numba
-        A, B, C, D = self.controller.system.get_ABCD()
+        A, B, C, D = self.controller.plant.get_ABCD()
         self.A = A
         self.A = np.ascontiguousarray(A, dtype=np.float64)
         # SISO → (n x 1)
@@ -103,7 +103,7 @@ class PsoFunc:
         # SISO → D ist ein skalar
         self.D = float(D[0, 0])
 
-        self.system_order = self.controller.system.get_plant_order()
+        self.plant_order = self.controller.plant.get_plant_order()
 
         self.controller_param: dict[str, str | float | np.ndarray]
 
@@ -154,7 +154,7 @@ class PsoFunc:
 
         if isinstance(self.controller, PIDClosedLoop):
             itae_val = _pid_pso_func(X, self.t_eval, self.dt, self.r_eval, self.l_eval, self.n_eval, self.A, self.B,
-                                     self.C, self.D, self.system_order, self.controller_param["Tf"],
+                                     self.C, self.D, self.plant_order, self.controller_param["Tf"],
                                      self.controller_param["control_constraint"], self.controller_param["anti_windup"],
                                      self.solver, self.performance_index, self.swarm_size)
 
@@ -428,6 +428,7 @@ def system_response(t_eval: np.ndarray, dt: float, u_eval: np.ndarray,
         B: Input matrix.
         C: Output matrix.
         D: Feedthrough term (scalar).
+        solver: Solver enum value.
 
     Returns:
         The plant output trajectory y(t) as a 1-D numpy array.

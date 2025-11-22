@@ -44,7 +44,7 @@ class ClosedLoop(ABC):
             raise NotImplementedError(f"Unsupported format specifier: '{format_spec}'")
 
     @property
-    def system(self) -> Plant:
+    def plant(self) -> Plant:
         return self._plant
 
     @abstractmethod
