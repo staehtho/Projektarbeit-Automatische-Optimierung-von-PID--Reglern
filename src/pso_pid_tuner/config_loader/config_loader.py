@@ -72,16 +72,13 @@ def load_config():
         errors.append("'simulation_time' section is missing or not a dictionary.")
         sim_time = {}
 
-    mode = sim_time.get("mode", "fixed")
-    if not isinstance(mode, str):
-        errors.append(f"'mode' should be a string ('fixed' or 'auto'), got {type(mode).__name__}.")
-    else:
-        mode = mode.strip().lower()
-        if mode not in ("fixed", "auto"):
-            errors.append(
-                f"'mode' must be either 'fixed' or 'auto', got '{mode}'."
-            )
-        sim_time["mode"] = mode
+    mode = sim_time.get("mode")
+    mode = mode.strip().lower()
+    if mode not in ("fixed", "auto"):
+        errors.append(
+            f"'mode' must be either 'fixed' or 'auto', got '{mode}'."
+        )
+    sim_time["mode"] = mode
 
     for key in ["start_time", "end_time", "time_step"]:
         val = sim_time.get(key)

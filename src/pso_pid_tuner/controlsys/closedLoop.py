@@ -112,7 +112,7 @@ class ClosedLoop(ABC):
         r = lambda t: np.ones_like(t)
         return self.system_response(t0, t1, dt, r=r)
 
-    def l_step_response(
+    def step_response_l(
             self,
             t0: float = 0,
             t1: float = 10,
@@ -137,7 +137,7 @@ class ClosedLoop(ABC):
         l = lambda t: np.ones_like(t)
         return self.system_response(t0, t1, dt, l=l)
 
-    def n_step_response(
+    def step_response_n(
             self,
             t0: float = 0,
             t1: float = 10,

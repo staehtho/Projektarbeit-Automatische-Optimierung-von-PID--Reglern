@@ -121,11 +121,11 @@ def report_generator(data: dict):
             plt.plot(t_ol, y_ol, label="Open Loop")
             plt.plot(t_cl, y_cl, label="Closed Loop")
         case "input_disturbance":
-            t_cl, y_cl = pid.l_step_response(t0=start_time, t1=end_time, dt=time_step)
+            t_cl, y_cl = pid.step_response_l(t0=start_time, t1=end_time, dt=time_step)
             systems_for_bode["Closed Loop input disturbance"] = pid.closed_loop_l
             plt.plot(t_cl, y_cl, label="Closed Loop input disturbance")
         case "measurement_disturbance":
-            t_cl, y_cl = pid.n_step_response(t0=start_time, t1=end_time, dt=time_step)
+            t_cl, y_cl = pid.step_response_n(t0=start_time, t1=end_time, dt=time_step)
             systems_for_bode["Closed Loop measurement disturbance"] = pid.closed_loop_n
             plt.plot(t_cl, y_cl, label="Closed Loop measurement disturbance")
 

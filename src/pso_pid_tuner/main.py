@@ -1,10 +1,10 @@
 import sys
 from tqdm import tqdm
 import numpy as np
-from src.pso_pid_tuner.report_generator import report_generator
-from src.pso_pid_tuner.config_loader import load_config, ConfigError
-from src.pso_pid_tuner.controlsys import Plant, PIDClosedLoop, PsoFunc, smallest_root_realpart, settling_time
-from src.pso_pid_tuner.PSO import Swarm
+from pso_pid_tuner.report_generator import report_generator
+from pso_pid_tuner.config_loader import load_config, ConfigError
+from pso_pid_tuner.controlsys import Plant, PIDClosedLoop, PsoFunc, smallest_root_realpart, settling_time
+from pso_pid_tuner.PSO import Swarm
 
 print("Starting the PID Optimizer. Loading modules, please wait...")
 
