@@ -96,7 +96,6 @@ def load_config():
             errors.append(f"'{key}' should be a number, got {type(val).__name__}.")
 
     # Anti-windup
-    # anti_windup = "clamping"
     anti_windup = system.get("anti_windup")
     if anti_windup not in ["clamping", "conditional"]:
         errors.append(f"'anti_windup' should be 'clamping' or 'conditional', got {anti_windup}.")
@@ -106,6 +105,7 @@ def load_config():
                 cfg["system"]["anti_windup"] = AntiWindup.CLAMPING
             case "conditional":
                 cfg["system"]["anti_windup"] = AntiWindup.CONDITIONAL
+        cfg["system"]["anti_windup_string"] = cfg["system"]["anti_windup"].name.lower()
 
     # excitation_target
     excitation_target = system.get("excitation_target")

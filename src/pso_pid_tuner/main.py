@@ -30,6 +30,7 @@ def main():
     time_step = config["system"]["simulation_time"]["time_step"]
 
     anti_windup = config["system"]["anti_windup"]
+    anti_windup_string = config["system"]["anti_windup_string"]
 
     excitation_target = config["system"]["excitation_target"]
 
@@ -129,6 +130,10 @@ def main():
 
         "plant": plant,
         "pid": pid,
+
+        "anti_windup_method": anti_windup_string,
+        "constraint_min": constraint_min,
+        "constraint_max": constraint_max,
 
         "start_time": start_time,
         "end_time": end_time,

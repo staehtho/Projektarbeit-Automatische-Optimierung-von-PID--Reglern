@@ -67,6 +67,10 @@ def report_generator(data: dict):
     plant_num = data["plant_num"]
     plant_den = data["plant_den"]
 
+    anti_windup_method = data["anti_windup_method"]
+    constraint_min = data["constraint_min"]
+    constraint_max = data["constraint_max"]
+
     # --------------------------
     # Print results
     # --------------------------
@@ -256,6 +260,9 @@ def report_generator(data: dict):
     elements.append(Paragraph(f"Time step: {time_step}", style_body))
     elements.append(Paragraph(f"Mode: {sim_mode}", style_body))
     elements.append(Paragraph(f"Excitation target: {excitation_target}", style_body))
+    elements.append(Paragraph(f"Anti-windup-method: {anti_windup_method}", style_body))
+    elements.append(Paragraph(f"Control output upper limit: {constraint_max}", style_body))
+    elements.append(Paragraph(f"Control output lower limit: {constraint_min}", style_body))
     elements.append(Spacer(1, 0.5 * cm))
 
     # PAGE BREAK

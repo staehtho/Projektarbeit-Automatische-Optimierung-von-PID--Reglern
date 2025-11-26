@@ -23,7 +23,7 @@ system:
     # G = -----------    e.g.: G = ----------------  => -------------
     #     denominator              3*s^2 + 2*s + 1        [3, 2, 1]
     numerator: [1]
-    denominator: [1, 0, 0]
+    denominator: [1, 2, 1]
 
   simulation_time:
     start_time: 0      # Start time in [sec]
@@ -31,15 +31,16 @@ system:
     time_step: 1e-4    # Simulation time step in [sec]
     mode: "auto"      # choose "fixed" for using end_time, choose "auto" to try and shorten the simulation time
 
-  # Anti-windup method: choose "clamping" or "conditional"
-  anti_windup: "clamping"
   # Excitation_target: choose "reference" (r) or "input_disturbance" (z1) or "measurement_disturbance" (z2)
   excitation_target: "reference"
 
+  # Anti-windup method: choose "clamping" or "conditional"
+  anti_windup: "clamping"
+
   control_constraint:
     # Control signal limits for both the I-term and the controller output
-    min_constraint: -2
-    max_constraint: 2
+    min_constraint: -1.1
+    max_constraint: 1.1
 
   # Performance index: defines the control quality criterion used for optimization.
   # Common choices:
