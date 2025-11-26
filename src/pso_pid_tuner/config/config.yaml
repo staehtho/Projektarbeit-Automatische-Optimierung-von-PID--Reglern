@@ -31,16 +31,16 @@ system:
     time_step: 1e-4    # Simulation time step in [sec]
     mode: "auto"      # choose "fixed" for using end_time, choose "auto" to try and shorten the simulation time
 
-  # Excitation_target: choose "reference" (r) or "input_disturbance" (z1) or "measurement_disturbance" (z2)
+  # Excitation_target: choose "reference" (r) or "input_disturbance" (l) or "measurement_disturbance" (n)
   excitation_target: "reference"
 
   # Anti-windup method: choose "clamping" or "conditional"
-  anti_windup: "clamping"
+  anti_windup: "conditional"
 
   control_constraint:
     # Control signal limits for both the I-term and the controller output
-    min_constraint: -1.1
-    max_constraint: 1.1
+    min_constraint: -10
+    max_constraint: 10
 
   # Performance index: defines the control quality criterion used for optimization.
   # Common choices:
