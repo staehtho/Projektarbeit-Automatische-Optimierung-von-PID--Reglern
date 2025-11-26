@@ -1,3 +1,20 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Project:       PID Optimizer
+# Script:        plant.py
+# Description:   Defines the Plant class representing a linear time-invariant system specified
+#                by its transfer function. Provides state-space conversion, transfer-function
+#                evaluation, dominant time-constant estimation, and utilities for open-loop
+#                frequency- and time-domain simulation, including step responses.
+#
+# Authors:       Florin Büchi, Thomas Stähli
+# Created:       01.12.2025
+# Modified:      01.12.2025
+# Version:       1.0
+#
+# License:       ZHAW Zürcher Hochschule für angewandte Wissenschaften (or internal use only)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
 import numpy as np
 from scipy.signal import tf2ss
 from typing import Callable

@@ -1,3 +1,20 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Project:       PID Optimizer
+# Script:        utils.py
+# Description:   Provides utility functions for frequency- and time-domain analysis, including
+#                Bode plotting, gain crossover computation, pole analysis, and settling-time
+#                evaluation. Also includes helper tools for system simulation and response
+#                assessment within the PID Optimizer environment.
+#
+# Authors:       Florin Büchi, Thomas Stähli
+# Created:       01.12.2025
+# Modified:      01.12.2025
+# Version:       1.0
+#
+# License:       ZHAW Zürcher Hochschule für angewandte Wissenschaften (or internal use only)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
 import numpy as np
 from typing import Callable, Union
 import matplotlib.pyplot as plt

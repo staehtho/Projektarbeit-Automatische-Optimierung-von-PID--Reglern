@@ -1,3 +1,20 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Project:       PID Optimizer
+# Script:        closedLoop.py
+# Description:   Provides the abstract ClosedLoop base class used to represent and simulate
+#                closed-loop systems in the PID Optimizer. Includes transfer function
+#                computation, disturbance responses, and step simulation utilities. Concrete
+#                controllers must implement the controller() and system_response() methods.
+#
+# Authors:       Florin Büchi, Thomas Stähli
+# Created:       01.12.2025
+# Modified:      01.12.2025
+# Version:       1.0
+#
+# License:       ZHAW Zürcher Hochschule für angewandte Wissenschaften (or internal use only)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
 from abc import ABC, abstractmethod
 import numpy as np
 from typing import Callable
@@ -6,7 +23,6 @@ from .plant import Plant
 
 class ClosedLoop(ABC):
     def __init__(self, plant: Plant):
-
         self._plant = plant
 
     def __format__(self, format_spec: str) -> str:
@@ -49,31 +65,98 @@ class ClosedLoop(ABC):
 
     @abstractmethod
     def controller(self, s: complex | np.ndarray) -> complex | np.ndarray:
-        """
-        Compute the controller transfer function with derivative filter in the Laplace domain.
+        """Compute the controller transfer function in the Laplace domain.
+
+        This method must be implemented by all concrete closed-loop controller
+        subclasses. It returns the complex-valued controller transfer function
+        evaluated at the given Laplace frequency ``s``. Implementations typically
+        include proportional, integral, and derivative components, as well as
+        derivative filtering.
 
         Args:
-            s (complex | np.ndarray): Laplace variable.
+            s (complex | np.ndarray):
+                Laplace variable at which the transfer function is evaluated.
+                May be a scalar or a NumPy array for vectorized frequency-domain
+                evaluation.
 
         Returns:
-            complex | np.ndarray: Complex transfer function value.
+            complex | np.ndarray:
+                The controller transfer function ``C(s)`` evaluated at ``s``.
+
+        Raises:
+            NotImplementedError:
+                If a subclass does not implement this method.
         """
         pass
 
     def closed_loop(self, s: complex | np.ndarray) -> complex | np.ndarray:
-        """Closed-loop transfer function."""
+        """Compute the closed-loop transfer function.
+
+        Returns the standard unity-feedback closed-loop transfer function
+
+            G_cl(s) = C(s) * G(s) / (1 + C(s) * G(s))
+
+        where ``C(s)`` is the controller transfer function and ``G(s)`` is the
+        plant transfer function. The computation supports scalar and vectorized
+        Laplace-domain inputs.
+
+        Args:
+            s (complex | np.ndarray):
+                Laplace variable. Can be a single complex value or a NumPy array
+                for frequency-sweep evaluations.
+
+        Returns:
+            complex | np.ndarray:
+                Closed-loop transfer function ``G_cl(s)`` evaluated at ``s``.
+        """
         C = self.controller(s)
         G = self._plant.system(s)
         return (C * G) / (1 + C * G)
 
     def closed_loop_l(self, s: complex | np.ndarray) -> complex | np.ndarray:
-        """Closed-loop transfer function for l, input disturbance."""
+        """Compute the closed-loop transfer function for an input disturbance (l).
+
+        Models the disturbance-to-output transfer path where the disturbance acts
+        at the plant input. The resulting transfer function is
+
+            G_l(s) = G(s) / (1 + C(s) * G(s))
+
+        This corresponds to how plant-input disturbances propagate through a
+        unity-feedback control loop.
+
+        Args:
+            s (complex | np.ndarray):
+                Laplace variable. Can be a complex scalar or a NumPy array for
+                vectorized frequency-domain evaluation.
+
+        Returns:
+            complex | np.ndarray:
+                Closed-loop disturbance transfer function ``G_l(s)``.
+        """
         C = self.controller(s)
         G = self._plant.system(s)
         return G / (1 + C * G)
 
     def closed_loop_n(self, s: complex | np.ndarray) -> complex | np.ndarray:
-        """Closed-loop transfer function for measurement disturbance."""
+        """Compute the closed-loop transfer function for a measurement disturbance (n).
+
+        Models how disturbances added at the measurement/output propagate to the
+        controlled output. The resulting transfer function is
+
+            G_n(s) = 1 / (1 + C(s) * G(s))
+
+        This corresponds to the sensitivity function of a unity-feedback control
+        loop and captures how well the controller rejects measurement noise.
+
+        Args:
+            s (complex | np.ndarray):
+                Laplace variable. Can be a complex scalar or a NumPy array for
+                vectorized frequency-domain evaluation.
+
+        Returns:
+            complex | np.ndarray:
+                Closed-loop transfer function ``G_n(s)`` for measurement disturbances.
+        """
         C = self.controller(s)
         G = self._plant.system(s)
         return 1 / (1 + C * G)
@@ -174,5 +257,46 @@ class ClosedLoop(ABC):
             x0: np.ndarray | None = None,
             y0: float = 0
     ) -> tuple[np.ndarray, np.ndarray]:
+        """Simulate the closed-loop time-domain response of the system.
 
+        Computes the time response of the controlled plant under a specified
+        reference trajectory and optional disturbances. Implementations must
+        propagate the plant dynamics, controller dynamics, and all internal states
+        over the time vector defined by ``t0``, ``t1``, and ``dt``.
+
+        The function must return both the simulated time vector and the corresponding
+        output trajectory.
+
+        Args:
+            t0 (float):
+                Simulation start time in seconds.
+            t1 (float):
+                Simulation end time in seconds.
+            dt (float):
+                Simulation time step in seconds.
+            r (Callable[[np.ndarray], np.ndarray] | None, optional):
+                Reference (setpoint) function. Must accept a NumPy time vector and
+                return a trajectory of equal length. If ``None``, a zero reference is used.
+            l (Callable[[np.ndarray], np.ndarray] | None, optional):
+                Input disturbance function applied at the plant input (Z1). If ``None``,
+                a zero disturbance is assumed.
+            n (Callable[[np.ndarray], np.ndarray] | None, optional):
+                Measurement disturbance function added at the output (Z2). If ``None``,
+                a zero disturbance is assumed.
+            x0 (np.ndarray | None, optional):
+                Initial state vector of the plant. If ``None``, a zero state vector
+                must be assumed by the implementation.
+            y0 (float, optional):
+                Initial value of the measured output. Defaults to ``0``.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]:
+                A tuple ``(t, y)`` consisting of:
+                - ``t``: Time vector used for simulation.
+                - ``y``: Output trajectory of the closed-loop system.
+
+        Raises:
+            NotImplementedError:
+                Must be raised by subclasses that do not implement this method.
+        """
         pass

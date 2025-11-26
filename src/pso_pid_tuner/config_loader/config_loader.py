@@ -1,3 +1,20 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Project:       PID Optimizer
+# Script:        config_loader.py
+# Description:   Loads and validates the YAML configuration for the PID Optimizer. This script
+#                parses all system and PSO parameters, enforces type and value constraints,
+#                maps string parameters to Enums, and returns a fully normalized configuration
+#                dictionary. Invalid configurations raise a detailed ConfigError.
+#
+# Authors:       Florin Büchi, Thomas Stähli
+# Created:       01.12.2025
+# Modified:      01.12.2025
+# Version:       1.0
+#
+# License:       ZHAW Zürcher Hochschule für angewandte Wissenschaften (or internal use only)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
 import yaml
 from pathlib import Path
 import sys
@@ -6,16 +23,42 @@ from ..controlsys import AntiWindup, PerformanceIndex
 
 
 class ConfigError(Exception):
-    """Custom exception for invalid configuration."""
+    """Custom exception indicating invalid or inconsistent configuration input.
+
+    This exception is raised when the configuration file cannot be loaded,
+    contains invalid data types, violates logical constraints, or fails any of
+    the validation rules applied during parsing.
+
+    Typical causes include:
+        - Missing required configuration sections.
+        - Invalid numerical ranges (e.g., min ≥ max).
+        - Unsupported string literals for enumerations.
+        - Structural errors in ``config.yaml``.
+
+    Attributes:
+        message (str): Human-readable description of the configuration issue.
+    """
     pass
 
 
 def get_config_path() -> Path:
     """
-    Liefert den Pfad zur config.yaml – im Skriptmodus aus ./config/,
-    im EXE-Modus aus dem Ordner der EXE.
-    """
+    Resolve the filesystem path to the active ``config.yaml`` file.
 
+    The function transparently supports both **script execution** and
+    **frozen application mode** (e.g., PyInstaller-built binaries).
+    In frozen mode, the configuration file is expected in the same directory
+    as the executable. In script mode, the function locates the project root
+    based on the current file position and returns ``./config/config.yaml``.
+
+    Returns:
+        Path: Absolute path to the ``config.yaml`` configuration file.
+
+    Notes:
+        - Frozen mode is detected via ``sys.frozen``.
+        - Script mode uses the directory structure to locate the project root.
+        - No validation of file existence is performed.
+    """
     if getattr(sys, "frozen", False):
         # EXE-Modus → config.yaml liegt neben der EXE
         base_path = Path(sys.executable).parent
@@ -30,7 +73,38 @@ def get_config_path() -> Path:
 
 
 def load_config():
+    """
+    Load, validate, and normalize the PID Optimizer configuration file.
 
+    This function reads the ``config.yaml`` file, performs extensive structural,
+    type, and value validation on all configuration sections, and converts
+    string-encoded parameters into internal enum representations. All detected
+    validation issues are accumulated and reported collectively to provide
+    actionable feedback to the user.
+
+    The function ensures that required configuration sections exist, validates
+    numeric ranges (e.g., controller bounds, simulation settings), checks
+    logical relationships (e.g., min < max constraints), and prepares a fully
+    normalized configuration dictionary for downstream processing.
+
+    Returns:
+        dict: A validated and normalized configuration dictionary containing:
+            - ``system`` definitions (plant, simulation settings, constraints, enums)
+            - ``pso`` settings (swarm size, iterations, parameter bounds)
+
+    Raises:
+        ConfigError:
+            If the configuration file cannot be loaded or if any validation
+            errors are detected. All issues are aggregated into a single error
+            message.
+
+    Notes:
+        - ``anti_windup`` and ``performance_index`` fields are mapped to Enum
+          instances and also stored as lowercase strings where required.
+        - Numeric strings such as ``"1e-4"`` are automatically converted to floats.
+        - This function performs only semantic validation; it does not verify
+          whether the provided system dynamics are physically realizable.
+    """
     config_path = get_config_path()
 
     errors = []  # Liste zur Sammlung aller Exceptions

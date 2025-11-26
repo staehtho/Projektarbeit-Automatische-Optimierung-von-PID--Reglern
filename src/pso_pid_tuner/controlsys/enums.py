@@ -1,3 +1,20 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Project:       PID Optimizer
+# Script:        enums.py
+# Description:   Defines enumeration types used throughout the PID Optimizer, including
+#                anti-windup methods, performance indices, and solver selections. Also
+#                provides integer-based Enum variants for Numba compatibility and a utility
+#                to map regular Enums to their corresponding IntEnum types.
+#
+# Authors:       Florin Büchi, Thomas Stähli
+# Created:       01.12.2025
+# Modified:      01.12.2025
+# Version:       1.0
+#
+# License:       ZHAW Zürcher Hochschule für angewandte Wissenschaften (or internal use only)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
 from enum import Enum, IntEnum, auto
 
 

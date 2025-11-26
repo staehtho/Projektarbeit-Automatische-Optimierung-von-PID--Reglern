@@ -1,3 +1,21 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Project:       PID Optimizer
+# Script:        PIDClosedLoop.py
+# Description:   Implements the PIDClosedLoop class, providing a closed-loop control system
+#                based on a PID controller in gain or time-constant form. Supports filtered
+#                derivative action, output constraints, anti-windup strategies, frequency-domain
+#                evaluation, and time-domain simulation via the plant model and compiled
+#                response function.
+#
+# Authors:       Florin Büchi, Thomas Stähli
+# Created:       01.12.2025
+# Modified:      01.12.2025
+# Version:       1.0
+#
+# License:       ZHAW Zürcher Hochschule für angewandte Wissenschaften (or internal use only)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
 from typing import Callable
 import numpy as np
 
@@ -147,7 +165,43 @@ class PIDClosedLoop(ClosedLoop):
                       # Time-constant form
                       Ti: float = None,
                       Td: float = None):
+        """Set PID controller parameters in either gain form or time-constant form.
 
+        This method allows parameterization of the PID controller using one of two
+        mutually exclusive representations:
+
+        **Gain form**
+            - ``Kp``: Proportional gain
+            - ``Ki``: Integral gain
+            - ``Kd``: Derivative gain
+
+        **Time-constant form**
+            - ``Kp``: Proportional gain
+            - ``Ti``: Integral time constant (``Ti = Kp / Ki``)
+            - ``Td``: Derivative time constant (``Td = Kd / Kp``)
+
+        Only one representation may be provided. The method automatically converts
+        between both representations and stores all internal parameters:
+        ``Kp``, ``Ki``, ``Kd``, ``Ti``, and ``Td``.
+
+        Args:
+            Kp (float, optional):
+                Proportional gain. Required for both parameterizations.
+            Ki (float, optional):
+                Integral gain. Used only when specifying the gain form.
+            Kd (float, optional):
+                Derivative gain. Used only when specifying the gain form.
+            Ti (float, optional):
+                Integral time constant. Used only when specifying the time-constant form.
+            Td (float, optional):
+                Derivative time constant. Used only when specifying the time-constant form.
+
+        Raises:
+            ValueError:
+                If both parameter forms are provided simultaneously.
+            ValueError:
+                If neither representation is fully provided.
+        """
         # --- Parameter Validation ---
         gain_form = all(v is not None for v in (Kp, Ki, Kd))
         time_form = all(v is not None for v in (Kp, Ti, Td))

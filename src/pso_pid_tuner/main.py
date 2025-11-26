@@ -1,3 +1,20 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Project:       PID Optimizer
+# Script:        main.py
+# Description:   Serves as the entry point of the PID Optimizer. Loads configuration settings,
+#                initializes the plant and PID controller, constructs the PSO objective
+#                function, runs the optimization loop with progress feedback, and generates a
+#                comprehensive report with the final tuned parameters and system responses.
+#
+# Authors:       Florin Büchi, Thomas Stähli
+# Created:       01.12.2025
+# Modified:      01.12.2025
+# Version:       1.0
+#
+# License:       ZHAW Zürcher Hochschule für angewandte Wissenschaften (or internal use only)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
 import sys
 from tqdm import tqdm
 import numpy as np

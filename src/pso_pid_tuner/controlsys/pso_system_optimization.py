@@ -1,3 +1,20 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Project:       PID Optimizer
+# Script:        pso_system_optimization.py
+# Description:   Provides Numba-accelerated simulation routines and performance index evaluation
+#                for PSO-based PID optimization. Includes PID update logic, ODE solvers,
+#                closed-loop and open-loop response functions, and a vectorized PSO objective
+#                function for evaluating multiple PID parameter sets in parallel.
+#
+# Authors:       Florin Büchi, Thomas Stähli
+# Created:       01.12.2025
+# Modified:      01.12.2025
+# Version:       1.0
+#
+# License:       ZHAW Zürcher Hochschule für angewandte Wissenschaften (or internal use only)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
 import numpy as np
 import time
 from numba import njit, prange, types, float64, int64
