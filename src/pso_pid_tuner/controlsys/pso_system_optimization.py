@@ -457,8 +457,9 @@ def system_response(t_eval: np.ndarray, dt: float, u_eval: np.ndarray,
         u = float(u_eval[i])
 
         # Zustand aktualisieren (numerische Integration)
-        if solver == MySolverInt.RK4:
-            x = rk4(A, B, x, u, dt)
+        match solver:
+            case MySolverInt.RK4:
+                x = rk4(A, B, x, u, dt)
 
         # Ausgang berechnen
         y = dot1D(C, x)
@@ -597,16 +598,17 @@ def _pid_pso_func(X: np.ndarray, t_eval: np.ndarray, dt: float, r_eval: np.ndarr
                                 anti_windup_method, A, B, C, D, solver)
 
         # Kosten berechnen
-        if performance_index == PerformanceIndexInt.IAE:
-            performance_index_val[i] = iae(t_eval, y, r_eval)
+        match performance_index:
+            case PerformanceIndexInt.IAE:
+                performance_index_val[i] = iae(t_eval, y, r_eval)
 
-        elif performance_index == PerformanceIndexInt.ISE:
-            performance_index_val[i] = ise(t_eval, y, r_eval)
+            case PerformanceIndexInt.ISE:
+                performance_index_val[i] = ise(t_eval, y, r_eval)
 
-        elif performance_index == PerformanceIndexInt.ITAE:
-            performance_index_val[i] = itae(t_eval, y, r_eval)
+            case PerformanceIndexInt.ITAE:
+                performance_index_val[i] = itae(t_eval, y, r_eval)
 
-        elif performance_index == PerformanceIndexInt.ITSE:
-            performance_index_val[i] = itse(t_eval, y, r_eval)
+            case PerformanceIndexInt.ITSE:
+                performance_index_val[i] = itse(t_eval, y, r_eval)
 
     return performance_index_val
