@@ -30,7 +30,8 @@ def bode_plot(
         low_exp: float = -2,
         high_exp: float = 3,
         num_points: int = 400,
-        grid: bool = True
+        grid: bool = True,
+        title: str = "Bode Diagramm"
 ):
     """
     Plot Bode diagrams (magnitude and phase) for multiple systems.
@@ -53,6 +54,8 @@ def bode_plot(
             Number of frequency points for logarithmic sweep. Default is 400.
         grid (bool, optional):
             If True, displays grid lines. Default is True.
+        title (str, optional):
+            Plot title
 
     Raises:
         TypeError: If a system entry is neither callable nor a tuple of (omega, mag, phase).
@@ -112,7 +115,7 @@ def bode_plot(
 
     plt.xlim(omega.min(), omega.max())
 
-    fig.suptitle("Bode Diagramm", fontsize=14, fontweight='bold')
+    fig.suptitle(title, fontsize=14, fontweight='bold')
 
     if grid:
         ax_mag.grid(True, which="both")
