@@ -376,11 +376,20 @@ class Swarm:
             if space_criteria:
                 termination_criteria = True
 
-            # Check convergence based on lack of improvement
-            if len(swarm_state) > self._max_stall and 1 - (
-                    swarm_state[-1] / swarm_state[-self._max_stall]
-            ) <= self._convergence_factor:
-                termination_criteria = True
+            # Robust convergence check based on lack of improvement
+            if len(swarm_state) > self._max_stall:
+                prev_cost = swarm_state[-self._max_stall]
+                curr_cost = swarm_state[-1]
+
+                # Falls vorher oder aktuell NaN/inf → setze Verbesserung auf 0
+                if not np.isfinite(prev_cost) or not np.isfinite(curr_cost) or prev_cost == 0:
+                    improvement = 0.0
+                else:
+                    improvement = 1 - (curr_cost / prev_cost)
+
+                # Prüfen, ob Verbesserung klein genug ist
+                if improvement <= self._convergence_factor:
+                    termination_criteria = True
 
             if termination_criteria:
                 break
