@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Project:       PID Optimizer
-# Script:        closedLoop.py
+# Module:        closedLoop.py
 # Description:   Provides the abstract ClosedLoop base class used to represent and simulate
 #                closed-loop systems in the PID Optimizer. Includes transfer function
 #                computation, disturbance responses, and step simulation utilities. Concrete

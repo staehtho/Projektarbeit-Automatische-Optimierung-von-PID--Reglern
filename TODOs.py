@@ -6,6 +6,8 @@
 
 # TODO: Stichworte zu BA, was solle diese beinhalten
 
+# TODO: Bode range dynamisch
+# TODO: Name von ClosedLoop in Plot anpassen
 
 # TODO: pdf generator: auch anregungsfunktion plotten
 # TODO: contional windup umsetzen oder rückbauen BA

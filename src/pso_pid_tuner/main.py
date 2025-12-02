@@ -124,13 +124,12 @@ def main():
 
     for _ in pbar:
         swarm = Swarm(obj_func, swarm_size, 3, bounds)
-        terminated_swarm = swarm.simulate_swarm()
+        swarm_result, performance_index_val = swarm.simulate_swarm()
 
         # Best parameters from the swarm
-        Kp = terminated_swarm.gBest.p_best_position[0]
-        Ti = terminated_swarm.gBest.p_best_position[1]
-        Td = terminated_swarm.gBest.p_best_position[2]
-        performance_index_val = terminated_swarm.gBest.p_best_cost
+        Kp = swarm_result[0]
+        Ti = swarm_result[1]
+        Td = swarm_result[2]
 
         if performance_index_val < best_performance_index:
             best_performance_index = performance_index_val

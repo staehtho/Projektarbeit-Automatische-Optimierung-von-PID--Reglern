@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Project:       PID Optimizer
-# Script:        swarmlib.py
+# Module:        swarmlib.py
 # Description:   Implements a Particle Swarm Optimization (PSO) framework including particle
 #                dynamics, swarm management, adaptive neighborhood selection, and convergence
 #                criteria. Provides a configurable optimizer capable of evaluating arbitrary
@@ -16,6 +16,7 @@
 
 
 import random
+import sys
 import numpy as np
 import copy
 import math
@@ -33,10 +34,10 @@ class Particle:
     """
 
     # Class-level (shared) attributes
-    bounds: np.ndarray = None
-    coefficients: List[float] = None  # [inertia, cognitive_coeff, social_coeff]
+    bounds: np.ndarray
+    coefficients: List[float]  # [inertia, cognitive_coeff, social_coeff]
     randomness: float = 1.0
-    speed_bounds: np.ndarray = None
+    speed_bounds: np.ndarray
 
     # -------------------------------------------------------------------------
     # Instance-level attributes
@@ -48,11 +49,11 @@ class Particle:
             position (np.ndarray): Initial position vector of the particle.
             velocity (np.ndarray): Initial velocity vector of the particle.
         """
-        self.position = position
-        self.velocity = velocity
-        self.cost: Optional[float] = None
-        self.p_best_cost: Optional[float] = None
-        self.p_best_position: Optional[np.ndarray] = None
+        self._position = position
+        self._velocity = velocity
+        self._cost: float = sys.float_info.max
+        self._p_best_cost: float = sys.float_info.max
+        self._p_best_position: np.ndarray = position
 
     # -------------------------------------------------------------------------
     # Class configuration
@@ -74,6 +75,22 @@ class Particle:
         cls.randomness = randomness
         r = np.subtract(bounds[1], bounds[0])
         cls.speed_bounds = np.array([-r, r]).T  # velocity limits per dimension
+
+    # -------------------------------------------------------------------------
+    # Attributes
+    # -------------------------------------------------------------------------
+
+    @property
+    def position(self) -> np.ndarray:
+        return self._position
+
+    @property
+    def p_best_cost(self) -> float:
+        return self._p_best_cost
+
+    @property
+    def p_best_position(self) -> np.ndarray:
+        return self._p_best_position
 
     # -------------------------------------------------------------------------
     # Particle dynamics
@@ -101,31 +118,31 @@ class Particle:
                             key=lambda pp: pp.p_best_cost)
 
         # Compute velocity contributions
-        vec_g_best = best_neighbor.p_best_position - self.position
-        vec_p_best = self.p_best_position - self.position
+        vec_g_best = best_neighbor.p_best_position - self._position
+        vec_p_best = self._p_best_position - self._position
 
         inertia, c1, c2 = Particle.coefficients
-        self.velocity = (
-                self.velocity * inertia
+        self._velocity = (
+                self._velocity * inertia
                 + vec_g_best * c1 * u1
                 + vec_p_best * c2 * u2
         )
 
         # Clip velocity to bounds
-        for j in range(len(self.position)):
+        for j in range(len(self._position)):
             min_v, max_v = Particle.speed_bounds[j]
-            self.velocity[j] = np.clip(self.velocity[j], min_v, max_v)
+            self._velocity[j] = np.clip(self._velocity[j], min_v, max_v)
 
     def update_position(self) -> None:
         """Updates the particle's position based on velocity, enforcing bounds."""
-        self.position += self.velocity
-        for j in range(len(self.position)):
-            if self.position[j] > Particle.bounds[1][j]:
-                self.position[j] = Particle.bounds[1][j]
-                self.velocity[j] = 0
-            elif self.position[j] < Particle.bounds[0][j]:
-                self.position[j] = Particle.bounds[0][j]
-                self.velocity[j] = 0
+        self._position += self._velocity
+        for j in range(len(self._position)):
+            if self._position[j] > Particle.bounds[1][j]:
+                self._position[j] = Particle.bounds[1][j]
+                self._velocity[j] = 0
+            elif self._position[j] < Particle.bounds[0][j]:
+                self._position[j] = Particle.bounds[0][j]
+                self._velocity[j] = 0
 
     def update_best(self, cost: float) -> None:
         """Updates the personal best position if the current cost is better.
@@ -133,10 +150,10 @@ class Particle:
         Args:
             cost (float): Current cost value of the particle.
         """
-        self.cost = cost
-        if self.p_best_cost is None or cost < self.p_best_cost:
-            self.p_best_cost = cost
-            self.p_best_position = copy.deepcopy(self.position)
+        self._cost = cost
+        if cost < self._p_best_cost:
+            self._p_best_cost = cost
+            self._p_best_position = copy.deepcopy(self._position)
 
 
 # ============================================================================
@@ -157,7 +174,7 @@ class Swarm:
                  randomness: float = 1.0,
                  u1: float = 1.49,
                  u2: float = 1.49,
-                 inertia_range: tuple[float, float] = (0.1, 1.1),
+                 initial_range: tuple[float, float] = (0.1, 1.1),
                  initial_swarm_span: int = 2000,
                  min_neighbors_fraction: float = 0.25,
                  max_stall: int = 15,
@@ -173,7 +190,7 @@ class Swarm:
             randomness (float, optional): Random factor for velocity updates. Defaults to 1.0.
             u1 (float, optional): Cognitive coefficient. Defaults to 1.49.
             u2 (float, optional): Social coefficient. Defaults to 1.49.
-            inertia_range (tuple[float, float], optional): Inertia weight range. Defaults to (0.1, 1.1).
+            initial_range (tuple[float, float], optional): Inertia weight range. Defaults to (0.1, 1.1).
             initial_swarm_span (int, optional): Initial span divisions for particle positions. Defaults to 2000.
             min_neighbors_fraction (float, optional): Minimum fraction of swarm considered neighbors. Defaults to 0.25.
             max_stall (int, optional): Maximum iterations with little improvement. Defaults to 15.
@@ -185,8 +202,8 @@ class Swarm:
         self.param_number = param_number
         self.bounds = np.array(bounds, dtype=float)
         self.randomness = randomness
-        self._coefficients = [inertia_range[1], u1, u2]
-        self._inertia_range = inertia_range
+        self._coefficients = [initial_range[1], u1, u2]
+        self._initial_range = initial_range
         self._max_stall = max_stall
         self._initial_swarm_span = initial_swarm_span
         self._min_neighbors_fraction = min_neighbors_fraction
@@ -194,7 +211,7 @@ class Swarm:
         self._convergence_factor = convergence_factor
 
         self.particles: List[Particle] = []
-        self.gBest: Optional[Particle] = None
+        self.gBest: Particle
         self.iterations: int = 0
         self._no_improvement_counter = 0
 
@@ -287,8 +304,8 @@ class Swarm:
                 self._coefficients[0] /= 2
             self._coefficients[0] = np.clip(
                 self._coefficients[0],
-                self._inertia_range[0],
-                self._inertia_range[1]
+                self._initial_range[0],
+                self._initial_range[1]
             )
         else:
             self._no_improvement_counter += 1
@@ -314,16 +331,25 @@ class Swarm:
 
     def simulate_swarm(self,
                        iterate_func: Optional[Callable[['Swarm'], None]] = None
-                       ) -> 'Swarm':
-        """Runs the PSO optimization until convergence criteria are met.
+                       ) -> tuple[np.ndarray, float]:
+        """Runs the Particle Swarm Optimization (PSO) until convergence.
+
+        This method iteratively updates particle positions and velocities
+        according to the PSO algorithm, tracking global and personal bests.
+        The optimization stops when either the swarm's particle space shrinks
+        below a threshold or when improvements stall beyond a defined limit.
 
         Args:
             iterate_func (Optional[Callable[['Swarm'], None]]):
-                Optional callback executed each iteration. Receives the swarm
-                and the particle space percentage.
+                An optional callback function executed at each iteration.
+                Receives the current swarm instance and can be used for
+                logging or monitoring progress.
 
         Returns:
-            Swarm: The swarm instance after convergence.
+            tuple[np.ndarray, float]:
+                A tuple containing:
+                - The best position vector found by the swarm (`np.ndarray`).
+                - The corresponding best cost value (`float`).
         """
         swarm_state = [self.gBest.p_best_cost]
         termination_criteria = False
@@ -339,7 +365,6 @@ class Swarm:
             swarm_state.append(self.gBest.p_best_cost)
 
             particle_space = self._get_particle_space()
-            particle_space_rel = round((particle_space / initial_space) * 100)
 
             # Execute user-provided callback if available
             if iterate_func:
@@ -351,13 +376,22 @@ class Swarm:
             if space_criteria:
                 termination_criteria = True
 
-            # Check convergence based on lack of improvement
-            if len(swarm_state) > self._max_stall and 1 - (
-                    swarm_state[-1] / swarm_state[-self._max_stall]
-            ) <= self._convergence_factor:
-                termination_criteria = True
+            # Robust convergence check based on lack of improvement
+            if len(swarm_state) > self._max_stall:
+                prev_cost = swarm_state[-self._max_stall]
+                curr_cost = swarm_state[-1]
+
+                # Falls vorher oder aktuell NaN/inf → setze Verbesserung auf 0
+                if not np.isfinite(prev_cost) or not np.isfinite(curr_cost) or prev_cost == 0:
+                    improvement = 0.0
+                else:
+                    improvement = 1 - (curr_cost / prev_cost)
+
+                # Prüfen, ob Verbesserung klein genug ist
+                if improvement <= self._convergence_factor:
+                    termination_criteria = True
 
             if termination_criteria:
                 break
 
-        return self
+        return self.gBest.p_best_position, self.gBest.p_best_cost

@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Project:       PID Optimizer
-# Script:        pso_system_optimization.py
+# Module:        pso_system_optimization.py
 # Description:   Provides Numba-accelerated simulation routines and performance index evaluation
 #                for PSO-based PID optimization. Includes PID update logic, ODE solvers,
 #                closed-loop and open-loop response functions, and a vectorized PSO objective
@@ -265,32 +265,54 @@ def pid_update(e: float, e_prev: float, filtered_prev: float, integral: float,
         - integral: Updated integral state.
         - d_filtered: Updated filtered derivative state.
     """
-    # PID terms
-    P = Kp * e
-    de = (e - e_prev) / dt
-    alpha = dt / (Tf + dt)
-    d_filtered = (1 - alpha) * filtered_prev + alpha * de
-    D_term = Kp * Td * d_filtered
-    I_term = Kp / Ti * integral
-    u_temp = P + I_term + D_term
+    # --- Derivative block (filtered) ---
+    if Td > 0.0:
+        alpha = Tf / (Tf + dt)
+        d_filtered = alpha * filtered_prev + (1.0 - alpha) * ((e - e_prev) / dt)
+    else:
+        d_filtered = 0.0
 
-    # --- Anti-windup handling ---
+    # --- Integral update proposal ---
+    if Ti > 0.0:
+        integral_candidate = integral + e * dt
+    else:
+        integral_candidate = integral
+
+    # Unscaled integrator output
+    I_term_unscaled = (1.0 / Ti) * integral_candidate if Ti > 0 else 0.0
+
+    # --- Serial PID core ---
+    u_unsat = Kp * (e + I_term_unscaled + Td * d_filtered)
+
+    # --- Anti-windup ---
     if anti_windup_method == AntiWindupInt.CONDITIONAL:
-        if (u_min < u_temp < u_max) or \
-                (u_temp >= u_max and e < 0.0) or \
-                (u_temp <= u_min and e > 0.0):
-            integral += e * dt
-            I_term = Kp / Ti * integral
-        u = min(max(P + I_term + D_term, u_min), u_max)
+
+        # Allow integration only if it will not cause saturation
+        if (u_min < u_unsat < u_max) or \
+                (u_unsat >= u_max and e < 0.0) or \
+                (u_unsat <= u_min and e > 0.0):
+            integral = integral_candidate
+        # else: keep previous integral
+
+        # re-evaluate I term
+        I_term_unscaled = (1.0 / Ti) * integral if Ti > 0 else 0.0
+        u = Kp * (e + I_term_unscaled + Td * d_filtered)
+        u = min(max(u, u_min), u_max)
 
     elif anti_windup_method == AntiWindupInt.CLAMPING:
-        integral += e * dt
-        I_term = Kp / Ti * integral
-        I_term = min(max(I_term, u_min), u_max)
-        u = min(max(P + I_term + D_term, u_min), u_max)
+
+        # Always integrate
+        integral = integral_candidate
+
+        # Clamp the *integrator* inside control limits
+        I_term_unscaled = (1.0 / Ti) * integral if Ti > 0 else 0.0
+        I_term_clamped = min(max(I_term_unscaled, u_min / Kp), u_max / Kp)
+
+        u = Kp * (e + I_term_clamped + Td * d_filtered)
+        u = min(max(u, u_min), u_max)
 
     else:
-        u = 0.0  # Safety default
+        u = 0.0  # safety fallback
 
     return u, integral, d_filtered
 
@@ -457,8 +479,9 @@ def system_response(t_eval: np.ndarray, dt: float, u_eval: np.ndarray,
         u = float(u_eval[i])
 
         # Zustand aktualisieren (numerische Integration)
-        if solver == MySolverInt.RK4:
-            x = rk4(A, B, x, u, dt)
+        match solver:
+            case MySolverInt.RK4:
+                x = rk4(A, B, x, u, dt)
 
         # Ausgang berechnen
         y = dot1D(C, x)
@@ -597,16 +620,17 @@ def _pid_pso_func(X: np.ndarray, t_eval: np.ndarray, dt: float, r_eval: np.ndarr
                                 anti_windup_method, A, B, C, D, solver)
 
         # Kosten berechnen
-        if performance_index == PerformanceIndexInt.IAE:
-            performance_index_val[i] = iae(t_eval, y, r_eval)
+        match performance_index:
+            case PerformanceIndexInt.IAE:
+                performance_index_val[i] = iae(t_eval, y, r_eval)
 
-        elif performance_index == PerformanceIndexInt.ISE:
-            performance_index_val[i] = ise(t_eval, y, r_eval)
+            case PerformanceIndexInt.ISE:
+                performance_index_val[i] = ise(t_eval, y, r_eval)
 
-        elif performance_index == PerformanceIndexInt.ITAE:
-            performance_index_val[i] = itae(t_eval, y, r_eval)
+            case PerformanceIndexInt.ITAE:
+                performance_index_val[i] = itae(t_eval, y, r_eval)
 
-        elif performance_index == PerformanceIndexInt.ITSE:
-            performance_index_val[i] = itse(t_eval, y, r_eval)
+            case PerformanceIndexInt.ITSE:
+                performance_index_val[i] = itse(t_eval, y, r_eval)
 
     return performance_index_val

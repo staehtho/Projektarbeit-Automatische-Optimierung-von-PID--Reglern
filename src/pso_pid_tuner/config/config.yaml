@@ -1,21 +1,29 @@
-# ============================================================
-# Configuration file for PSO-based PID optimizing
+# ──────────────────────────────────────────────────────────────────────────────
+# Project:       PID Optimizer
+# File:          config.yaml
+# Description:   This YAML file contains parameters for:
+#                1. System definition (plant transfer function, simulation time, anti-windup, control constraints)
+#                2. PSO (Particle Swarm Optimization) settings to optimize PID parameters
+#                3. Bounds for PID parameters (Kp, Ti, Td) used during the PSO optimization
 #
-# This YAML file contains parameters for:
-# 1. System definition (plant transfer function, simulation time, anti-windup, control constraints)
-# 2. PSO (Particle Swarm Optimization) settings to optimize PID parameters
-# 3. Bounds for PID parameters (Kp, Ti, Td) used during the PSO optimization
+#                Notes:
+#                - All numerical values should be provided as numbers (floats or ints).
+#                - Anti-windup can be either "clamping" or "conditional".
+#                - Constraints define limits for controller outputs and the I-term.
+#                - PSO bounds define the search space for PID gains.
 #
-# Notes:
-# - All numerical values should be provided as numbers (floats or ints).
-# - Anti-windup can be either "clamping" or "conditional".
-# - Constraints define limits for controller outputs and the I-term.
-# - PSO bounds define the search space for PID gains.
-# ============================================================
+# Authors:       Florin Büchi, Thomas Stähli
+# Created:       01.12.2025
+# Modified:      01.12.2025
+# Version:       1.0
+#
+# License:       ZHAW Zürcher Hochschule für angewandte Wissenschaften (or internal use only)
+# ──────────────────────────────────────────────────────────────────────────────
 
-# ============================================================
+
+# ──────────────────────────────────────────────────────────────────────────────
 # System parameter
-# ============================================================
+# ──────────────────────────────────────────────────────────────────────────────
 system:
   plant:
     # Transfer function
@@ -55,9 +63,9 @@ system:
   # This metric is minimized during the PSO to evaluate controller performance.
   performance_index: "ITAE"
 
-# ============================================================
+# ──────────────────────────────────────────────────────────────────────────────
 # PSO parameter
-# ============================================================
+# ──────────────────────────────────────────────────────────────────────────────
 pso:
   swarm_size: 40     # Number of particles in the swarm
   iterations: 10      # Number of PSO iterations to optimize PID parameters

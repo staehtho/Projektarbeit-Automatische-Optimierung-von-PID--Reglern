@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Project:       PID Optimizer
-# Script:        config_loader.py
+# Module:        config_loader.py
 # Description:   Loads and validates the YAML configuration for the PID Optimizer. This script
 #                parses all system and PSO parameters, enforces type and value constraints,
 #                maps string parameters to Enums, and returns a fully normalized configuration

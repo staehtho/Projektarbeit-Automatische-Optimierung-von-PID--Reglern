@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Project:       PID Optimizer
-# Script:        report_generator.py
+# Module:        report_generator.py
 # Description:   Generates a complete optimization report including step and Bode plots,
 #                PID results, simulation parameters, and plant data. Exports all figures and
 #                summary information to a timestamped directory and builds a structured PDF
@@ -139,6 +139,7 @@ def report_generator(data: dict):
             t_cl, y_cl = pid.step_response(t0=start_time, t1=end_time, dt=time_step)
             systems_for_bode["Open Loop"] = plant.system
             systems_for_bode["Closed Loop"] = pid.closed_loop
+            # TODO Bezeichnung von Open Loop stimmt nicht!!!
             plt.plot(t_ol, y_ol, label="Open Loop")
             plt.plot(t_cl, y_cl, label="Closed Loop")
         case "input_disturbance":

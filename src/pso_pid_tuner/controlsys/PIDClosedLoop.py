@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Project:       PID Optimizer
-# Script:        PIDClosedLoop.py
+# Module:        PIDClosedLoop.py
 # Description:   Implements the PIDClosedLoop class, providing a closed-loop control system
 #                based on a PID controller in gain or time-constant form. Supports filtered
 #                derivative action, output constraints, anti-windup strategies, frequency-domain
