@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Project:       PID Optimizer
-# Script:        report_generator.py
+# Module:        report_generator.py
 # Description:   Generates a complete optimization report including step and Bode plots,
 #                PID results, simulation parameters, and plant data. Exports all figures and
 #                summary information to a timestamped directory and builds a structured PDF

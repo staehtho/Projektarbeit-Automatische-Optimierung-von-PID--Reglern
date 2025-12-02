@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Project:       PID Optimizer
-# Script:        swarmlib.py
+# Module:        swarmlib.py
 # Description:   Implements a Particle Swarm Optimization (PSO) framework including particle
 #                dynamics, swarm management, adaptive neighborhood selection, and convergence
 #                criteria. Provides a configurable optimizer capable of evaluating arbitrary

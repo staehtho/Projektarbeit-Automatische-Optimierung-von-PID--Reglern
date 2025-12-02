@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Project:       PID Optimizer
-# Script:        plant.py
+# Module:        plant.py
 # Description:   Defines the Plant class representing a linear time-invariant system specified
 #                by its transfer function. Provides state-space conversion, transfer-function
 #                evaluation, dominant time-constant estimation, and utilities for open-loop

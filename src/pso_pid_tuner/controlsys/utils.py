@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Project:       PID Optimizer
-# Script:        utils.py
+# Module:        utils.py
 # Description:   Provides utility functions for frequency- and time-domain analysis, including
 #                Bode plotting, gain crossover computation, pole analysis, and settling-time
 #                evaluation. Also includes helper tools for system simulation and response

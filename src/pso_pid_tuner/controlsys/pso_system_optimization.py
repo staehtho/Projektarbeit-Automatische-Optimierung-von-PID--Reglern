@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Project:       PID Optimizer
-# Script:        pso_system_optimization.py
+# Module:        pso_system_optimization.py
 # Description:   Provides Numba-accelerated simulation routines and performance index evaluation
 #                for PSO-based PID optimization. Includes PID update logic, ODE solvers,
 #                closed-loop and open-loop response functions, and a vectorized PSO objective

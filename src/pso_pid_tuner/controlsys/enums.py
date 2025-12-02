@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Project:       PID Optimizer
-# Script:        enums.py
+# Module:        enums.py
 # Description:   Defines enumeration types used throughout the PID Optimizer, including
 #                anti-windup methods, performance indices, and solver selections. Also
 #                provides integer-based Enum variants for Numba compatibility and a utility
