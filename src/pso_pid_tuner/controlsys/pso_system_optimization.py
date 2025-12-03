@@ -125,6 +125,8 @@ class PsoFunc:
         self.controller_param: dict[str, str | float | np.ndarray]
 
         self.performance_index = map_enum_to_int(performance_index)
+        self.control_constraint = np.array(self.controller.control_constraint, dtype=np.float64)
+        self.anti_windup_method = map_enum_to_int(self.controller.anti_windup_method)
 
         self.solver = map_enum_to_int(solver)
 
@@ -137,8 +139,6 @@ class PsoFunc:
 
             self.controller_param = {
                 "Tf": pid.Tf,
-                "control_constraint": np.array(pid.control_constraint, dtype=np.float64),
-                "anti_windup": map_enum_to_int(pid.anti_windup_method)
             }
 
         else:
@@ -172,7 +172,7 @@ class PsoFunc:
         if isinstance(self.controller, PIDClosedLoop):
             itae_val = _pid_pso_func(X, self.t_eval, self.dt, self.r_eval, self.l_eval, self.n_eval, self.A, self.B,
                                      self.C, self.D, self.plant_order, self.controller_param["Tf"],
-                                     self.controller_param["control_constraint"], self.controller_param["anti_windup"],
+                                     self.control_constraint, self.anti_windup_method,
                                      self.solver, self.performance_index, self.swarm_size)
 
         else:

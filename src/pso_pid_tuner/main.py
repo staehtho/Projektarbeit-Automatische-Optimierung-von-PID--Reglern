@@ -86,28 +86,22 @@ def main():
         pid.set_filter(Tf=t_dom / 100)
 
     # generate function to be optimized
+    r = lambda t: np.zeros_like(t)
+    l = lambda t: np.zeros_like(t)
+    n = lambda t: np.zeros_like(t)
+
     match excitation_target:
         case "reference":
             r = lambda t: np.ones_like(t)
-            l = lambda t: np.zeros_like(t)
-            n = lambda t: np.zeros_like(t)
         case "input_disturbance":
-            r = lambda t: np.zeros_like(t)
             l = lambda t: np.ones_like(t)
-            n = lambda t: np.zeros_like(t)
         case "measurement_disturbance":
-            r = lambda t: np.zeros_like(t)
-            l = lambda t: np.zeros_like(t)
             n = lambda t: np.ones_like(t)
-        case _:
-            r = lambda t: np.zeros_like(t)
-            l = lambda t: np.zeros_like(t)
-            n = lambda t: np.zeros_like(t)
 
     # in case of sim-mode 'auto', find settling time of plant
     if sim_mode == "auto" and excitation_target == "reference":
-        t, y = plant.system_response(u=r, t0=start_time, t1=end_time, dt=time_step)
-        end_time = settling_time(t=t, y=y, r=r, tolerance=0.05, max_allowed_time=end_time)
+        t_set, y_set = plant.system_response(u=r, t0=start_time, t1=end_time, dt=time_step)
+        end_time = settling_time(t=t_set, y=y_set, r=r, tolerance=0.05, max_allowed_time=end_time)
 
     # generate function to be optimized
     obj_func = PsoFunc(pid, start_time, end_time, time_step, r=r, l=l, n=n,

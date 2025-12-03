@@ -25,58 +25,6 @@ from .enums import *
 
 
 class PIDClosedLoop(ClosedLoop):
-    """
-    Closed-loop control system using a PID controller in international form.
-
-    The PID controller can be parameterized using either **gain form** or
-    **time-constant form**:
-
-    Gain form:
-        - Kp: Proportional gain
-        - Ki: Integral gain
-        - Kd: Derivative gain
-
-    Time-constant form:
-        - Kp: Proportional gain
-        - Ti: Integral time constant
-        - Td: Derivative time constant
-
-    Only one parameterization method should be provided during initialization.
-    If one form is provided, the parameters of the other form are computed
-    automatically.
-
-    The derivative part of the PID controller is filtered using a first-order
-    (PT1) filter with time constant `Tf`.
-
-    PID Transfer Function (international form):
-        Gc(s) = Kp * (1 + 1/(Ti * s) + (Td * s) / (Tf * s + 1))
-
-    Args:
-        plant (Plant): The plant being controlled.
-
-        Kp (float, optional): Proportional gain (gain form).
-        Ki (float, optional): Integral gain (gain form).
-        Kd (float, optional): Derivative gain (gain form).
-
-        Ti (float, optional): Integral time constant (time-constant form).
-        Td (float, optional): Derivative time constant (time-constant form).
-
-        Tf (float, optional): Time constant of the derivative PT1 filter.
-            Defaults to 0.01.
-
-        control_constraint (list[float], optional): Saturation limits for the
-            control signal, in the format [u_min, u_max]. Defaults to [-5.0, 5.0].
-
-        anti_windup_method (AntiWindup, optional): Method to reduce integral windup.
-            Supported values:
-            - "clamping": Stop integration when output saturates.
-            - "conditional": Integrate only when output is not saturated.
-            Defaults to "clamping".
-
-    Raises:
-        ValueError: If both parameterization methods (gain and time-constant
-            form) are provided or if neither is provided.
-    """
 
     def __init__(self,
                  plant: Plant,
@@ -94,7 +42,59 @@ class PIDClosedLoop(ClosedLoop):
                  anti_windup_method: AntiWindup = AntiWindup.CLAMPING
                  ) -> None:
 
-        super().__init__(plant)
+        """
+        Closed-loop control system using a PID controller in international form.
+
+        The PID controller can be parameterized using either **gain form** or
+        **time-constant form**:
+
+        Gain form:
+            - Kp: Proportional gain
+            - Ki: Integral gain
+            - Kd: Derivative gain
+
+        Time-constant form:
+            - Kp: Proportional gain
+            - Ti: Integral time constant
+            - Td: Derivative time constant
+
+        Only one parameterization method should be provided during initialization.
+        If one form is provided, the parameters of the other form are computed
+        automatically.
+
+        The derivative part of the PID controller is filtered using a first-order
+        (PT1) filter with time constant `Tf`.
+
+        PID Transfer Function (international form):
+            Gc(s) = Kp * (1 + 1/(Ti * s) + (Td * s) / (Tf * s + 1))
+
+        Args:
+            plant (Plant): The plant being controlled.
+
+            Kp (float, optional): Proportional gain (gain form).
+            Ki (float, optional): Integral gain (gain form).
+            Kd (float, optional): Derivative gain (gain form).
+
+            Ti (float, optional): Integral time constant (time-constant form).
+            Td (float, optional): Derivative time constant (time-constant form).
+
+            Tf (float, optional): Time constant of the derivative PT1 filter.
+                Defaults to 0.01.
+
+            control_constraint (list[float], optional):
+                A two-element list defining the minimum and maximum allowable
+                control signal (e.g., actuator saturation limits). If not
+                provided, defaults to [-5.0, 5.0].
+            anti_windup_method (AntiWindup, optional):
+                The anti-windup strategy used to handle saturation effects.
+                Defaults to ``AntiWindup.CLAMPING``.
+
+        Raises:
+            ValueError: If both parameterization methods (gain and time-constant
+                form) are provided or if neither is provided.
+        """
+
+        super().__init__(plant, control_constraint, anti_windup_method)
 
         self._kp: float = 0
         self._ki: float = 0
@@ -107,11 +107,6 @@ class PIDClosedLoop(ClosedLoop):
 
         # filter time constant
         self._tf = Tf
-
-        # Control output constraints
-        self._control_constraint = control_constraint or [-5.0, 5.0]
-
-        self._anti_windup_method = anti_windup_method
 
     # -------------------- Properties --------------------
 
@@ -144,14 +139,6 @@ class PIDClosedLoop(ClosedLoop):
     def Tf(self) -> float:
         """Derivative filter time constant."""
         return self._tf
-
-    @property
-    def control_constraint(self) -> list[float]:
-        return self._control_constraint
-
-    @property
-    def anti_windup_method(self) -> AntiWindup:
-        return self._anti_windup_method
 
     def set_filter(self, Tf):
         self._tf = Tf

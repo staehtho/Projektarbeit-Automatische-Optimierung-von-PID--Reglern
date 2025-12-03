@@ -19,11 +19,41 @@ from abc import ABC, abstractmethod
 import numpy as np
 from typing import Callable
 from .plant import Plant
+from .enums import AntiWindup
 
 
 class ClosedLoop(ABC):
-    def __init__(self, plant: Plant):
+    def __init__(
+            self,
+            plant: Plant,
+            control_constraint: list[float] = None,
+            anti_windup_method: AntiWindup = AntiWindup.CLAMPING
+    ):
+        """
+        Initializes a closed-loop control system.
+
+        Args:
+            plant (Plant):
+                The plant or process model that the controller interacts with.
+            control_constraint (list[float], optional):
+                A two-element list defining the minimum and maximum allowable
+                control signal (e.g., actuator saturation limits). If not
+                provided, defaults to [-5.0, 5.0].
+            anti_windup_method (AntiWindup, optional):
+                The anti-windup strategy used to handle saturation effects.
+                Defaults to ``AntiWindup.CLAMPING``.
+
+        Attributes:
+            plant (Plant):
+                Internal reference to the plant model.
+            control_constraint (list[float]):
+                Saturation limits applied to the control output.
+            anti_windup_method (AntiWindup):
+                Selected anti-windup technique for the controller.
+        """
         self._plant = plant
+        self._control_constraint = control_constraint or [-5.0, 5.0]
+        self._anti_windup_method = anti_windup_method
 
     def __format__(self, format_spec: str) -> str:
         """
@@ -62,6 +92,14 @@ class ClosedLoop(ABC):
     @property
     def plant(self) -> Plant:
         return self._plant
+
+    @property
+    def control_constraint(self) -> list[float]:
+        return self._control_constraint
+
+    @property
+    def anti_windup_method(self) -> AntiWindup:
+        return self._anti_windup_method
 
     @abstractmethod
     def controller(self, s: complex | np.ndarray) -> complex | np.ndarray:
