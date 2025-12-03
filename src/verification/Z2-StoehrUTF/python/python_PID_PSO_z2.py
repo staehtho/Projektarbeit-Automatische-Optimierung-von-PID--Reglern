@@ -3,7 +3,7 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 
-from src.pso_pid_tuner.controlsys import Plant, PIDClosedLoop, PsoFunc, itae
+from src.pso_pid_tuner.controlsys import Plant, PIDClosedLoop, PsoFunc, itae, AntiWindup
 from src.pso_pid_tuner.PSO import Swarm
 
 
@@ -13,8 +13,9 @@ class PidParameter:
                  identifier_name: str = "n", identifier_value: float | int = 0):
 
         self._plant = Plant(num, den)
-        self._pid_verification = PIDClosedLoop(self._plant, Kp=Kp, Ti=Ti, Td=Td, control_constraint=control_constraint)
-        self._pid_verification.anti_windup_method = "clamping"
+        self._pid_verification = PIDClosedLoop(self._plant, Kp=Kp, Ti=Ti, Td=Td,
+                                               control_constraint=control_constraint,
+                                               anti_windup_method=AntiWindup.CLAMPING)
 
         self._kp = Kp
         self._ti = Ti
@@ -36,32 +37,31 @@ class PidParameter:
         self._min_td = 0
 
     def simulate_swarm(self, n: int, t0: float, t1: float, dt: float,
-                       bounds: list[list[float]] | None = None, swarm_size: int = 40) -> int:
+                       bounds: list[list[float]] | None = None, swarm_size: int = 40) -> None:
         if bounds is None:
             bounds = [[0, 0.1, 0], [10, 10, 10]]
-        n = lambda t: np.ones_like(t)
-        obj_func = PsoFunc(self._pid_verification, t0, t1, dt, n=n, swarm_size=swarm_size, pre_compiling=False)
+        l = lambda t: np.ones_like(t)
+        obj_func = PsoFunc(self._pid_verification, t0, t1, dt, l=l, swarm_size=swarm_size, pre_compiling=False)
 
         iterations = 0
 
         for _ in range(n):
             swarm = Swarm(obj_func, swarm_size, 3, bounds)
-            terminated_swarm = swarm.simulate_swarm()
 
-            self._kp_pso.append(terminated_swarm.gBest.p_best_position[0])
-            self._ti_pso.append(terminated_swarm.gBest.p_best_position[1])
-            self._td_pso.append(terminated_swarm.gBest.p_best_position[2])
-            self._itae_pso.append(terminated_swarm.gBest.p_best_cost)
+            swarm_result, performance_index_val = swarm.simulate_swarm()
 
-            iterations += terminated_swarm.iterations
+            # Best parameters from the swarm
+            self._kp_pso.append(swarm_result[0])
+            self._ti_pso.append(swarm_result[1])
+            self._td_pso.append(swarm_result[2])
+
+            self._itae_pso.append(performance_index_val)
 
         self._min_itae = np.min(np.array(self._itae_pso))
         min_idx = np.argmin(np.array(self._itae_pso))
         self._min_kp = self._kp_pso[min_idx]
         self._min_ti = self._ti_pso[min_idx]
         self._min_td = self._td_pso[min_idx]
-
-        return iterations
 
     def to_dict(self):
         """Gibt alle relevanten Ergebnisse als Dictionary zurück."""
@@ -89,9 +89,8 @@ def pascal(n: int):
 
 
 def pso_vs_brute_force(pid_params: list[dict], number_pso: int, swarm_size: int, t0: float, t1: float, dt: float,
-                       filename: str, identifier_name: str) -> int:
+                       filename: str, identifier_name: str) -> None:
     results = []
-    tot_iterations = 0
 
     for params in tqdm(pid_params, desc=identifier_name, unit="step"):
         num = params.get("num")
@@ -104,15 +103,13 @@ def pso_vs_brute_force(pid_params: list[dict], number_pso: int, swarm_size: int,
             identifier_name=identifier_name, identifier_value=identifier_value
         )
 
-        tot_iterations += pid_parameter.simulate_swarm(n=number_pso, t0=t0, t1=t1, dt=dt, swarm_size=swarm_size)
+        pid_parameter.simulate_swarm(n=number_pso, t0=t0, t1=t1, dt=dt, swarm_size=swarm_size)
 
         results.append(pid_parameter.to_dict())
 
     df = pd.DataFrame(results)
     df.to_csv(filename + ".csv", index=False)
     print(f"Ergebnisse in {filename}.csv gespeichert.")
-
-    return tot_iterations
 
 
 def main():
@@ -219,17 +216,15 @@ def main():
     t0, t1, dt = 0, 20, 1e-4
 
     start = time.time()
-    tot_iterations = pso_vs_brute_force(ptn_pid_params, n, swarm_size, t0, t1, dt, "ptn_pid_results", identifier_name="n")
+    pso_vs_brute_force(ptn_pid_params, n, swarm_size, t0, t1, dt, "ptn_pid_results", identifier_name="n")
     end = time.time()
-    total_odes = tot_iterations * swarm_size * (t1 - t0) / dt
-    print(f"PTn: Total ODEs solved ≈ {total_odes:.3e} in {(end - start):.2f} sec")
+    print(f"PTn: {(end - start):.2f} sec")
     '''12 Kernen und 1.2 GHZ PTn: Total ODEs solved ≈ 9.016e+10 in 2730.12 sec'''
 
     start = time.time()
-    tot_iterations = pso_vs_brute_force(pt2_pid_params, n, swarm_size, t0, t1, dt, "pt2_pid_results", identifier_name="D")
+    pso_vs_brute_force(pt2_pid_params, n, swarm_size, t0, t1, dt, "pt2_pid_results", identifier_name="D")
     end = time.time()
-    total_odes = tot_iterations * swarm_size * (t1 - t0) / dt
-    print(f"PT2: Total ODEs solved ≈ {total_odes:.3e} in {(end - start):.2f} sec")
+    print(f"PT2: {(end - start):.2f} sec")
     '''12 Kernen und 1.2 GHZ PT2: Total ODEs solved ≈ 1.486e+11 in 2198.78 sec'''
 
 
