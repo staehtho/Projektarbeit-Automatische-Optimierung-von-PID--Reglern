@@ -1,10 +1,14 @@
 clear
 
+s = tf('s')
 %PT2_2
 
-Kp = 10;
-Tn = 9.6;
-Tv = 0.3;
+Kp = 9.92;
+Ti = 0.11;
+Td = 0.01;
+Tf = 0.002;
+
+Filter = s / (Tf * s + 1);
 
 sim('PT2_Param_limited_Matlab') 
 
@@ -28,12 +32,10 @@ ITAE_PT2_2
 
 %% PT2_3
 
-Kp = 10
-Tn = 7.3
-Tv = 0.3
+Kp = 42
+Tn = 1.64
+Tv = 0.01
 
-
- 
 
 sim('PID_PT2_Param_limited_3') 
 t_PT2_3 = simout.time;

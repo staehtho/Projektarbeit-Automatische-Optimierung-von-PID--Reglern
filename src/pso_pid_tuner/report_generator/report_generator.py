@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Project:       PID Optimizer
-# Module:        report_generator.py
+# Script:        report_generator.py
 # Description:   Generates a complete optimization report including step and Bode plots,
 #                PID results, simulation parameters, and plant data. Exports all figures and
 #                summary information to a timestamped directory and builds a structured PDF
@@ -137,10 +137,9 @@ def report_generator(data: dict):
     match excitation_target:
         case "reference":
             t_cl, y_cl = pid.step_response(t0=start_time, t1=end_time, dt=time_step)
-            systems_for_bode["Open Loop"] = plant.system
+            systems_for_bode["Plant"] = plant.system
             systems_for_bode["Closed Loop"] = pid.closed_loop
-            # TODO Bezeichnung von Open Loop stimmt nicht!!!
-            plt.plot(t_ol, y_ol, label="Open Loop")
+            plt.plot(t_ol, y_ol, label="Plant")
             plt.plot(t_cl, y_cl, label="Closed Loop")
         case "input_disturbance":
             t_cl, y_cl = pid.step_response_l(t0=start_time, t1=end_time, dt=time_step)
@@ -158,7 +157,7 @@ def report_generator(data: dict):
     plt.legend()
 
     # Plot Bode
-    bode_fig = bode_plot(systems_for_bode)
+    bode_fig = bode_plot(systems_for_bode, high_exp = 5)
 
     # Get user's download directory
     download_dir = os.path.join(os.path.expanduser("~"), "Downloads")
@@ -238,7 +237,7 @@ def report_generator(data: dict):
     ]))
 
     elements.append(header_table)
-    elements.append(Spacer(1, 0.7 * cm))
+    #elements.append(Spacer(1, 0.1 * cm))
 
     # INFO BLOCK
     elements.append(Paragraph("Information", style_h2))
@@ -248,13 +247,25 @@ def report_generator(data: dict):
     elements.append(Paragraph("developed by: Thomas Staehli, Florin Büchi, Roland Büchi", style_body))
     elements.append(
         Paragraph("enjoy tuning and leave us some feedback: bhir@zhaw.ch", style_body))
-    elements.append(Spacer(1, 0.5 * cm))
+    #elements.append(Spacer(1, 0.1 * cm))
+
+    # STRUCTURE
+    if anti_windup_method.lower() == "clamping":
+        aw_img_path = os.path.join(resource_path(), "report_generator", "reglerstruktur_clamping.png")
+        aw_img = Image(aw_img_path, width=15 * cm, height=4.3 * cm)
+    elif anti_windup_method.lower() == "conditional":
+        aw_img_path = os.path.join(resource_path(), "report_generator", "reglerstruktur_conditional.png")
+        aw_img = Image(aw_img_path, width=15 * cm, height=5.3 * cm)
+
+    aw_img.hAlign = "CENTER"
+    elements.append(aw_img)
+    #elements.append(Spacer(1, 0.5 * cm))
 
     # PLANT MODEL
     elements.append(Paragraph("Plant Model", style_h2))
     elements.append(Paragraph(f"Numerator: {plant_num}", style_body))
     elements.append(Paragraph(f"Denominator: {plant_den}", style_body))
-    elements.append(Spacer(1, 0.5 * cm))
+    #elements.append(Spacer(1, 0.3 * cm))
 
     # PARAMETERS
     elements.append(Paragraph("Best Found Parameters", style_h2))
@@ -262,26 +273,42 @@ def report_generator(data: dict):
     elements.append(Paragraph(f"T<sub>i</sub> = {best_Ti:.4f}", style_body))
     elements.append(Paragraph(f"T<sub>d</sub> = {best_Td:.4f}", style_body))
     elements.append(Paragraph(f"Best {performance_index.name} = {best_performance_index:.6f}", style_body))
-    elements.append(Spacer(1, 0.5 * cm))
+    #elements.append(Spacer(1, 0.3 * cm))
 
     # FILTER
     elements.append(Paragraph("Recommended Filter Time Constant (T<sub>f</sub>)", style_h2))
     elements.append(Paragraph(f"T<sub>f,max</sub> = {Tf_max:.4e} s   "f"(upper limit imposed by the crossover frequency)",style_body))
     elements.append(Paragraph(f"To implement this filter digitally, the sampling frequency "f"f<sub>s</sub> should be at least {fs_min:.0f} Hz.",style_body))
     elements.append(Paragraph(f"For the generated plots, the filter time constant was set to T<sub>f,max</sub>.",style_body))
-    elements.append(Spacer(1, 0.5 * cm))
+    #elements.append(Spacer(1, 0.3 * cm))
 
-    # SIM SETTINGS
+    # SIM SETTINGS (2-column table)
     elements.append(Paragraph("Simulation Settings", style_h2))
-    elements.append(Paragraph(f"Start time: {start_time}", style_body))
-    elements.append(Paragraph(f"End time: {end_time}", style_body))
-    elements.append(Paragraph(f"Time step: {time_step}", style_body))
-    elements.append(Paragraph(f"Mode: {sim_mode}", style_body))
-    elements.append(Paragraph(f"Excitation target: {excitation_target}", style_body))
-    elements.append(Paragraph(f"Anti-windup-method: {anti_windup_method}", style_body))
-    elements.append(Paragraph(f"Control output upper limit: {constraint_max}", style_body))
-    elements.append(Paragraph(f"Control output lower limit: {constraint_min}", style_body))
-    elements.append(Spacer(1, 0.5 * cm))
+
+    sim_table_data = [
+        [Paragraph(f"Start time: {start_time}", style_body),
+        Paragraph(f"End time: {end_time}", style_body)],
+
+        [Paragraph(f"Mode: {sim_mode}", style_body),
+        Paragraph(f"Time step: {time_step}", style_body)],
+
+        [Paragraph(f"Excitation target: {excitation_target}", style_body),
+        Paragraph(f"Anti-windup-method: {anti_windup_method}", style_body)],
+
+        [Paragraph(f"Control output upper limit: {constraint_max}", style_body),
+        Paragraph(f"Control output lower limit: {constraint_min}", style_body)]]
+
+    sim_table = Table(sim_table_data, colWidths=[8 * cm, 8 * cm])
+    sim_table.hAlign = "LEFT"
+    sim_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+
+    elements.append(sim_table)
+    #elements.append(Spacer(1, 0.5 * cm))
 
     # PAGE BREAK
     elements.append(PageBreak())
