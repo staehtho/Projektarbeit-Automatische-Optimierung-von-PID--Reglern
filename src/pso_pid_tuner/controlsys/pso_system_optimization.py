@@ -37,24 +37,6 @@ class PsoFunc:
 
     The class pre-compiles Numba-jitted helper functions for faster repeated
     evaluations.
-
-    Attributes:
-        controller (ClosedLoop): The PID controller instance.
-        t0 (float): Simulation start time.
-        t1 (float): Simulation end time.
-        dt (float): Simulation time step.
-        t_eval (np.ndarray): Array of time points for simulation.
-        r_eval (np.ndarray): Evaluated reference trajectory over t_eval.
-        l_eval (np.ndarray): Evaluated disturbance trajectory at plant input (Z1) over t_eval.
-        n_eval (np.ndarray): Evaluated disturbance trajectory at measurement/output (Z2) over t_eval.
-        A (np.ndarray): State-space system matrix A (contiguous for Numba).
-        B (np.ndarray): State-space input vector B (contiguous for Numba).
-        C (np.ndarray): State-space output vector C (contiguous for Numba).
-        D (float): State-space scalar D.
-        plant_order (int): Order of the system (number of states).
-        controller_param (dict[str, str | float | np.ndarray]): PID-specific parameters
-            including derivative filter time Tf, control constraints, and anti-windup method.
-        swarm_size (int): Number of particles in the PSO swarm.
     """
     def __init__(self, controller: ClosedLoop, t0: float, t1: float, dt: float,
                  r: Callable[[np.ndarray], np.ndarray] | None = None,
@@ -132,18 +114,6 @@ class PsoFunc:
 
         self.swarm_size = swarm_size
 
-        # Extract PID-specific parameters
-        if isinstance(self.controller, PIDClosedLoop):
-
-            pid: PIDClosedLoop = self.controller
-
-            self.controller_param = {
-                "Tf": pid.Tf,
-            }
-
-        else:
-            raise NotImplementedError(f"Unsupported controller type: '{type(controller)}'")
-
         # Pre-compile Numba functions
         if self._pre_compiling:
             start = time.time()
@@ -171,7 +141,7 @@ class PsoFunc:
 
         if isinstance(self.controller, PIDClosedLoop):
             itae_val = _pid_pso_func(X, self.t_eval, self.dt, self.r_eval, self.l_eval, self.n_eval, self.A, self.B,
-                                     self.C, self.D, self.plant_order, self.controller_param["Tf"],
+                                     self.C, self.D, self.plant_order, self.controller.Tf,
                                      self.control_constraint, self.anti_windup_method,
                                      self.solver, self.performance_index, self.swarm_size)
 
