@@ -179,7 +179,6 @@ def load_config():
                 cfg["system"]["anti_windup"] = AntiWindup.CLAMPING
             case "conditional":
                 cfg["system"]["anti_windup"] = AntiWindup.CONDITIONAL
-        cfg["system"]["anti_windup_string"] = cfg["system"]["anti_windup"].name.lower()
 
     # excitation_target
     excitation_target = system.get("excitation_target")

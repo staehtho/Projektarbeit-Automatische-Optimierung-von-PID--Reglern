@@ -29,7 +29,7 @@ from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle,
     PageBreak, PageTemplate, Frame)
 
-from ..controlsys import bode_plot, crossover_frequency, PerformanceIndex
+from ..controlsys import bode_plot, crossover_frequency, PerformanceIndex, AntiWindup
 
 
 def resource_path() -> Path:
@@ -84,7 +84,7 @@ def report_generator(data: dict):
     plant_num = data["plant_num"]
     plant_den = data["plant_den"]
 
-    anti_windup_method = data["anti_windup_method"]
+    anti_windup_method: AntiWindup = data["anti_windup_method"]
     constraint_min = data["constraint_min"]
     constraint_max = data["constraint_max"]
 
@@ -250,10 +250,10 @@ def report_generator(data: dict):
     #elements.append(Spacer(1, 0.1 * cm))
 
     # STRUCTURE
-    if anti_windup_method.lower() == "clamping":
+    if anti_windup_method == AntiWindup.CLAMPING:
         aw_img_path = os.path.join(resource_path(), "report_generator", "reglerstruktur_clamping.png")
         aw_img = Image(aw_img_path, width=15 * cm, height=4.3 * cm)
-    elif anti_windup_method.lower() == "conditional":
+    elif anti_windup_method == AntiWindup.CONDITIONAL:
         aw_img_path = os.path.join(resource_path(), "report_generator", "reglerstruktur_conditional.png")
         aw_img = Image(aw_img_path, width=15 * cm, height=5.3 * cm)
 
@@ -293,7 +293,7 @@ def report_generator(data: dict):
         Paragraph(f"Time step: {time_step}", style_body)],
 
         [Paragraph(f"Excitation target: {excitation_target}", style_body),
-        Paragraph(f"Anti-windup-method: {anti_windup_method}", style_body)],
+        Paragraph(f"Anti-windup-method: {anti_windup_method.name.lower()}", style_body)],
 
         [Paragraph(f"Control output upper limit: {constraint_max}", style_body),
         Paragraph(f"Control output lower limit: {constraint_min}", style_body)]]

@@ -43,7 +43,7 @@ system:
   excitation_target: "reference"
 
   # Anti-windup method: choose "clamping" or "conditional"
-  anti_windup: "conditional"
+  anti_windup: "clamping"
 
   control_constraint:
     # Control signal limits for both the I-term and the controller output
