@@ -2,6 +2,7 @@ import time
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from src.pso_pid_tuner.controlsys import Plant, PIDClosedLoop, PsoFunc, itae, AntiWindup
 from src.pso_pid_tuner.PSO import Swarm
@@ -40,8 +41,8 @@ class PidParameter:
                        bounds: list[list[float]] | None = None, swarm_size: int = 40) -> None:
         if bounds is None:
             bounds = [[0, 0.1, 0], [10, 10, 10]]
-        l = lambda t: np.ones_like(t)
-        obj_func = PsoFunc(self._pid_verification, t0, t1, dt, l=l, swarm_size=swarm_size, pre_compiling=False)
+        r = lambda t: np.ones_like(t)
+        obj_func = PsoFunc(self._pid_verification, t0, t1, dt, r=r, swarm_size=swarm_size, pre_compiling=False)
 
         iterations = 0
 
@@ -96,7 +97,7 @@ def pso_vs_brute_force(pid_params: list[dict], number_pso: int, swarm_size: int,
                        filename: str, identifier_name: str) -> None:
     results = []
 
-    for params in pid_params:
+    for params in tqdm(pid_params, desc=identifier_name, unit="step"):
         num = params.get("num")
         den = params.get("den")
         identifier_value = params.get(identifier_name)
@@ -112,8 +113,7 @@ def pso_vs_brute_force(pid_params: list[dict], number_pso: int, swarm_size: int,
         end = time.time()
 
         results.append(pid_parameter.to_dict())
-        print(results[-1])
-        print(f"{(end - start): 0.3f} sec")
+        break
 
     df = pd.DataFrame(results)
     df.to_csv(filename + ".csv", index=False)
