@@ -17,11 +17,12 @@
 
 
 from typing import Callable
+
 import numpy as np
 
-from .plant import Plant
 from .closedLoop import ClosedLoop
 from .enums import *
+from .plant import Plant
 
 
 class PIDClosedLoop(ClosedLoop):

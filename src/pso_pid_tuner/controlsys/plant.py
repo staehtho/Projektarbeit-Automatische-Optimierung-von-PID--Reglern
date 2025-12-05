@@ -15,9 +15,10 @@
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+from typing import Callable
+
 import numpy as np
 from scipy.signal import tf2ss
-from typing import Callable
 
 from .enums import map_enum_to_int, MySolver
 

@@ -16,10 +16,12 @@
 
 
 from abc import ABC, abstractmethod
-import numpy as np
 from typing import Callable
-from .plant import Plant
+
+import numpy as np
+
 from .enums import AntiWindup
+from .plant import Plant
 
 
 class ClosedLoop(ABC):

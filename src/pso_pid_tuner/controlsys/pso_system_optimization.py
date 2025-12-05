@@ -15,13 +15,14 @@
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-import numpy as np
 import time
-from numba import njit, prange, types, float64, int64
 from typing import Callable
 
-from .closedLoop import ClosedLoop
+import numpy as np
+from numba import njit, prange, types, float64, int64
+
 from .PIDClosedLoop import PIDClosedLoop
+from .closedLoop import ClosedLoop
 from .enums import *
 
 

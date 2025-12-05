@@ -15,10 +15,11 @@
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-import numpy as np
-from typing import Callable, Union
-import matplotlib.pyplot as plt
 import math
+from typing import Callable, Union
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 SystemData = Union[Callable[[np.ndarray], np.ndarray], tuple[np.ndarray, np.ndarray, np.ndarray]]
 
