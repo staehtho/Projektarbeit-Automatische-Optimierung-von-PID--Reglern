@@ -2,8 +2,8 @@ from pso_pid_tuner.controlsys import Plant, PIDClosedLoop, AntiWindup, MySolver,
 from pso_pid_tuner.PSO import Swarm
 
 import numpy as np
-import matplotlib.pyplot as plt
 from tqdm import tqdm
+from time import time
 
 
 def main():
@@ -25,18 +25,19 @@ def main():
 
     performance_index = []
 
-    pso_iteration = 500
+    pso_iteration = 1000
 
     for _ in tqdm(range(pso_iteration)):
         swarm = Swarm(obj_func, swarm_size, 3, bounds)
-        _, performance_idx = swarm.simulate_swarm()
 
-        performance_index.append(performance_idx)
+        start_time = time()
+        param, performance_idx = swarm.simulate_swarm()
+        end_time = time()
+
+        performance_index.append([performance_idx, param[0], param[1], param[2], end_time - start_time])
 
     performance_index = np.array(performance_index)
-    # performance_index = np.sort(performance_index)[::-1]
-    plt.plot(performance_index)
-    plt.show()
+    np.save("pso_iteration", performance_index)
 
 
 if __name__ == '__main__':
