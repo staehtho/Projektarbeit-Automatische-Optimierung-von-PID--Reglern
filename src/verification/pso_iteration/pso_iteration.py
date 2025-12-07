@@ -25,7 +25,7 @@ def main():
 
     performance_index = []
 
-    pso_iteration = 1000
+    pso_iteration = 5000
 
     for _ in tqdm(range(pso_iteration)):
         swarm = Swarm(obj_func, swarm_size, 3, bounds)
@@ -37,7 +37,7 @@ def main():
         performance_index.append([performance_idx, param[0], param[1], param[2], end_time - start_time])
 
     performance_index = np.array(performance_index)
-    np.save("pso_iteration", performance_index)
+    np.save(f"pso_iteration_{pso_iteration}", performance_index)
 
 
 if __name__ == '__main__':
