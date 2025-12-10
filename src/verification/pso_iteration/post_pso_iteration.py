@@ -42,7 +42,7 @@ def load_data_ptn():
 
 
 def load_data_pt2():
-    zetas = [0, 0.1]
+    zetas = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1]
     constrains = [2, 3, 5, 10]
     data = {}
     for z in zetas:
