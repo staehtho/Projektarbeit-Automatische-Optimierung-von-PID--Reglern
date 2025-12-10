@@ -67,8 +67,11 @@ system:
 # PSO parameter
 # ──────────────────────────────────────────────────────────────────────────────
 pso:
-  swarm_size: 40    # Number of particles in the swarm
-  iterations: 40      # Number of PSO iterations to optimize PID parameters
+  swarm_size: 40        # Number of particles in the swarm
+
+  # Number of PSO iterations to optimize PID parameters 14 was determined based on several test systems and
+  # using the ITAE criterion to achieve a result within 5%  of the minimal ITAE with 95% probability.
+  iterations: 14
 
   bounds:
     # Parameter search limits for PSO
