@@ -8,28 +8,30 @@ line_layout = {
     2: "-", 3: "--", 5: ":", 10: "-."
 }
 
-# Farben für PTn-Systeme
+# Harmonische Farben für PTn-Systeme
 color_ptn = {
-    "pt1": '#1f77bf',
-    "pt2": '#ff7f0e',
-    "pt3": '#2ca02c',
-    "pt4": '#d62728',
-    "pt5": '#9467bd',
-    "pt6": '#8c564b'
+    "pt1": '#4e79a7',  # sanftes Blau
+    "pt2": '#f28e2b',  # warmes Orange
+    "pt3": '#59a14f',  # frisches Grün
+    "pt4": '#e15759',  # klares Rot
+    "pt5": '#b07aa1',  # weiches Violett
+    "pt6": '#9c755f'   # erdiges Braun
 }
 
-# Farben für PT2-Systeme (zeta)
+
+# Harmonische Farbskala für PT2-Systeme (zeta)
 color_pt2 = {
-    0: '#1f77bf',
-    0.1: '#ff7f0e',
-    0.2: '#2ca02c',
-    0.3: '#d62728',
-    0.4: '#9467bd',
-    0.5: '#8c564b',
-    0.6: '#e377c2',
-    0.7: '#7f7f7f',
-    1: '#bcbd22'
+    0.0:  '#4e79a7',
+    0.1:  '#76a5d2',
+    0.2:  '#a2c1e6',
+    0.3:  '#59a14f',
+    0.4:  '#8cc07a',
+    0.5:  '#b4d8a3',
+    0.6:  '#f28e2b',
+    0.7:  '#f5b66e',
+    1.0:  '#e15759'
 }
+
 
 
 def load_data_ptn():
@@ -42,7 +44,7 @@ def load_data_ptn():
 
 
 def load_data_pt2():
-    zetas = [0, 0.1]
+    zetas = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1]
     constrains = [2, 3, 5, 10]
     data = {}
     for z in zetas:
@@ -80,8 +82,8 @@ def plot_ptn(data_ptn):
     plt.gca().add_artist(legend1)
     plt.legend(handles=constrain_handler, title="Stellgrössenbegrenzung", bbox_to_anchor=(1, 1), handlelength=3)
 
-    plt.savefig("ptn_iteration.png", dpi=300, bbox_inches='tight')
     plt.grid()
+    plt.savefig("ptn_iteration.png", dpi=300, bbox_inches='tight')
     plt.show()
 
 
@@ -111,8 +113,8 @@ def plot_pt2(data_pt2):
     plt.gca().add_artist(legend1)
     plt.legend(handles=constrain_handler, title="Stellgrössenbegrenzung", bbox_to_anchor=(1, 1), handlelength=3)
 
-    plt.savefig("pt2_iteration.png", dpi=300, bbox_inches='tight')
     plt.grid()
+    plt.savefig("pt2_iteration.png", dpi=300, bbox_inches='tight')
     plt.show()
 
 
