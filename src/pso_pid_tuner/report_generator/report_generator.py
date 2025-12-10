@@ -112,7 +112,7 @@ def report_generator(data: dict):
     wc = crossover_frequency(L)
 
     # limitations of timeconstant of filter
-    Tf_max = 1 / (100 * wc)  # can't be bigger, or filter would be too slow and impact the stepresponse
+    Tf_max = 1 / (10 * wc)  # can't be bigger, or filter would be too slow and impact the stepresponse
     fs_min = 10 / (np.pi * Tf_max)  # required minimum for sample frequency
     pid.set_filter(Tf=Tf_max)
 
@@ -247,7 +247,7 @@ def report_generator(data: dict):
     elements.append(Paragraph("developed by: Thomas Staehli, Florin Büchi, Roland Büchi", style_body))
     elements.append(
         Paragraph("enjoy tuning and leave us some feedback: bhir@zhaw.ch", style_body))
-    #elements.append(Spacer(1, 0.1 * cm))
+    elements.append(Spacer(1, 0.2 * cm))
 
     # STRUCTURE
     if anti_windup_method == AntiWindup.CLAMPING:
@@ -255,7 +255,7 @@ def report_generator(data: dict):
         aw_img = Image(aw_img_path, width=15 * cm, height=4.3 * cm)
     elif anti_windup_method == AntiWindup.CONDITIONAL:
         aw_img_path = os.path.join(resource_path(), "report_generator", "reglerstruktur_conditional.png")
-        aw_img = Image(aw_img_path, width=15 * cm, height=5.3 * cm)
+        aw_img = Image(aw_img_path, width=15 * cm, height=4.7 * cm)
 
     aw_img.hAlign = "CENTER"
     elements.append(aw_img)
