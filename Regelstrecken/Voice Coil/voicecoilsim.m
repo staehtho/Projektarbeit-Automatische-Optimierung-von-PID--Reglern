@@ -1,6 +1,6 @@
 clear
 
-s = tf('s')
+s = tf('s');
 
 %gegebene Parameter
 %Kp = 4.92;
@@ -9,10 +9,16 @@ s = tf('s')
 %Tf = 0.57e-3;
 
 %pso parameter
-Kp = 7.6346;
-Ti = 0.2618;
-Td = 0.0053;
-Tf = 0.002;
+%Kp = 2.2952;
+%Ti = 0.0993;
+%Td = 0.006;
+%Tf = 1/2000;
+
+%pso parameter
+Kp = 2.3;
+Ti = 0.1;
+Td = 0.006;
+Tf = 1/2000;
 
 Filter = s / (Tf * s + 1);
 
