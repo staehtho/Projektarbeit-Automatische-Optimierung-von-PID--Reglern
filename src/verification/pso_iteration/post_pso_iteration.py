@@ -33,7 +33,6 @@ color_pt2 = {
 }
 
 
-
 def load_data_ptn():
     return {
         2: {f"pt{i}": np.load(f"pso_iteration_pt{i}_2.npy") for i in range(1, 7)},
@@ -121,6 +120,34 @@ def plot_pt2(data_pt2):
 def main():
     data_ptn = load_data_ptn()
     data_pt2 = load_data_pt2()
+
+    # Alle Werte in eine Liste sammeln (nur erste Spalte)
+    all_values = []
+
+    # PTn-Daten
+    for subdict in data_ptn.values():
+        for arr in subdict.values():
+            all_values.extend(arr[:, -1])  # nur die erste Spalte
+
+    # PT2-Daten
+    for subdict in data_pt2.values():
+        for arr in subdict.values():
+            all_values.extend(arr[:, -1])  # nur die erste Spalte
+
+    all_values = np.array(all_values)
+
+    # Globale Kennzahlen berechnen
+    global_min = np.min(all_values)
+    global_max = np.max(all_values)
+    global_median = np.median(all_values)
+    global_mean = np.mean(all_values)
+
+    print(f"Globale PSO-Kennzahlen über alle Durchläufe:")
+    print(f"  Minimum: {global_min:.4f}")
+    print(f"  Maximum: {global_max:.4f}")
+    print(f"  Median : {global_median:.4f}")
+    print(f"  Mean   : {global_mean:.4f}")
+    print(f"  n      : {all_values.shape[0]}")
 
     plot_ptn(data_ptn)
     plot_pt2(data_pt2)
