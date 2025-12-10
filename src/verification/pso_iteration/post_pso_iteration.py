@@ -1,134 +1,127 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-import json
-from typing import Callable
+from matplotlib.lines import Line2D
+from numba.cuda import gridDim
+
+# Linienstil für Stellgrößenbegrenzung
+line_layout = {
+    2: "-", 3: "--", 5: ":", 10: "-."
+}
+
+# Farben für PTn-Systeme
+color_ptn = {
+    "pt1": '#1f77bf',
+    "pt2": '#ff7f0e',
+    "pt3": '#2ca02c',
+    "pt4": '#d62728',
+    "pt5": '#9467bd',
+    "pt6": '#8c564b'
+}
+
+# Farben für PT2-Systeme (zeta)
+color_pt2 = {
+    0: '#1f77bf',
+    0.1: '#ff7f0e',
+    0.2: '#2ca02c',
+    0.3: '#d62728',
+    0.4: '#9467bd',
+    0.5: '#8c564b',
+    0.6: '#e377c2',
+    0.7: '#7f7f7f',
+    1: '#bcbd22'
+}
 
 
-def exp_model(x: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
-    return a * np.exp(b * x) + c
+def load_data_ptn():
+    return {
+        2: {f"pt{i}": np.load(f"pso_iteration_pt{i}_2.npy") for i in range(1, 7)},
+        3: {f"pt{i}": np.load(f"pso_iteration_pt{i}_3.npy") for i in range(1, 7)},
+        5: {f"pt{i}": np.load(f"pso_iteration_pt{i}_5.npy") for i in range(1, 7)},
+        10: {f"pt{i}": np.load(f"pso_iteration_pt{i}_10.npy") for i in range(1, 7)},
+    }
 
 
-def log_model(x: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
-    return a * np.log(b * x + 1) + c
-
-
-def pot_model(x: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
-    return a * x ** b + c
-
-
-def estimate_x_for_fraction_global(model: Callable, a: float, b: float, c: float, fraction: float,
-                                   x_guess: int = 10000):
-    """
-    Schätzt die Anzahl PSO-Läufe x für eine gegebene fraction der globalen Verbesserung.
-    x_guess dient als numerische Approximation für x->∞ bei log- und pot-Fit.
-    """
-    y_start = model(1, a, b, c)
-
-    # Bestimme theoretisches Minimum
-    if model == exp_model:
-        y_min = c
-    else:  # log und pot: numerische Approximation
-        y_min = model(x_guess, a, b, c)
-
-    y_target = y_start - fraction * (y_start - y_min)
-
-    # Invertiere je nach Modell
-    if model == log_model:
-        x_est = (np.exp((y_target - c) / a) - 1) / b
-    elif model == exp_model:
-        x_est = np.log((y_target - c) / a) / b
-    elif model == pot_model:
-        x_est = ((y_target - c) / a) ** (1 / b)
-    else:
-        raise ValueError("Modell unbekannt")
-    return x_est, y_min
-
-
-def fraction_after_x_iterations_global(model: Callable, a: float, b: float, c: float, x: float, y_min: float):
-    """Berechnet den Prozentsatz der globalen Verbesserung nach x Iterationen."""
-    y_start = model(1, a, b, c)
-    y_current = model(x, a, b, c)
-    fraction = (y_start - y_current) / (y_start - y_min)
-    return fraction * 100  # in Prozent
+def load_data_pt2():
+    zetas = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1]
+    constrains = [2, 3, 5, 10]
+    data = {}
+    for z in zetas:
+        data[z] = {c: np.load(f"pso_iteration_pt2_zeta{z}_{c}.npy") for c in constrains}
+    return data
 
 
 def minmax(x):
     return (x - np.min(x)) / (np.max(x) - np.min(x))
 
 
-def main():
-    data = np.load("pso_iteration_100.npy")
-    performance_index = data[:, 0]
-    time_vec = data[:, -1]
+def plot_ptn(data_ptn):
+    plt.figure(figsize=(12, 8))
+    for factor, pts in data_ptn.items():
+        for pt_name, runs in pts.items():
+            runs_sorted = np.sort(runs[:, 0])[::-1]
+            data_norm = minmax(runs_sorted)
+            plt.plot(data_norm, linestyle=line_layout[factor], color=color_ptn[pt_name], linewidth=1)
 
-    time_mean = np.mean(time_vec)
-    time_min = np.min(time_vec)
-    time_max = np.max(time_vec)
+    # Legende PTn
+    ptn_handler = [Line2D([0], [0], color=c, lw=2, label=name.upper()) for name, c in color_ptn.items()]
+    constrain_handler = [Line2D([0], [0], color="black", linestyle=ls, lw=2, label=r"$\pm$" + str(name))
+                         for name, ls in line_layout.items()]
 
-    performance_index = np.sort(performance_index)[::-1]
-    performance_index = performance_index[1::]
-    x = np.arange(performance_index.shape[0])
-    y_norm = minmax(performance_index)
+    # Horizontale Linien
+    plt.axhline(y=0.1, color='black', linestyle='--', linewidth=2)
+    plt.axhline(y=0.05, color='black', linestyle='--', linewidth=2)
+    plt.text(x=-20, y=0.05, s='5%', color='r', va='baseline')
+    plt.text(x=-20, y=0.1, s='10%', color='r', va='baseline')
 
-    fit_dic = {
-        "exp_fit": {"a": y_norm[0] - y_norm[-1], "b": -0.005, "c": y_norm[-1], "model": exp_model},
-        "log_fit": {"a": y_norm[0] - y_norm[-1], "b": 0.05, "c": y_norm[-1], "model": log_model},
-        "pot_fit": {"a": y_norm[0] - y_norm[-1], "b": 2, "c": y_norm[-1], "model": pot_model},
-    }
+    plt.xlabel("Iterationen")
+    plt.ylabel("Normiertes ITAE")
 
-    plt.figure(figsize=(8, 5))
-    fraction = 0.95
-    x_given = 50
+    legend1 = plt.legend(handles=ptn_handler, title=r"PT$n$", bbox_to_anchor=(1, 0.8), handlelength=3)
+    plt.gca().add_artist(legend1)
+    plt.legend(handles=constrain_handler, title="Stellgrössenbegrenzung", bbox_to_anchor=(1, 1), handlelength=3)
 
-    result_dict = {
-        "time_statistics": {
-            "mean_sec": float(time_mean),
-            "min_sec": float(time_min),
-            "max_sec": float(time_max)
-        }
-    }
-
-    for key, val in fit_dic.items():
-        model = val["model"]
-        a, b, c = val["a"], val["b"], val["c"]
-
-        param = curve_fit(model, x, y_norm, p0=[a, b, c])
-        a, b, c = param[0]
-
-        y_fit = model(x, a, b, c)
-        plt.plot(x, y_fit, label=key)
-
-        # Schätzung 95% bezogen auf globales Minimum
-        x_est, y_min = estimate_x_for_fraction_global(model, a, b, c, fraction)
-        perc = fraction_after_x_iterations_global(model, a, b, c, x_given, y_min)
-
-        time_given = x_given * time_mean
-        time_95 = x_est * time_mean
-
-        result_dict[key] = {
-            "a": float(a),
-            "b": float(b),
-            "c": float(c),
-            "x_95_percent_global": float(x_est),
-            f"percent_after_{x_given}_iterations_global": float(perc),
-            f"time_for_{x_given}_iterations_sec": float(time_given),
-            f"time_for_95_percent_sec": float(time_95)
-        }
-
-    plt.plot(x, y_norm, 'k.', markeredgewidth=0.01, label='Daten')
-    plt.xlabel("PSO Iterationen")
-    plt.ylabel("Performance Index")
-    plt.legend()
+    plt.savefig("ptn_iteration.png", dpi=300, bbox_inches='tight')
     plt.grid()
-    plt.title("PSO Konvergenz der Fit-Modelle")
-    plt.savefig("plot_global_fit", dpi=600)
     plt.show()
 
-    with open("pso_fit_results.json", "w") as f:
-        json.dump(result_dict, f, indent=4)
 
-    print("Ergebnisse wurden in 'pso_fit_results_global.json' gespeichert.")
+def plot_pt2(data_pt2):
+    plt.figure(figsize=(12, 8))
+    for zeta, constrains_dict in data_pt2.items():
+        for constr, runs in constrains_dict.items():
+            runs_sorted = np.sort(runs[:, 0])[::-1]
+            data_norm = minmax(runs_sorted)
+            plt.plot(data_norm, linestyle=line_layout[constr], color=color_pt2[zeta], linewidth=1)
+
+    # Legende PT2 zeta
+    pt2_handler = [Line2D([0], [0], color=c, lw=2, label=f"ζ={z}") for z, c in color_pt2.items()]
+    constrain_handler = [Line2D([0], [0], color="black", linestyle=ls, lw=2, label=r"$\pm$" + str(name))
+                         for name, ls in line_layout.items()]
+
+    # Horizontale Linien
+    plt.axhline(y=0.1, color='black', linestyle='--', linewidth=2)
+    plt.axhline(y=0.05, color='black', linestyle='--', linewidth=2)
+    plt.text(x=-20, y=0.05, s='5%', color='r', va='baseline')
+    plt.text(x=-20, y=0.1, s='10%', color='r', va='baseline')
+
+    plt.xlabel("Iterationen")
+    plt.ylabel("Normiertes ITAE")
+
+    legend1 = plt.legend(handles=pt2_handler, title="PT2", bbox_to_anchor=(1, 0.8), handlelength=3)
+    plt.gca().add_artist(legend1)
+    plt.legend(handles=constrain_handler, title="Stellgrössenbegrenzung", bbox_to_anchor=(1, 1), handlelength=3)
+
+    plt.savefig("pt2_iteration.png", dpi=300, bbox_inches='tight')
+    plt.grid()
+    plt.show()
+
+
+def main():
+    data_ptn = load_data_ptn()
+    data_pt2 = load_data_pt2()
+
+    plot_ptn(data_ptn)
+    plot_pt2(data_pt2)
 
 
 if __name__ == "__main__":
