@@ -27,12 +27,11 @@ def main():
     r = lambda t: np.ones_like(t)
 
     # PT2-Dämpfungen
-    #zetas = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1]
-    zetas = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1]
+    zetas = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1]
     # ====================
     # PTn-Systeme
     # ====================
-    '''for den in dens:
+    for den in dens:
         for constrain in constrains:
             plant = Plant([1], pascal(den + 1))
             pid = PIDClosedLoop(
@@ -58,7 +57,7 @@ def main():
                 performance_index.append([performance_idx, *param, end_time - start_time])
 
             performance_index = np.array(performance_index)
-            np.save(f"pso_iteration_pt{den}_{constrain}", performance_index)'''
+            np.save(f"pso_iteration_pt{den}_{constrain}", performance_index)
 
     # ====================
     # PT2-Systeme

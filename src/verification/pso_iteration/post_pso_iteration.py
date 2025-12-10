@@ -8,27 +8,28 @@ line_layout = {
     2: "-", 3: "--", 5: ":", 10: "-."
 }
 
-# Farben für PTn-Systeme
+# Harmonische Farben für PTn-Systeme
 color_ptn = {
-    "pt1": '#1f77bf',
-    "pt2": '#ff7f0e',
-    "pt3": '#2ca02c',
-    "pt4": '#d62728',
-    "pt5": '#9467bd',
-    "pt6": '#8c564b'
+    "pt1": '#4e79a7',  # sanftes Blau
+    "pt2": '#f28e2b',  # warmes Orange
+    "pt3": '#59a14f',  # frisches Grün
+    "pt4": '#e15759',  # klares Rot
+    "pt5": '#b07aa1',  # weiches Violett
+    "pt6": '#9c755f'   # erdiges Braun
 }
 
-# Farben für PT2-Systeme (zeta)
+
+# Harmonische Farbskala für PT2-Systeme (zeta)
 color_pt2 = {
-    0: '#1f77bf',
-    0.1: '#ff7f0e',
-    0.2: '#2ca02c',
-    0.3: '#d62728',
-    0.4: '#9467bd',
-    0.5: '#8c564b',
-    0.6: '#e377c2',
-    0.7: '#7f7f7f',
-    1: '#bcbd22'
+    0.0:  '#4e79a7',
+    0.1:  '#76a5d2',
+    0.2:  '#a2c1e6',
+    0.3:  '#59a14f',
+    0.4:  '#8cc07a',
+    0.5:  '#b4d8a3',
+    0.6:  '#f28e2b',
+    0.7:  '#f5b66e',
+    1.0:  '#e15759'
 }
 
 
@@ -80,8 +81,8 @@ def plot_ptn(data_ptn):
     plt.gca().add_artist(legend1)
     plt.legend(handles=constrain_handler, title="Stellgrössenbegrenzung", bbox_to_anchor=(1, 1), handlelength=3)
 
-    plt.savefig("ptn_iteration.png", dpi=300, bbox_inches='tight')
     plt.grid()
+    plt.savefig("ptn_iteration.png", dpi=300, bbox_inches='tight')
     plt.show()
 
 
@@ -111,14 +112,42 @@ def plot_pt2(data_pt2):
     plt.gca().add_artist(legend1)
     plt.legend(handles=constrain_handler, title="Stellgrössenbegrenzung", bbox_to_anchor=(1, 1), handlelength=3)
 
-    plt.savefig("pt2_iteration.png", dpi=300, bbox_inches='tight')
     plt.grid()
+    plt.savefig("pt2_iteration.png", dpi=300, bbox_inches='tight')
     plt.show()
 
 
 def main():
     data_ptn = load_data_ptn()
     data_pt2 = load_data_pt2()
+
+    # Alle Werte in eine Liste sammeln (nur erste Spalte)
+    all_values = []
+
+    # PTn-Daten
+    for subdict in data_ptn.values():
+        for arr in subdict.values():
+            all_values.extend(arr[:, -1])  # nur die erste Spalte
+
+    # PT2-Daten
+    for subdict in data_pt2.values():
+        for arr in subdict.values():
+            all_values.extend(arr[:, -1])  # nur die erste Spalte
+
+    all_values = np.array(all_values)
+
+    # Globale Kennzahlen berechnen
+    global_min = np.min(all_values)
+    global_max = np.max(all_values)
+    global_median = np.median(all_values)
+    global_mean = np.mean(all_values)
+
+    print(f"Globale PSO-Kennzahlen über alle Durchläufe:")
+    print(f"  Minimum: {global_min:.4f}")
+    print(f"  Maximum: {global_max:.4f}")
+    print(f"  Median : {global_median:.4f}")
+    print(f"  Mean   : {global_mean:.4f}")
+    print(f"  n      : {all_values.shape[0]}")
 
     plot_ptn(data_ptn)
     plot_pt2(data_pt2)
