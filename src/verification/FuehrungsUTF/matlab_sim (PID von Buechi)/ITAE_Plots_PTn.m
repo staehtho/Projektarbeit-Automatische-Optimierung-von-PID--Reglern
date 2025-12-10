@@ -23,7 +23,7 @@ limits = [
 ];
 
 % Lade PID-Parameter
-run('PTn_parameter_Buechi.m')
+run('PTn_parameter_PSO.m')
 
 % Ergebnisliste vorbereiten
 results = [];
@@ -71,6 +71,6 @@ T = array2table(results, ...
     'VariableNames', {'SystemIndex','LimitIndex','Kp','Tn','Tv','UpperLimit','LowerLimit','ITAE'});
 
 % CSV speichern
-writetable(T, 'PTn_Buechi_results_matlab.csv');
+writetable(T, 'PTn_PSO_results_matlab.csv');
 
 disp('Alle Simulationen abgeschlossen. Ergebnisse in "simulation_results.csv" gespeichert.');
