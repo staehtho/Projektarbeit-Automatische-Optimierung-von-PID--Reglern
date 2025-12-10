@@ -47,8 +47,8 @@ system:
 
   control_constraint:
     # Control signal limits for both the I-term and the controller output
-    min_constraint: -4
-    max_constraint: 4
+    min_constraint: -2
+    max_constraint: 2
 
   # Performance index: defines the control quality criterion used for optimization.
   # Common choices:
