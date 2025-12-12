@@ -30,12 +30,12 @@ system:
     #     numerator                       1                  [1]
     # G = -----------    e.g.: G = ----------------  => -------------
     #     denominator              3*s^2 + 2*s + 1        [3, 2, 1]
-    numerator: [23040]
-    denominator: [1, 9.6, 2304]
+    numerator: [1]
+    denominator: [1, 2, 1]
 
   simulation_time:
     start_time: 0      # Start time in [sec]
-    end_time: 0.2       # End time in [sec]
+    end_time: 20       # End time in [sec]
     time_step: 1e-4    # Simulation time step in [sec]
     mode: "fixed"      # choose "fixed" for using end_time, choose "auto" to try and shorten the simulation time
 
@@ -47,8 +47,8 @@ system:
 
   control_constraint:
     # Control signal limits for both the I-term and the controller output
-    min_constraint: -2
-    max_constraint: 2
+    min_constraint: -5
+    max_constraint: 5
 
   # Performance index: defines the control quality criterion used for optimization.
   # Common choices:
@@ -78,7 +78,7 @@ pso:
     # Define lower and upper boundaries for each PID parameter
     kp_min: 0.0
     kp_max: 10.0
-    ti_min: 0.0001
-    ti_max: 1
+    ti_min: 0.001
+    ti_max: 10
     td_min: 0.0
     td_max: 10.0
