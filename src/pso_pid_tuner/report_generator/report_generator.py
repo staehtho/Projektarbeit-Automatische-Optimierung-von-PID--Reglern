@@ -244,7 +244,7 @@ def report_generator(data: dict):
     elements.append(Paragraph(
         '<font color="red"><b>PRELIMINARY – results have not been fully validated and the application is still under development'
         '</b></font>', style_body))
-    elements.append(Paragraph("developed by: Thomas Staehli, Florin Büchi, Roland Büchi", style_body))
+    elements.append(Paragraph("developed by: Thomas Stähli, Florin Büchi, Roland Büchi", style_body))
     elements.append(
         Paragraph("enjoy tuning and leave us some feedback: bhir@zhaw.ch", style_body))
     elements.append(Spacer(1, 0.2 * cm))
