@@ -77,7 +77,7 @@ def plot_ptn(data_ptn):
     plt.xlabel("Iterationen")
     plt.ylabel("Normiertes ITAE")
 
-    legend1 = plt.legend(handles=ptn_handler, title=r"PT$n$", bbox_to_anchor=(1, 0.8), handlelength=3)
+    legend1 = plt.legend(handles=ptn_handler, title="PTn", bbox_to_anchor=(1, 0.8), handlelength=3)
     plt.gca().add_artist(legend1)
     plt.legend(handles=constrain_handler, title="Stellgrössenbegrenzung", bbox_to_anchor=(1, 1), handlelength=3)
 
