@@ -78,7 +78,7 @@ pso:
     # Define lower and upper boundaries for each PID parameter
     kp_min: 0.0
     kp_max: 10.0
-    ti_min: 0.001
+    ti_min: 0.000001
     ti_max: 10
     td_min: 0.0
     td_max: 10.0
