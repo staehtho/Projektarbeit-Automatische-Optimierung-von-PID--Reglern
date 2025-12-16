@@ -16,10 +16,11 @@ den_list = {
 
 % Limitierungen (4 Stück)
 limits = [
-    2  -2;
-    3  -3;
-    5  -5;
-    10 -10
+    0.5 -0.5;
+    %2  -2;
+    %3  -3;
+    %5  -5;
+    %10 -10
 ];
 
 % Lade PID-Parameter
@@ -71,6 +72,6 @@ T = array2table(results, ...
     'VariableNames', {'SystemIndex','LimitIndex','Kp','Tn','Tv','UpperLimit','LowerLimit','ITAE'});
 
 % CSV speichern
-writetable(T, 'PTn_PSO_results_matlab.csv');
+writetable(T, 'PTn_PSO_results_matlab_correct_limit.csv');
 
 disp('Alle Simulationen abgeschlossen. Ergebnisse in "simulation_results.csv" gespeichert.');

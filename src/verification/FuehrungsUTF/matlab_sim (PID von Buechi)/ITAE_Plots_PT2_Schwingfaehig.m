@@ -73,6 +73,6 @@ T_out = array2table(results, ...
     'VariableNames', {'Index','Daempfung','LimitIndex','Kp','Tn','Tv','UpperLimit','LowerLimit','ITAE','SimTime_s'});
 
 % CSV speichern
-writetable(T_out, 'PT2_PSO_results_matlab.csv');
+writetable(T_out, 'PT2_PSO_results_matlab_correct_limit.csv');
 
 disp('✅ Alle Simulationen abgeschlossen. Ergebnisse in "PT2_Buechi_results_matlab.csv" gespeichert.');
