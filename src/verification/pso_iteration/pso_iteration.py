@@ -27,7 +27,7 @@ def main():
     r = lambda t: np.ones_like(t)
 
     # PT2-Dämpfungen
-    zetas = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1]
+    xis = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1]
     # ====================
     # PTn-Systeme
     # ====================
@@ -62,10 +62,10 @@ def main():
     # ====================
     # PT2-Systeme
     # ====================
-    for zeta in zetas:
+    for xi in xis:
         for constrain in constrains:
-            # PT2-Übertragungsfunktion: 1 / (s^2 + 2*zeta*s + 1)
-            plant = Plant([1], [1, 2*zeta, 1])
+            # PT2-Übertragungsfunktion: 1 / (s^2 + 2*xi*s + 1)
+            plant = Plant([1], [1, 2*xi, 1])
             pid = PIDClosedLoop(
                 plant,
                 Kp=10, Ti=3, Td=0.8, Tf=0.1,
@@ -81,7 +81,7 @@ def main():
             )
 
             performance_index = []
-            for _ in tqdm(range(pso_iteration), f"PT2: {zeta=}, {constrain=}"):
+            for _ in tqdm(range(pso_iteration), f"PT2: {xi=}, {constrain=}"):
                 swarm = Swarm(obj_func, swarm_size, 3, bounds)
                 start_time = time()
                 param, performance_idx = swarm.simulate_swarm()
@@ -89,7 +89,7 @@ def main():
                 performance_index.append([performance_idx, *param, end_time - start_time])
 
             performance_index = np.array(performance_index)
-            np.save(f"pso_iteration_pt2_zeta{zeta}_{constrain}", performance_index)
+            np.save(f"pso_iteration_pt2_xi{xi}_{constrain}", performance_index)
 
 
 if __name__ == '__main__':

@@ -19,7 +19,7 @@ color_ptn = {
 }
 
 
-# Harmonische Farbskala für PT2-Systeme (zeta)
+# Harmonische Farbskala für PT2-Systeme (xi)
 color_pt2 = {
     0.0:  '#4e79a7',
     0.1:  '#76a5d2',
@@ -43,11 +43,11 @@ def load_data_ptn():
 
 
 def load_data_pt2():
-    zetas = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1]
+    xis = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1]
     constrains = [2, 3, 5, 10]
     data = {}
-    for z in zetas:
-        data[z] = {c: np.load(f"pso_iteration_pt2_zeta{z}_{c}.npy") for c in constrains}
+    for z in xis:
+        data[z] = {c: np.load(f"pso_iteration_pt2_xi{z}_{c}.npy") for c in constrains}
     return data
 
 
@@ -77,7 +77,7 @@ def plot_ptn(data_ptn):
     plt.xlabel("Iterationen")
     plt.ylabel("Normiertes ITAE")
 
-    legend1 = plt.legend(handles=ptn_handler, title=r"PT$n$", bbox_to_anchor=(1, 0.8), handlelength=3)
+    legend1 = plt.legend(handles=ptn_handler, title="PTn", bbox_to_anchor=(1, 0.8), handlelength=3)
     plt.gca().add_artist(legend1)
     plt.legend(handles=constrain_handler, title="Stellgrössenbegrenzung", bbox_to_anchor=(1, 1), handlelength=3)
 
@@ -88,14 +88,14 @@ def plot_ptn(data_ptn):
 
 def plot_pt2(data_pt2):
     plt.figure(figsize=(12, 8))
-    for zeta, constrains_dict in data_pt2.items():
+    for xi, constrains_dict in data_pt2.items():
         for constr, runs in constrains_dict.items():
             runs_sorted = np.sort(runs[:, 0])[::-1]
             data_norm = minmax(runs_sorted)
-            plt.plot(data_norm, linestyle=line_layout[constr], color=color_pt2[zeta], linewidth=1)
+            plt.plot(data_norm, linestyle=line_layout[constr], color=color_pt2[xi], linewidth=1)
 
-    # Legende PT2 zeta
-    pt2_handler = [Line2D([0], [0], color=c, lw=2, label=f"ζ={z}") for z, c in color_pt2.items()]
+    # Legende PT2 xi
+    pt2_handler = [Line2D([0], [0], color=c, lw=2, label=rf"$\xi={z}$") for z, c in color_pt2.items()]
     constrain_handler = [Line2D([0], [0], color="black", linestyle=ls, lw=2, label=r"$\pm$" + str(name))
                          for name, ls in line_layout.items()]
 

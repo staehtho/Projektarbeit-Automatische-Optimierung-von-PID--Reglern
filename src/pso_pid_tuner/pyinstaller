@@ -1,1 +1,0 @@
-pyinstaller --noconfirm --onefile --name "PID Optimizer V0.3" --add-data "config/config.yaml;config" --add-data "report_generator/ZHAW_logo.png;report_generator" -i "icons/pid_tuner.ico" main.py
