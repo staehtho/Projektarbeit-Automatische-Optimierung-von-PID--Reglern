@@ -206,7 +206,7 @@ def dot1D(x: np.ndarray, y: np.ndarray) -> float:
     ),
     cache=True, inline="always"
 )
-def pid_update(e: float, e_prev: float, filtered_prev: float, integral: float,
+def pid_update(e: float, e_prev: float, d_filtered_prev: float, integral_prev: float,
                Kp: float, Ti: float, Td: float, Tf: float, dt: float, u_min: float, u_max: float,
                anti_windup_method: int) -> tuple[float, float, float]:
     """
@@ -219,8 +219,8 @@ def pid_update(e: float, e_prev: float, filtered_prev: float, integral: float,
     Args:
         e: Current error.
         e_prev: Previous error.
-        filtered_prev: Previous filtered derivative term.
-        integral: Current integral state (accumulated error integral).
+        d_filtered_prev: Previous filtered derivative term.
+        integral_prev: Previous integral state (accumulated error integral).
         Kp: Proportional gain.
         Ti: Integral time constant.
         Td: Derivative time constant.
@@ -232,60 +232,91 @@ def pid_update(e: float, e_prev: float, filtered_prev: float, integral: float,
 
     Returns:
         A tuple with three floats: (u, integral, d_filtered)
-        - u: The saturated control output.
-        - integral: Updated integral state.
-        - d_filtered: Updated filtered derivative state.
+        - u_updated: The saturated control output.
+        - integral_updated: Updated integral state.
+        - d_filtered_updated: Updated filtered derivative state.
     """
-    # --- Derivative block (filtered) ---
+
+    # --------------------------------------------------
+    # 1) Proportional block
+    # --------------------------------------------------
+    P_term = Kp * e
+
+    # --------------------------------------------------
+    # 2) Integration block
+    # --------------------------------------------------
+    if Ti > 0.0:
+        integral_candidate = integral_prev + e * dt
+    else:
+        integral_candidate = integral_prev
+
+    # previous integrator (scaled for parallelform)
+    I_term_previous = Kp * (1.0 / Ti) * integral_prev if Ti > 0 else 0.0
+
+    # candidate integrator (scaled for parallelform)
+    I_term_candidate = Kp * (1.0 / Ti) * integral_candidate if Ti > 0 else 0.0
+
+    # --------------------------------------------------
+    # 3) Derivative block (filtered)
+    # --------------------------------------------------
     if Td > 0.0:
         alpha = Tf / (Tf + dt)
-        d_filtered = alpha * filtered_prev + (1.0 - alpha) * ((e - e_prev) / dt)
+        d_filtered_updated = alpha * d_filtered_prev + (1.0 - alpha) * ((e - e_prev) / dt)
     else:
-        d_filtered = 0.0
+        d_filtered_updated = 0.0
 
-    # --- Integral update proposal ---
-    if Ti > 0.0:
-        integral_candidate = integral + e * dt
-    else:
-        integral_candidate = integral
+    # D-Term scaled for parallelform
+    D_term = Kp * Td * d_filtered_updated
 
-    # Unscaled integrator output
-    I_term_unscaled = (1.0 / Ti) * integral_candidate if Ti > 0 else 0.0
+    # --------------------------------------------------
+    # 4) PID-Build
+    # --------------------------------------------------
+    # unsaturated control output with previous I-term
+    u_unsat_previous = P_term + I_term_previous + D_term
 
-    # --- Serial PID core ---
-    u_unsat = Kp * (e + I_term_unscaled + Td * d_filtered)
+    # unsaturated control output with candidate I-term
+    u_unsat_candidate = P_term + I_term_candidate + D_term
 
-    # --- Anti-windup ---
+    # --------------------------------------------------
+    # 5) Anti-windup
+    # --------------------------------------------------
     if anti_windup_method == AntiWindupInt.CONDITIONAL:
 
-        # Allow integration only if it will not cause saturation
-        if (u_min < u_unsat < u_max) or \
-                (u_unsat >= u_max and e < 0.0) or \
-                (u_unsat <= u_min and e > 0.0):
-            integral = integral_candidate
-        # else: keep previous integral
-
-        # re-evaluate I term
-        I_term_unscaled = (1.0 / Ti) * integral if Ti > 0 else 0.0
-        u = Kp * (e + I_term_unscaled + Td * d_filtered)
-        u = min(max(u, u_min), u_max)
+        # Allow integration only if it will not cause saturation on control output
+        if (u_min < u_unsat_candidate < u_max) or \
+                (u_unsat_candidate >= u_max and e < 0.0) or \
+                (u_unsat_candidate <= u_min and e > 0.0):
+            integral_updated = integral_candidate
+            u_unsat_updated = u_unsat_candidate
+        else:
+            integral_updated = integral_prev
+            u_unsat_updated = u_unsat_previous
 
     elif anti_windup_method == AntiWindupInt.CLAMPING:
 
-        # Always integrate
-        integral = integral_candidate
-
-        # Clamp the *integrator* inside control limits
-        I_term_unscaled = (1.0 / Ti) * integral if Ti > 0 else 0.0
-        I_term_clamped = min(max(I_term_unscaled, u_min / Kp), u_max / Kp)
-
-        u = Kp * (e + I_term_clamped + Td * d_filtered)
-        u = min(max(u, u_min), u_max)
+        # Allow integration only if it will not cause saturation inside integration
+        if (u_min < I_term_candidate < u_max) or \
+                (I_term_candidate >= u_max and e < 0.0) or \
+                (I_term_candidate <= u_min and e > 0.0):
+            integral_updated = integral_candidate
+            u_unsat_updated = u_unsat_candidate
+        else:
+            integral_updated = integral_prev
+            u_unsat_updated = u_unsat_previous
 
     else:
-        u = 0.0  # safety fallback
+        u_unsat_updated = 0.0         # safety fallback
+        integral_updated = 0.0        # safety fallback
 
-    return u, integral, d_filtered
+    # --------------------------------------------------
+    # 6) Output Saturation
+    # --------------------------------------------------
+    u_updated = min(max(u_unsat_updated, u_min), u_max)
+
+    # --------------------------------------------------
+    # 7) Output
+    # --------------------------------------------------
+    return u_updated, integral_updated, d_filtered_updated
 
 
 # =============================================================================
