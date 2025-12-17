@@ -1,8 +1,3 @@
-# TODO: PID (PSO) finden und Voicecoil
-# TODO: Voicecoil regeln und aufzeichnen
-
-# TODO: Büchi Punkte für BA ergänzen
-
 # TODO: Abtastfrequenz in config.yaml aufnehmen und Tf auf fs/10 setzen -> kein recommended Filter, PSO mit dieser Tf
 #  berechnen. Warning wenn fs zu gross
 
