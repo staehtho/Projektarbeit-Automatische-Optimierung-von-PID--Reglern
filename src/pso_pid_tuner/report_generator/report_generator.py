@@ -241,9 +241,12 @@ def report_generator(data: dict):
 
     # INFO BLOCK
     elements.append(Paragraph("Information", style_h2))
-    elements.append(Paragraph(
-        '<font color="red"><b>PRELIMINARY – results have not been fully validated and the application is still under development'
-        '</b></font>', style_body))
+
+    # PRELIMINARY
+    # elements.append(Paragraph(
+    #     '<font color="red"><b>PRELIMINARY – results have not been fully validated and the application is still under development'
+    #     '</b></font>', style_body))
+
     elements.append(Paragraph("developed by: Thomas Stähli, Florin Büchi, Roland Büchi", style_body))
     elements.append(
         Paragraph("enjoy tuning and leave us some feedback: bhir@zhaw.ch", style_body))
