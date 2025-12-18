@@ -44,8 +44,8 @@ class Plant:
             den: list[float] | np.ndarray,
             solver: MySolver = MySolver.RK4
     ) -> None:
-        self._num = np.array(num, copy=False, dtype=float)
-        self._den = np.array(den, copy=False, dtype=float)
+        self._num = np.array(num, dtype=float)
+        self._den = np.array(den, dtype=float)
 
         self._solver = solver
 
