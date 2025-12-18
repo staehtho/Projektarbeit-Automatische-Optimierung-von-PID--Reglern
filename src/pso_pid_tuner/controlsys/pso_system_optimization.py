@@ -245,16 +245,17 @@ def pid_update(e: float, e_prev: float, d_filtered_prev: float, integral_prev: f
     # --------------------------------------------------
     # 2) Integration block
     # --------------------------------------------------
+    # unscaled integratorvalue
     if Ti > 0.0:
         integral_candidate = integral_prev + e * dt
     else:
         integral_candidate = integral_prev
 
     # previous integrator (scaled for parallelform)
-    I_term_previous = Kp * (1.0 / Ti) * integral_prev if Ti > 0 else 0.0
+    I_term_previous = (Kp / Ti) * integral_prev if Ti > 0 else 0.0
 
     # candidate integrator (scaled for parallelform)
-    I_term_candidate = Kp * (1.0 / Ti) * integral_candidate if Ti > 0 else 0.0
+    I_term_candidate = (Kp / Ti) * integral_candidate if Ti > 0 else 0.0
 
     # --------------------------------------------------
     # 3) Derivative block (filtered)
